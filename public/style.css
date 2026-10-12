@@ -182,6 +182,34 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
 .step.done .step-ico { background: var(--green); border-color: var(--green); color: #04210d; }
 .step.error .step-ico { background: var(--red); border-color: var(--red); color: #fff; }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* The plan as the AI writes it */
+.live-li { padding: 0 0 6px 56px; }
+@media (max-width: 560px) { .live-li { padding-left: 0; } }
+.live { padding: 14px 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); }
+.live-status { margin: 0; font-size: 13px; color: var(--muted); }
+.live h3 { margin: 12px 0 4px; font-size: 20px; letter-spacing: -0.01em; }
+.live-summary { margin: 0 0 10px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.live-notes {
+  margin-top: 10px; max-height: 9.5em; overflow: hidden; white-space: pre-wrap;
+  font-size: 13px; line-height: 1.55; color: var(--muted);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 40%);
+  mask-image: linear-gradient(to bottom, transparent, #000 40%);
+  display: flex; flex-direction: column; justify-content: flex-end;
+}
+.live-days { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.live-days li { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); }
+.live-days li.new { animation: live-in 0.3s ease-out; }
+.live-days li:first-child { border-top: 0; }
+.live-days b { display: block; font-size: 15px; font-weight: 600; }
+.live-days small { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
+.live-num {
+  flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--card-strong); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.live-roads { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.live-roads .chip { padding: 6px 11px; font-size: 13px; }
+@keyframes live-in { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .live-days li.new { animation: none; } }
 .error-box {
   display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
   padding: 16px; border-radius: 18px; background: rgba(255, 69, 58, 0.12); color: var(--text);

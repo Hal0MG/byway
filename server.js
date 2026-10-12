@@ -1381,9 +1381,9 @@ function extractJson(text) {
 
 // Ask the configured AI for a JSON answer. Returns { data, model, sources }.
 // signal: stop when the app stops waiting (local model only). region: a key for reusing research notes.
-async function callAI({ system, user, searches = 0, schema, signal, region }) {
+async function callAI({ system, user, searches = 0, schema, signal, region, onEvent }) {
   // Local model: no fallback, so a stopped LM Studio shows its own clear error instead of a Gemini quota message.
-  if (AI_PROVIDER === "local") return callLocal({ system, user, searches, schema, signal, region });
+  if (AI_PROVIDER === "local") return callLocal({ system, user, searches, schema, signal, region, onEvent });
   if (AI_PROVIDER === "claude" && anthropic) {
     try {
       const ending = searches > 0
@@ -1548,30 +1548,116 @@ function clientGone(res) {
   return c.signal;
 }
 
-// LM Studio sends nothing until the whole answer is written, and Node's fetch gives up after 300 s without response
-// headers (undici's headersTimeout). That cut every long answer on the Mac at 5 minutes, so LOCAL_TIMEOUT is the only limit.
+// Answers are streamed, so the app can show the plan while it's written (`onText` gets the answer so far). A plain
+// request also failed on the Mac: LM Studio sends nothing until the answer is done, and Node's fetch gives up after
+// 300 s without response headers. The agent keeps undici's own timeouts out of it; LOCAL_TIMEOUT is the only limit.
 const LM_AGENT = new Agent({ headersTimeout: 0, bodyTimeout: 0 });
 
-async function lmChat(body, signal) {
+async function lmChat(body, signal, onText) {
+  const failed = (e) => {
+    if (signal?.aborted) return new Error("Cancelled.");
+    if (e.name === "TimeoutError") return new Error("The local model took too long to answer.");
+    console.log(`LM Studio request failed: ${e.message}${e.cause ? ` (${e.cause.code || e.cause.message})` : ""}`);
+    return new Error("LM Studio isn't running. Open Setup (the gear button) to start it.");
+  };
   let r;
   try {
     r = await undiciFetch(`${LOCAL_URL}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: LOCAL_MODEL, temperature: 0.3, ...body }), // low: steadier routes from a small model
+      // low temperature: steadier routes from a small model
+      body: JSON.stringify({ model: LOCAL_MODEL, temperature: 0.3, ...body, stream: true }),
       signal: signal ? AbortSignal.any([AbortSignal.timeout(LOCAL_TIMEOUT), signal]) : AbortSignal.timeout(LOCAL_TIMEOUT),
       dispatcher: LM_AGENT,
     });
   } catch (e) {
-    if (signal?.aborted) throw new Error("Cancelled.");
-    if (e.name === "TimeoutError") throw new Error("The local model took too long to answer.");
-    console.log(`LM Studio request failed: ${e.message}${e.cause ? ` (${e.cause.code || e.cause.message})` : ""}`);
-    throw new Error("LM Studio isn't running. Open Setup (the gear button) to start it.");
+    throw failed(e);
   }
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(`LM Studio: ${d?.error?.message || d?.error || `HTTP ${r.status}`}`);
-  const choice = d.choices?.[0] || {};
-  return { ...(choice.message || {}), finish: choice.finish_reason };
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({}));
+    throw new Error(`LM Studio: ${d?.error?.message || d?.error || `HTTP ${r.status}`}`);
+  }
+  // Server-sent events: content and reasoning arrive in pieces, tool calls as pieces keyed by index.
+  let content = "";
+  let reasoning = "";
+  let finish = null;
+  const calls = [];
+  let buf = "";
+  const dec = new TextDecoder();
+  try {
+    for await (const chunk of r.body) {
+      buf += dec.decode(chunk, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).trim();
+        buf = buf.slice(i + 1);
+        if (!line.startsWith("data:") || line === "data: [DONE]") continue;
+        const d = JSON.parse(line.slice(5));
+        if (d.error) throw new Error(`LM Studio: ${d.error.message || d.error}`);
+        const c = d.choices?.[0];
+        if (!c) continue;
+        const delta = c.delta || {};
+        if (delta.reasoning_content || delta.reasoning) reasoning += delta.reasoning_content || delta.reasoning;
+        if (delta.content) {
+          content += delta.content;
+          onText?.(content);
+        }
+        for (const t of delta.tool_calls || []) {
+          const call = (calls[t.index ?? calls.length] ||= { id: "", type: "function", function: { name: "", arguments: "" } });
+          if (t.id) call.id = t.id;
+          if (t.function?.name) call.function.name += t.function.name;
+          if (t.function?.arguments) call.function.arguments += t.function.arguments;
+        }
+        if (c.finish_reason) finish = c.finish_reason;
+      }
+    }
+  } catch (e) {
+    if (e.message.startsWith("LM Studio:")) throw e;
+    throw failed(e);
+  }
+  const tool_calls = calls.filter(Boolean);
+  return { role: "assistant", content, reasoning_content: reasoning, ...(tool_calls.length && { tool_calls }), finish };
+}
+
+// Calls fn(x) at most every `ms` milliseconds; the calls in between are dropped (the next one carries the newer state).
+function every(ms, fn) {
+  let last = 0;
+  return (x) => {
+    const now = Date.now();
+    if (now - last < ms) return;
+    last = now;
+    fn(x);
+  };
+}
+
+// The finished part of a JSON answer that's still being written: everything up to the last closed object or array,
+// with the open brackets closed. Half-written strings are left out, so the app only shows whole days and stops.
+function partialJson(text) {
+  const stack = [];
+  let inStr = false;
+  let esc = false;
+  let cut = 0;
+  let open = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === "\\") esc = true;
+      else if (ch === '"') inStr = false;
+    } else if (ch === '"') inStr = true;
+    else if (ch === "{" || ch === "[") stack.push(ch);
+    else if (ch === "}" || ch === "]") {
+      stack.pop();
+      cut = i + 1;
+      open = [...stack];
+    }
+  }
+  if (!cut) return null;
+  try {
+    return JSON.parse(text.slice(text.indexOf("{"), cut) + open.reverse().map((b) => (b === "{" ? "}" : "]")).join(""));
+  } catch {
+    return null;
+  }
 }
 
 // Turns off Qwen3.5's thinking on LM Studio's OpenAI-compatible endpoint. Only this works there: "reasoning": "off",
@@ -1582,7 +1668,19 @@ const NO_THINK = { reasoning_effort: "none" };
 // 1. Research: the model may call web_search / read_page (up to `searches` calls), then writes its plan as notes.
 // 2. Answer: a second request turns the notes into JSON, with LM Studio constraining the output to the schema,
 //    so a small model can't produce broken JSON.
-async function callLocal({ system, user, searches = 0, schema, signal, region }) {
+// `onEvent` (optional) hears the progress: { type: "status", text }, { type: "notes", text } with the notes so far,
+// and { type: "partial", data } with the finished part of the JSON answer.
+async function callLocal({ system, user, searches = 0, schema, signal, region, onEvent }) {
+  const notesOut = every(500, (text) => onEvent?.({ type: "notes", text: stripThink(text) }));
+  let lastPartial = "";
+  const partialOut = every(400, (text) => {
+    const data = partialJson(stripThink(text));
+    const key = data ? JSON.stringify(data) : "";
+    if (key.length > lastPartial.length) {
+      lastPartial = key;
+      onEvent?.({ type: "partial", data });
+    }
+  });
   if (!searchAvailable()) searches = 0; // no TAVILY_API_KEY: plan from the model's own knowledge
   const sources = new Map();
   const messages = [{ role: "system", content: system }];
@@ -1612,7 +1710,7 @@ async function callLocal({ system, user, searches = 0, schema, signal, region })
         ...(!LOCAL_THINK && NO_THINK),
         ...(allowTools && { tools: LOCAL_TOOLS, tool_choice: "auto" }),
       };
-      let m = await lmChat(turnBody, signal);
+      let m = await lmChat(turnBody, signal, notesOut);
       // Qwen3.5 sometimes thinks until it runs out of tokens and says nothing. Redo that turn without thinking.
       if (m.finish === "length" && !stripThink(m.content) && !m.tool_calls?.length) {
         console.log("  thinking ran away, redoing the turn without it");
@@ -1626,6 +1724,7 @@ async function callLocal({ system, user, searches = 0, schema, signal, region })
         try {
           const args = JSON.parse(c.function?.arguments || "{}");
           if (c.function?.name === "web_search") {
+            onEvent?.({ type: "status", text: `Searching: ${args.query}` });
             const found = await webSearch(String(args.query || ""));
             found.forEach((x) => sources.set(x.url, x.title));
             result = found.length
@@ -1633,6 +1732,7 @@ async function callLocal({ system, user, searches = 0, schema, signal, region })
               : "No results.";
             console.log(`  search: ${args.query} (${found.length} results)`);
           } else if (c.function?.name === "read_page") {
+            onEvent?.({ type: "status", text: `Reading ${String(args.url || "").replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}` });
             result = await readPage(String(args.url || ""));
             console.log(`  read: ${args.url}`);
           } else result = "Unknown tool.";
@@ -1644,6 +1744,7 @@ async function callLocal({ system, user, searches = 0, schema, signal, region })
       }
       if (used >= searches) {
         messages.push({ role: "user", content: "That's all the research. Write your notes now, at most about 500 words." });
+        onEvent?.({ type: "status", text: "Writing notes on the route" });
       }
     }
   }
@@ -1662,7 +1763,9 @@ async function callLocal({ system, user, searches = 0, schema, signal, region })
     },
   ];
   let data = null;
+  onEvent?.({ type: "status", text: "Writing the plan" });
   for (let attempt = 0; attempt < 2 && !data; attempt++) {
+    lastPartial = "";
     const m = await lmChat({
       messages: ask(attempt ? "\nKeep every text field short (one sentence) so the whole answer fits." : ""),
       max_tokens: 16000,
@@ -1670,7 +1773,7 @@ async function callLocal({ system, user, searches = 0, schema, signal, region })
       // (it once used 60,000 characters and left no answer).
       ...NO_THINK,
       response_format: { type: "json_schema", json_schema: { name: "answer", strict: true, schema } },
-    }, signal);
+    }, signal, partialOut);
     try {
       data = extractJson(stripThink(m.content));
     } catch {
@@ -1887,6 +1990,13 @@ app.post("/api/plan", async (req, res) => {
     if (!prompt) return res.status(400).json({ error: "Describe the trip first." });
     const signal = clientGone(res);
     const maxH = maxHoursOf(settings);
+    // With `stream`, the answer is newline-separated JSON events (see callLocal), ending in { type: "done", ... }.
+    if (req.body.stream) {
+      res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+      res.setHeader("Cache-Control", "no-store");
+      res.flushHeaders();
+    }
+    const emit = (e) => req.body.stream && !res.writableEnded && res.write(`${JSON.stringify(e)}\n`);
 
     // The local model gets only the byways in the states the trip crosses (shorter prompt, better focus).
     // A revision already knows its states (the client sends them); a new trip asks the model first.
@@ -1895,7 +2005,10 @@ app.post("/api/plan", async (req, res) => {
     let list = await loadByways();
     let stateList = asArray(req.body.states).map(String).filter(Boolean);
     if (AI_PROVIDER === "local") {
-      if (!stateList.length) stateList = await localStates(prompt, signal);
+      if (!stateList.length) {
+        emit({ type: "status", text: "Working out which states and provinces the trip crosses" });
+        stateList = await localStates(prompt, signal);
+      }
       const states = new Set(stateList.map(placeKey));
       list = list.filter((b) => b.states.some((s) => states.has(placeKey(s))));
       console.log(`Catalog for ${[...states].join(", ") || "no states"}: ${list.length} byways`);
@@ -1990,7 +2103,7 @@ Request: ${prompt}`;
     const planSearches = AI_PROVIDER === "local" ? LOCAL_SEARCHES_PLAN : SEARCHES_PLAN;
     const searches = !revising ? planSearches : feedback || adds.length ? Math.min(2, planSearches) : 0;
     const region = !revising ? regionKey(stateList) : "";
-    const { data, model, sources } = await callAI({ system, user, searches, schema: PLAN_SCHEMA, signal, region });
+    const { data, model, sources } = await callAI({ system, user, searches, schema: PLAN_SCHEMA, signal, region, onEvent: emit });
     const plan = Array.isArray(data) ? { points: data } : data;
     plan.points = asArray(plan.points || plan.stops);
     plan.days = asArray(plan.days);
@@ -2012,9 +2125,17 @@ Request: ${prompt}`;
         picked.has(String(r.name).toLowerCase()) ||
         !/^(I|Interstate)[ -]?\d|^M\d|^(ON )?4\d\d\b|^Highway 4\d\d\b|^(A-|Autoroute )\d/i.test(`${r.ref || ""}`.trim() || `${r.name || ""}`.trim())
     );
-    res.json({ plan, model, sources });
+    if (req.body.stream) {
+      emit({ type: "done", plan, model, sources });
+      res.end();
+    } else res.json({ plan, model, sources });
   } catch (e) {
-    res.status(500).json({ error: e.message || String(e) });
+    const error = e.message || String(e);
+    if (!res.headersSent) res.status(500).json({ error });
+    else {
+      emit({ type: "error", error });
+      res.end();
+    }
   }
 });
 

@@ -85,6 +85,44 @@ function renderStart() {
 
 // ---------- planning progress ----------
 
+// What the AI is doing right now: its current step, its notes as they're written, then the days as the plan comes in.
+let liveShown = 0; // days already on screen, so only new ones slide in
+function liveBlock(live) {
+  const lp = live.plan || {};
+  const days = Array.isArray(lp.days) ? lp.days : [];
+  const points = Array.isArray(lp.points) ? lp.points : [];
+  const roads = Array.isArray(lp.roads) ? lp.roads : [];
+  const town = (n) => String(n || "").split(",")[0];
+  let body = "";
+  if (days.length) {
+    body = `
+      ${lp.title ? `<h3>${esc(lp.title)}</h3>` : ""}
+      ${lp.summary ? `<p class="live-summary">${esc(lp.summary)}</p>` : ""}
+      <ol class="live-days">
+        ${days
+          .map((d, i) => {
+            // the day's stops as a path ending at the overnight town
+            const night = town(d.overnight);
+            const pts = points.filter((x) => Number(x.day) === Number(d.day)).map((x) => town(x.name)).filter((n) => n !== night);
+            return `<li${i >= liveShown ? ' class="new"' : ""}><span class="live-num">${esc(d.day)}</span><div><b>${esc(d.title || "")}</b>
+              <small>${pts.length ? esc([...pts, night].join(" → ")) : `Night in ${esc(night)}`}</small></div></li>`;
+          })
+          .join("")}
+      </ol>
+      ${roads.length ? `<div class="live-roads">${roads.map((r) => `<span class="chip">${esc(r.name)}</span>`).join("")}</div>` : ""}`;
+  } else if (live.notes) {
+    // the end of the notes, from a line start, without markdown marks
+    let text = String(live.notes).replace(/[*#]+/g, "").trim();
+    if (text.length > 700) text = text.slice(text.indexOf("\n", text.length - 700) + 1 || text.length - 700);
+    body = `<div class="live-notes">${esc(text)}</div>`;
+  }
+  liveShown = days.length;
+  return `<div class="live">
+      ${live.status ? `<p class="live-status">${esc(live.status)}</p>` : ""}
+      ${body}
+    </div>`;
+}
+
 function renderProgress() {
   const p = progress;
   IT.innerHTML = `
@@ -99,7 +137,7 @@ function renderProgress() {
               (s) => `<li class="step ${s.state}">
                 <span class="step-ico">${s.state === "done" ? icon("check", 16) : s.state === "error" ? icon("alert", 16) : ""}</span>
                 <div><b>${esc(s.label)}</b><small>${esc(s.detail || "")}</small></div>
-              </li>`
+              </li>${s.id === p.live?.step && !p.error ? `<li class="live-li">${liveBlock(p.live)}</li>` : ""}`
             )
             .join("")}
         </ol>

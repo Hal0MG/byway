@@ -586,6 +586,54 @@ async function api(path, body, signal) {
   return data;
 }
 
+// /api/plan with { stream: true }: newline-separated JSON events while the AI works (status lines, its notes, the
+// finished part of the plan), then { type: "done" } with the plan. Shown live on the planning screen.
+async function planStream(body, step = "route") {
+  const r = await fetch("/api/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, stream: true }) });
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({}));
+    throw new Error(data.error || `Request failed (${r.status})`);
+  }
+  if (progress) progress.live = { step }; // shown under that progress step
+  const reader = r.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).trim();
+        buf = buf.slice(i + 1);
+        if (!line) continue;
+        const e = JSON.parse(line);
+        if (e.type === "done") return e;
+        if (e.type === "error") throw new Error(e.error);
+        const live = progress?.live;
+        if (!live) continue;
+        if (e.type === "status") live.status = e.text;
+        else if (e.type === "notes") live.notes = e.text;
+        else if (e.type === "partial") live.plan = e.data;
+        renderLive();
+      }
+    }
+  } finally {
+    if (progress) progress.live = null;
+  }
+  throw new Error("The planner stopped before finishing. Try again.");
+}
+// Events can come several times a second; redraw at most every 300 ms.
+let liveTimer = 0;
+function renderLive() {
+  if (liveTimer) return;
+  liveTimer = setTimeout(() => {
+    liveTimer = 0;
+    if (progress) renderItinerary();
+  }, 300);
+}
+
 function progressStart(steps) {
   progress = { steps: steps.map(([id, label]) => ({ id, label, state: "todo", detail: "" })), error: null };
   renderItinerary();
@@ -937,7 +985,7 @@ async function planTrip(prompt, settings) {
   progress.retry = () => planTrip(prompt, settings);
   try {
     progressSet("route", "doing", aiLabel());
-    const first = await api("/api/plan", { prompt, settings: tripSettings() });
+    const first = await planStream({ prompt, settings: tripSettings() });
     let skel = first.plan;
     progressSet("route", "done", `${skel.days.length} days, ${skel.roads.length} featured roads`);
     let detailsP = requestDetails(prompt, skel);
@@ -953,8 +1001,12 @@ async function planTrip(prompt, settings) {
     const long = longDays();
     if (long.length) {
       progressSet("drive", "doing", `Day ${long.join(", ")} ran over ${tripSettings().maxHours} hours, asking the AI to rebalance`);
+      // The guides being written are for the old days and get redone after this, and two answers at once
+      // halve the local model's speed, so stop them.
+      detailsCtl?.abort();
+      progressSet("details", "todo", "Waits for the rebalanced days");
       const dayHours = dayGroups().map((g) => (dayStats(g, "scenic")?.dur || 0) / 3600);
-      skel = (await api("/api/plan", { prompt, current: skeletonOf(), dayHours, settings: tripSettings(), states: tripStates() })).plan;
+      skel = (await planStream({ prompt, current: skeletonOf(), dayHours, settings: tripSettings(), states: tripStates() }, "drive")).plan;
       detailsP = requestDetails(prompt, skel);
       progressSet("details", "doing", "Rewriting for the rebalanced days");
       if ((await placePoints(skel)).reordered) detailsP = requestDetails(prompt, skeletonOf());
@@ -1007,7 +1059,7 @@ async function revisePlan({ feedback = "", roadEdits = null, dayHours = null, ni
   progress.retry = () => revisePlan({ feedback, roadEdits, dayHours, nightDays, title, note });
   try {
     progressSet("route", "doing", note || (feedback ? `"${feedback}"` : "Sending the changes to the AI"));
-    const resp = await api("/api/plan", {
+    const resp = await planStream({
       prompt, current: skeletonOf(), dayHours, nightDays, feedback, roadEdits, states: tripStates(), settings: tripSettings(),
     });
     const skel = resp.plan;
