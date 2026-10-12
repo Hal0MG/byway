@@ -1735,7 +1735,8 @@ async function callLocal({ system, user, searches = 0, schema, signal, region, o
         console.log("  thinking ran away, redoing the turn without it");
         m = await lmChat({ ...turnBody, ...NO_THINK }, signal);
       }
-      const calls = allowTools ? m.tool_calls || [] : [];
+      // a turn can ask for several searches at once; keep only what's left of the budget
+      const calls = allowTools ? (m.tool_calls || []).slice(0, searches - used) : [];
       messages.push({ role: "assistant", content: stripThink(m.content), ...(calls.length && { tool_calls: calls }) });
       if (!calls.length) break;
       for (const c of calls) {
@@ -2000,6 +2001,110 @@ const noAI = () => AI_PROVIDER !== "local" && !anthropic && !GEMINI_KEY;
 
 // Step 1: the route. Days, stops, via points and featured roads, with the byway catalog as reference.
 // With current + dayHours it revises an existing plan using drive times the app measured.
+// ---------- checking a plan before it's used ----------
+// Any model (small local ones most) can break the plan's own rules. These checks are plain code, so they hold whichever
+// model plans; the problems found go back to the model once, worded so it can fix them.
+
+const NUM_WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11,
+  twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, a: 1 };
+// The number of days the traveler asked for, or 0: "in 5 days", "a 3-day loop", "two days", "a week", "two weeks".
+function requestedDays(prompt) {
+  const t = String(prompt || "").toLowerCase();
+  const num = (w) => NUM_WORDS[w] ?? Number(w);
+  let m = t.match(/\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen)[ -]days?\b/);
+  if (m) return num(m[1]);
+  m = t.match(/\b(a|one|two|three)[ -]weeks?\b/);
+  if (m) return num(m[1]) * 7;
+  return 0;
+}
+
+// Examples in the planning instructions that a model may copy into an unrelated trip, with where they really are.
+const PROMPT_EXAMPLES = [
+  { text: "Tioga Pass", where: "California" },
+  { text: "Signal Mountain Lodge", where: "Wyoming" },
+  { text: "Ouray", where: "Colorado" },
+  { text: "US 550", where: "Colorado" },
+];
+
+const townOf = (name) => placeKey(String(name || "").split(",")[0]);
+// "Milepost 382, Asheville, NC" and "Asheville, North Carolina" are the same place: one's town is a part of the other.
+function samePlace(a, b) {
+  const parts = (x) => String(x || "").split(",").map(placeKey);
+  return parts(a).includes(townOf(b)) || parts(b).includes(townOf(a));
+}
+// Whether a point's road field names this road: models write the name ("Icefields Parkway") or the number ("AB 93").
+function onRoad(point, road) {
+  const pr = placeKey(point.road).replace(/[^a-z0-9]+/g, " ").trim();
+  if (!pr) return false;
+  return [road.name, road.ref].map((x) => placeKey(x).replace(/[^a-z0-9]+/g, " ").trim()).some((x) => x && (pr.includes(x) || x.includes(pr)));
+}
+
+// Problems in a plan, as sentences for the model. `opts`: prompt, loop, revising, feedback.
+function checkPlan(plan, { prompt, loop, feedback }) {
+  const issues = [];
+  const days = plan.days;
+  const points = plan.points;
+  const n = days.length;
+  if (!n) return ["The plan has no days."];
+  if (!points.length) return ["The plan has no points."];
+
+  const want = feedback ? 0 : requestedDays(prompt);
+  if (want && n !== want) issues.push(`The traveler asked for ${want} days but the plan has ${n}. Plan exactly ${want} days.`);
+  days.forEach((d, i) => {
+    if (Number(d.day) !== i + 1) issues.push(`Days must be numbered 1 to ${n} in order; day ${i + 1} is numbered ${d.day}.`);
+  });
+  for (const p of points) {
+    if (!(Number(p.day) >= 1 && Number(p.day) <= n)) issues.push(`Point "${p.name}" is on day ${p.day}, which doesn't exist.`);
+  }
+  for (const d of days) {
+    const mine = points.filter((p) => Number(p.day) === Number(d.day));
+    const stopsToday = mine.filter((p) => p.kind === "stop");
+    if (!stopsToday.length) {
+      issues.push(`Day ${d.day} has no stop. Its last stop must be the overnight, "${d.overnight}".`);
+      continue;
+    }
+    const last = stopsToday[stopsToday.length - 1];
+    if (!samePlace(last.name, d.overnight)) {
+      issues.push(`Day ${d.day}'s last stop is "${last.name}" but its overnight is "${d.overnight}". They must be the same place.`);
+    }
+    if (mine.length > 9) issues.push(`Day ${d.day} has ${mine.length} points; at most 9 per day.`);
+  }
+  if (points.length > 50) issues.push(`The plan has ${points.length} points; at most 50 in total.`);
+  if (loop || /\bloop\b/i.test(prompt || "")) {
+    const first = points[0], end = points[points.length - 1];
+    if (!samePlace(first.name, end.name)) {
+      issues.push(`This is a loop, so it must end where it starts ("${first.name}"), not at "${end.name}".`);
+    }
+  }
+  for (const r of plan.roads) {
+    const rdays = asArray(r.days).map(Number);
+    if (rdays.some((d) => !(d >= 1 && d <= n))) issues.push(`Road "${r.name}" lists day(s) ${rdays.join(", ")}, but the plan has ${n} days.`);
+    if (!points.some((p) => onRoad(p, r))) {
+      issues.push(`Featured road "${r.name}" has no point on it (no point has road "${r.name}"), so a router won't drive it. ` +
+        "Add a via on it, or drop the road.");
+    }
+  }
+  // copied examples: the example text appears, but nothing in the plan or request is in the place it belongs to
+  const everything = [plan.title, ...days.map((d) => d.title), ...points.map((p) => p.name), ...plan.roads.map((r) => `${r.name} ${r.ref || ""}`)]
+    .join(" | ");
+  const placesText = placeKey(`${prompt || ""} | ${points.map((p) => p.name).join(" | ")}`);
+  for (const ex of PROMPT_EXAMPLES) {
+    if (everything.includes(ex.text) && !placesText.includes(placeKey(ex.where)) && !placeKey(prompt).includes(placeKey(ex.text))) {
+      issues.push(`"${ex.text}" (in ${ex.where}) isn't on this trip; it was only an example in the instructions. Use real names from this trip.`);
+    }
+  }
+  return [...new Set(issues)];
+}
+
+// The model's answer as a plan with the expected arrays.
+function asPlan(data) {
+  const plan = Array.isArray(data) ? { points: data } : { ...data };
+  plan.points = asArray(plan.points || plan.stops);
+  plan.days = asArray(plan.days);
+  plan.roads = asArray(plan.roads);
+  return plan;
+}
+
 app.post("/api/plan", async (req, res) => {
   try {
     if (noAI()) return res.status(500).json({ error: "Add ANTHROPIC_API_KEY (or GEMINI_API_KEY) to .env" });
@@ -2123,10 +2228,34 @@ Request: ${prompt}`;
     const searches = !revising ? planSearches : feedback || adds.length ? Math.min(2, planSearches) : 0;
     const region = !revising ? regionKey(stateList) : "";
     const { data, model, sources } = await callAI({ system, user, searches, schema: PLAN_SCHEMA, signal, region, onEvent: emit });
-    const plan = Array.isArray(data) ? { points: data } : data;
-    plan.points = asArray(plan.points || plan.stops);
-    plan.days = asArray(plan.days);
-    plan.roads = asArray(plan.roads);
+    let plan = asPlan(data);
+
+    // Check the plan against its own rules; send the problems back once, without searching again.
+    const checkOpts = { prompt, loop: !!settings?.loop, feedback };
+    let issues = checkPlan(plan, checkOpts);
+    const found = issues.length;
+    if (found) {
+      console.log(`Plan check: ${found} problem(s): ${issues.join(" / ")}`);
+      emit({ type: "status", text: `Fixing ${found} problem${found > 1 ? "s" : ""} in the plan` });
+      emit({ type: "partial", data: null });
+      try {
+        const fixed = await callAI({
+          system,
+          user: `${user}\n\nYour plan was:\n${JSON.stringify(plan)}\n\nIt has these problems:\n` +
+            issues.map((x) => `- ${x}`).join("\n") +
+            "\nReturn the full corrected plan in the same format. Keep everything that was fine, with the same names.",
+          searches: 0, schema: PLAN_SCHEMA, signal, onEvent: emit,
+        });
+        const next = asPlan(fixed.data);
+        const left = checkPlan(next, checkOpts);
+        console.log(`Plan check after fixing: ${left.length} problem(s)${left.length ? `: ${left.join(" / ")}` : ""}`);
+        if (left.length < issues.length) [plan, issues] = [next, left];
+      } catch (e) {
+        if (signal.aborted) throw e;
+        console.log(`Plan fix failed, keeping the first plan: ${e.message}`);
+      }
+    }
+    const checks = { found, left: issues.length };
 
     // Attach the official byway record to roads the AI picked from the catalog.
     const byName = new Map((await loadByways()).map((b) => [b.name.toLowerCase(), b]));
@@ -2145,9 +2274,9 @@ Request: ${prompt}`;
         !/^(I|Interstate)[ -]?\d|^M\d|^(ON )?4\d\d\b|^Highway 4\d\d\b|^(A-|Autoroute )\d/i.test(`${r.ref || ""}`.trim() || `${r.name || ""}`.trim())
     );
     if (req.body.stream) {
-      emit({ type: "done", plan, model, sources });
+      emit({ type: "done", plan, model, sources, checks });
       res.end();
-    } else res.json({ plan, model, sources });
+    } else res.json({ plan, model, sources, checks });
   } catch (e) {
     const error = e.message || String(e);
     if (!res.headersSent) res.status(500).json({ error });
