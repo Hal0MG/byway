@@ -1571,7 +1571,7 @@ IT.addEventListener("submit", (e) => {
 // The trip stays on screen while the AI changes it: a bar at the bottom shows the steps, then what changed with an
 // Undo (the version saved just before). The day guides and photos catch up in the background.
 
-const liveState = { busy: false, step: "", text: "", result: "", error: "", bg: "", undo: null, last: "", run: 0 };
+const liveState = { busy: false, step: "", text: "", quote: "", result: "", error: "", bg: "", undo: null, last: null, run: 0 };
 function renderLiveBar() {
   const el = $("live-bar");
   if (!el) return;
@@ -1584,29 +1584,47 @@ function renderLiveBar() {
       : `${icon("check", 16)}<span>${esc(s.result)}${s.bg ? ` <small>${esc(s.bg)}</small>` : ""}</span>
          ${s.undo ? `<button class="link-btn" data-live="undo">Undo</button>` : ""}<button class="lb-x" data-live="close" aria-label="Close">×</button>`;
 }
+// later steps keep the traveler's quoted request, not a note about the first step
 function liveStep(step) {
   liveState.step = step;
+  liveState.text = liveState.quote;
   renderLiveBar();
 }
-async function liveChange(text) {
+const liveChange = (text) => liveRevise({ feedback: text });
+// Every AI change to an existing trip goes through here (revisePlan in app.js too): the traveler's words (feedback),
+// road picks (roadEdits), measured drive times (dayHours, nightDays). `title` and `note` describe it in the bar.
+async function liveRevise(opts = {}) {
+  const { feedback = "", roadEdits = null, dayHours = null, nightDays = null, title = "", note = "" } = opts;
   if (READONLY || !plan || liveState.busy || (progress && !progress.error)) return;
   const run = ++liveState.run;
   const before = routes.scenic?.distance_m || 0;
-  Object.assign(liveState, { busy: true, step: "Asking the AI", text: `“${text}”`, result: "", error: "", bg: "", undo: null, last: text });
+  const label = feedback || roadEditText(roadEdits) || note || title || "Changed the trip";
+  Object.assign(liveState, {
+    busy: true, step: title || "Asking the AI", quote: feedback ? `“${feedback}”` : "",
+    text: note || (feedback ? `“${feedback}”` : ""),
+    result: "", error: "", bg: "", undo: null, last: opts,
+  });
   renderLiveBar();
   renderItinerary();
   try {
     const resp = await api("/api/plan", {
-      prompt: trip.prompt || trip.name, current: skeletonOf(), feedback: text, states: tripStates(), settings: tripSettings(),
+      prompt: trip.prompt || trip.name, current: skeletonOf(), feedback, roadEdits, dayHours, nightDays,
+      states: tripStates(), settings: tripSettings(),
     });
-    snapshotVersion(text); // the trip as it was, for Undo
+    snapshotVersion(label); // the trip as it was, for Undo
     const undo = trip.versions?.at(-1)?.id || null;
-    trip.edits = [...(trip.edits || []), { text, at: new Date().toISOString() }];
+    const edit = feedback || roadEditText(roadEdits);
+    if (edit) trip.edits = [...(trip.edits || []), { text: edit, at: new Date().toISOString() }];
     liveStep("Placing the stops");
     await placePoints(resp.plan);
     addSources(resp.sources);
     liveStep("Measuring the drive");
     if (!(await findRoutes({ fit: false }))) throw new Error($("status").textContent || "Routing failed.");
+    // the AI doesn't always route through the roads that were picked, so check and add them
+    if (roadEdits?.add?.length) {
+      liveStep("Making sure the route drives your roads");
+      if ((await enforceRoads(roadEdits.add)).length) await findRoutes({ fit: false });
+    }
     renderSpotMarkers();
     scheduleSave();
     const km = routes.scenic?.distance_m || 0;
@@ -1648,7 +1666,7 @@ async function liveChange(text) {
 $("live-bar")?.addEventListener("click", async (e) => {
   const act = e.target.closest("[data-live]")?.dataset.live;
   if (act === "close") Object.assign(liveState, { result: "", error: "" });
-  if (act === "retry") return liveChange(liveState.last);
+  if (act === "retry") return liveRevise(liveState.last);
   if (act === "undo" && liveState.undo) {
     const id = liveState.undo;
     liveState.run++; // stop the background work of the change being undone

@@ -1049,64 +1049,13 @@ async function planTrip(prompt, settings) {
   }
 }
 
-// Change an existing plan with the AI, then refresh the route, details and photos. Used for:
-//   fixing long days     { dayHours }
+// Change an existing plan with the AI, in place (liveRevise in features.js shows it in the bar at the bottom). Used for:
+//   fixing long days     { dayHours, nightDays }
 //   the traveler's notes { feedback: "swap day 2 for the Adirondacks" }
 //   the road picker      { roadEdits: { add: [{ name, ref, states, why }], remove: [names] } }
+//   new trip options and seasonal closures (feedback written by the app)
 // Each change is recorded in trip.edits, shown under the original request.
-async function revisePlan({ feedback = "", roadEdits = null, dayHours = null, nightDays = null, title = "Updating the trip", note = "" } = {}) {
-  if (READONLY || !plan || (progress && !progress.error)) return;
-  const prompt = trip.prompt || trip.name;
-  setView("itinerary");
-  progressStart([
-    ["route", title],
-    ["places", "Placing stops on the map"],
-    ["drive", "Measuring every day's drive"],
-    ["details", "Writing the day guides"],
-    ["photos", "Finding photos and articles"],
-  ]);
-  progress.retry = () => revisePlan({ feedback, roadEdits, dayHours, nightDays, title, note });
-  try {
-    progressSet("route", "doing", note || (feedback ? `"${feedback}"` : "Sending the changes to the AI"));
-    const resp = await planStream({
-      prompt, current: skeletonOf(), dayHours, nightDays, feedback, roadEdits, states: tripStates(), settings: tripSettings(),
-    });
-    const skel = resp.plan;
-    // keep the plan as it was, so the change can be compared and undone
-    snapshotVersion(feedback || roadEditText(roadEdits) || note || title);
-    const edit = feedback || roadEditText(roadEdits);
-    if (edit) trip.edits = [...(trip.edits || []), { text: edit, at: new Date().toISOString() }];
-    progressSet("route", "done", `${skel.days.length} days`);
-    let detailsP = requestDetails(prompt, skel);
-    progressSet("details", "doing");
-    if ((await placePoints(skel)).reordered) detailsP = requestDetails(prompt, skeletonOf());
-    addSources(resp.sources);
-    progressSet("drive", "doing");
-    await findRoutes({ fit: false });
-    // The AI doesn't always route through the roads you picked, so check and add them ourselves.
-    if (roadEdits?.add?.length) {
-      progressSet("drive", "doing", "Making sure the route drives your roads");
-      if ((await enforceRoads(roadEdits.add)).length) await findRoutes({ fit: false });
-    }
-    progressSet("drive", "done");
-    const d = await detailsP;
-    if (d.error) progressSet("details", "error", d.error.message);
-    else {
-      mergeDetails(d.details);
-      addSources(d.sources);
-      progressSet("details", "done");
-    }
-    progressSet("photos", "doing");
-    await enrichPlan().catch(() => {});
-    progress = null;
-    scheduleSave();
-    renderSpotMarkers();
-    renderItinerary();
-  } catch (e) {
-    progress.error = e.message;
-    renderItinerary();
-  }
-}
+const revisePlan = (opts) => liveRevise(opts);
 // ---------- making the route drive a road (doesn't rely on the AI following instructions) ----------
 
 // Meters of the scenic route that run on road r ({ name, ref }).

@@ -21,6 +21,8 @@
   --pill-text: #ffffff;
   --shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   --radius: 22px;
+  /* widest the itinerary gets; it fills the window up to this */
+  --page: 1720px;
 }
 [data-theme="light"] {
   --bg: #f2f2f5;
@@ -220,10 +222,10 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
 /* Trip hero */
 .trip-hero {
   position: relative; overflow: hidden;
-  max-width: 1240px; margin: 0 auto; min-height: 420px;
+  max-width: var(--page); margin: 0 auto; min-height: 420px;
   border-radius: 30px; background: var(--surface);
   display: flex; align-items: flex-end;
-  margin-left: max(16px, calc((100% - 1240px) / 2)); margin-right: max(16px, calc((100% - 1240px) / 2));
+  margin-left: max(16px, calc((100% - var(--page)) / 2)); margin-right: max(16px, calc((100% - var(--page)) / 2));
 }
 .trip-hero .hero-img, .trip-hero .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
 .hero-shade {
@@ -245,9 +247,9 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
 
 .stats {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
-  max-width: 1240px; margin: 16px auto 0; overflow: hidden;
+  max-width: var(--page); margin: 16px auto 0; overflow: hidden;
   background: var(--line); border-radius: 22px;
-  margin-left: max(16px, calc((100% - 1240px) / 2)); margin-right: max(16px, calc((100% - 1240px) / 2));
+  margin-left: max(16px, calc((100% - var(--page)) / 2)); margin-right: max(16px, calc((100% - var(--page)) / 2));
 }
 .stat { display: flex; flex-direction: column; gap: 4px; padding: 18px 22px; background: var(--surface); }
 .stat-value { font-size: 36px; font-weight: 300; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
@@ -257,7 +259,7 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
 /* Layout: day index + days */
 .it-layout {
   display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 36px;
-  max-width: 1240px; margin: 36px auto 0; padding: 0 16px 90px;
+  max-width: var(--page); margin: 36px auto 0; padding: 0 16px 90px;
 }
 .day-index {
   position: sticky; top: 16px; align-self: start;
@@ -281,7 +283,7 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
 /* Day */
 .day { margin-bottom: 72px; scroll-margin-top: 16px; }
 .day-hero {
-  position: relative; overflow: hidden; height: 300px; border-radius: 26px;
+  position: relative; overflow: hidden; height: clamp(260px, 22vw, 440px); border-radius: 26px;
   background: linear-gradient(135deg, rgba(10, 132, 255, 0.35), rgba(48, 209, 198, 0.18)), var(--surface);
   display: flex; align-items: flex-end;
 }
@@ -382,11 +384,11 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
 /* Featured road cards */
 .road-cards { display: flex; flex-direction: column; gap: 16px; }
 .road-card {
-  display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   overflow: hidden; border-radius: var(--radius); background: var(--surface);
 }
 .road-card:not(:has(.road-img)) { grid-template-columns: 1fr; }
-.road-img { width: 100%; height: 100%; min-height: 240px; object-fit: cover; display: block; }
+.road-img { width: 100%; aspect-ratio: 4 / 3; height: auto; align-self: start; object-fit: cover; display: block; }
 .road-body { padding: 20px 22px; }
 .road-head { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .road-head h4 { margin: 0; font-size: 21px; letter-spacing: -0.01em; }
@@ -409,10 +411,10 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
 .links a:hover, .spot-actions a:hover { text-decoration: underline; }
 
 /* Spot cards */
-.spot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.spot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .spot-card { display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; background: var(--surface); }
 .spot-img {
-  position: relative; aspect-ratio: 16 / 10;
+  position: relative; aspect-ratio: 3 / 2;
   background: linear-gradient(135deg, rgba(10, 132, 255, 0.25), rgba(48, 209, 198, 0.12)), var(--surface-2);
 }
 .spot-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -437,8 +439,8 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
 
 /* The original request, past changes, and the change box */
 .request-card, .roads-panel {
-  max-width: 1240px; margin: 16px auto 0; border-radius: 22px; background: var(--surface);
-  margin-left: max(16px, calc((100% - 1240px) / 2)); margin-right: max(16px, calc((100% - 1240px) / 2));
+  max-width: var(--page); margin: 16px auto 0; border-radius: 22px; background: var(--surface);
+  margin-left: max(16px, calc((100% - var(--page)) / 2)); margin-right: max(16px, calc((100% - var(--page)) / 2));
 }
 .request-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 20px 22px; }
 .rc-label {
@@ -923,8 +925,8 @@ body[data-view="home"] #trip-name, body[data-view="home"] #save-state { display:
 .check input { width: 17px; height: 17px; accent-color: var(--teal); }
 .settings-strip {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
-  max-width: 1240px; margin: 12px auto 0; padding: 12px 18px; border-radius: 18px; background: var(--surface);
-  margin-left: max(16px, calc((100% - 1240px) / 2)); margin-right: max(16px, calc((100% - 1240px) / 2));
+  max-width: var(--page); margin: 12px auto 0; padding: 12px 18px; border-radius: 18px; background: var(--surface);
+  margin-left: max(16px, calc((100% - var(--page)) / 2)); margin-right: max(16px, calc((100% - var(--page)) / 2));
   font-size: 14px; color: var(--muted);
 }
 .settings-strip > span { flex: 1; min-width: 240px; display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -1018,7 +1020,7 @@ body[data-view="itinerary"] #map-profile { display: none; }
 .sseg.ferry { background: repeating-linear-gradient(90deg, var(--teal) 0 6px, transparent 6px 10px); }
 
 /* photo galleries */
-.road-img-btn { position: relative; display: block; padding: 0; width: 100%; height: 100%; }
+.road-img-btn { position: relative; display: block; padding: 0; width: 100%; align-self: start; }
 .gal-hint, .spot-img::after {
   position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 5px;
   padding: 5px 9px; border-radius: 999px; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 12px; font-weight: 700;
