@@ -1,0 +1,15 @@
+[
+ {"name": "Going-to-the-Sun Road", "ref": "", "wiki": "Going-to-the-Sun Road", "states": ["Montana"], "km": 80, "description": "Across Glacier National Park over Logan Pass, carved into the cliffs of the Garden Wall; open about July to mid October"},
+ {"name": "Tail of the Dragon", "ref": "US 129", "wiki": "Deals Gap", "states": ["Tennessee", "North Carolina"], "km": 18, "description": "US 129 at Deals Gap: 318 curves in 11 miles, America's most famous road for motorcycles and sports cars"},
+ {"name": "Million Dollar Highway", "ref": "US 550", "wiki": "Million Dollar Highway", "states": ["Colorado"], "km": 40, "description": "Ouray to Silverton over Red Mountain Pass, a cliff-hugging road with no guardrails and huge drops"},
+ {"name": "Mount Washington Auto Road", "ref": "", "wiki": "Mount Washington Auto Road", "states": ["New Hampshire"], "km": 12, "description": "Private toll road to the 6,288 ft summit of the Northeast's highest peak, steep and unguarded above treeline"},
+ {"name": "Pikes Peak Highway", "ref": "", "wiki": "Pikes Peak Highway", "states": ["Colorado"], "km": 31, "description": "Toll road from Cascade to the 14,115 ft summit of Pikes Peak with 156 turns, home of the hill climb race"},
+ {"name": "Angeles Crest Highway", "ref": "CA 2", "wiki": "Angeles Crest Highway", "states": ["California"], "km": 106, "description": "La Cañada Flintridge through the San Gabriel Mountains to Wrightwood, Los Angeles' favourite mountain drive"},
+ {"name": "Ortega Highway", "ref": "CA 74", "wiki": "Ortega Highway", "states": ["California"], "km": 45, "description": "Twisting climb from San Juan Capistrano over the Santa Ana Mountains to Lake Elsinore"},
+ {"name": "Skyline Boulevard", "ref": "CA 35", "wiki": "California State Route 35", "states": ["California"], "km": 80, "description": "Ridge-top road down the Santa Cruz Mountains above Silicon Valley, a classic Bay Area weekend drive"},
+ {"name": "Moki Dugway", "ref": "UT 261", "wiki": "Moki Dugway", "states": ["Utah"], "km": 5, "description": "Gravel switchbacks cut into a 1,100 ft cliff above the Valley of the Gods near Mexican Hat"},
+ {"name": "Oak Creek Canyon", "ref": "AZ 89A", "wiki": "Oak Creek Canyon", "states": ["Arizona"], "km": 23, "description": "From Sedona up red-rock Oak Creek Canyon and the switchbacks to Flagstaff"},
+ {"name": "Twisted Sisters", "ref": "RM 337", "wiki": "Ranch to Market Road 337", "states": ["Texas"], "km": 160, "description": "Ranch roads 335, 336 and 337 through the Texas Hill Country canyons around Leakey, a motorcycle favourite"},
+ {"name": "Pig Trail", "ref": "AR 23", "wiki": "Pig Trail Scenic Byway", "states": ["Arkansas"], "km": 31, "description": "Arkansas Highway 23 through the Ozark National Forest, tunnelled by trees and full of bends"},
+ {"name": "Hana Highway", "ref": "HI 360", "wiki": "Hana Highway", "states": ["Hawaii"], "km": 103, "description": "Maui's road to Hāna with 620 curves and 59 one-lane bridges past waterfalls and rainforest"}
+]

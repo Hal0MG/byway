@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roadtrip Planner</title>
+  <meta name="theme-color" content="#0a0a0c" />
+  <meta name="description" content="Plan road trips around the best scenic driving roads." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body data-view="home">
+  <div id="map"></div>
+
+  <!-- Home: the globe with trip suggestions floating around it (home.js) -->
+  <section id="home" aria-label="Home"></section>
+
+  <header id="topbar">
+    <button id="brand" class="brand" title="Home" aria-label="Home"></button>
+    <div class="trip-title">
+      <span class="wordmark">Roadtrip Planner</span>
+      <input id="trip-name" class="title-input" type="text" value="New trip" aria-label="Trip name" maxlength="120" />
+      <span id="save-state" class="subtle" aria-live="polite"></span>
+    </div>
+    <nav class="seg" aria-label="View">
+      <button data-view="home" aria-pressed="true"><span class="seg-ico" data-icon="globe"></span><span>Home</span></button>
+      <button data-view="itinerary" aria-pressed="false"><span class="seg-ico" data-icon="book"></span><span>Itinerary</span></button>
+      <button data-view="map" aria-pressed="false"><span class="seg-ico" data-icon="map"></span><span>Map</span></button>
+    </nav>
+    <div class="top-actions">
+      <button id="trips-btn" class="icon-btn" aria-label="Your trips" data-icon="list"></button>
+      <button id="setup-btn" class="icon-btn" aria-label="Setup" title="Setup" data-icon="gear"></button>
+      <button id="theme-btn" class="icon-btn" aria-label="Switch between light and dark" data-icon="moon"></button>
+    </div>
+  </header>
+
+  <!-- Itinerary: photos, day write-ups, roads and spots (filled by itinerary.js) -->
+  <main id="itinerary" tabindex="-1"></main>
+
+  <!-- Map view panel -->
+  <aside id="panel">
+    <div class="search">
+      <span data-icon="plus"></span>
+      <input id="search" type="text" placeholder="Add a stop" autocomplete="off" aria-label="Add a stop" />
+      <button id="add-btn" class="chip-btn">Add</button>
+    </div>
+
+    <div id="scroll">
+      <p id="empty">Add a stop, or plan a trip from the Itinerary tab.</p>
+      <ol id="stops"></ol>
+    </div>
+
+    <footer id="routes-card">
+      <div id="options" hidden>
+        <button class="option selected" id="opt-scenic" data-mode="scenic">
+          <span class="swatch scenic"></span>
+          <span class="label">Scenic</span>
+          <span class="time"></span>
+          <span class="meta"></span>
+        </button>
+        <button class="option" id="opt-fastest" data-mode="fastest">
+          <span class="swatch fastest"></span>
+          <span class="label">Fastest</span>
+          <span class="time"></span>
+          <span class="meta"></span>
+        </button>
+      </div>
+      <button id="fix-btn" class="btn soft" hidden>Fix long days with AI</button>
+      <div class="btn-row">
+        <button id="route-btn" class="btn blue">Find routes</button>
+        <button id="gpx-btn" class="btn green" hidden>Export GPX</button>
+      </div>
+      <p id="status" role="status"></p>
+      <p class="credit">Routes and elevation by OpenRouteService. Map data from OpenStreetMap. Photos and articles from Wikipedia and Wikimedia Commons.</p>
+    </footer>
+  </aside>
+
+  <!-- Saved trips -->
+  <div id="trips-sheet" class="sheet-backdrop" hidden>
+    <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="trips-title">
+      <header>
+        <h2 id="trips-title">Your trips</h2>
+        <button id="trips-done" class="icon-btn" aria-label="Close" data-icon="close"></button>
+      </header>
+      <button id="new-trip" class="btn blue">New trip</button>
+      <div id="trips-scroll">
+        <p id="trips-empty" class="subtle" hidden>No saved trips yet. Trips save automatically once you add a stop.</p>
+        <ul id="trips"></ul>
+      </div>
+    </section>
+  </div>
+
+  <!-- Elevation of the day shown on the map (features.js) -->
+  <div id="map-profile" hidden></div>
+
+  <div id="toast" role="status" hidden></div>
+
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="icons.js"></script>
+  <script src="app.js"></script>
+  <script src="itinerary.js"></script>
+  <script src="features.js"></script>
+  <script src="home.js"></script>
+  <script src="setup.js"></script>
+</body>
+</html>

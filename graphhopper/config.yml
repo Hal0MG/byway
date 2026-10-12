@@ -1,0 +1,52 @@
+graphhopper:
+  # The map file and graph folder are set by start-graphhopper.cmd
+  datareader.file: ""
+  graph.location: graph-cache
+
+  custom_models.directory: custom_models
+
+  # Two profiles: "car" for the fastest route, "scenic" for the scenic route.
+  # If you edit custom_models/scenic.json, delete the graph folder so it is rebuilt.
+  profiles:
+    - name: car
+      custom_model_files: [car_base.json]
+    - name: scenic
+      # coast.json boosts roads near Highway 1 / PCH (made by tools/build-coast.mjs)
+      custom_model_files: [car_base.json, scenic.json, coast.json]
+
+  # Speed-up data built once at import time.
+  profiles_ch:
+    - profile: car
+  profiles_lm:
+    - profile: scenic
+
+  # Data stored for every road. curvature and urban_density power the scenic rules.
+  graph.encoded_values: car_access, car_average_speed, road_access, road_class, road_environment, max_speed, ferry_speed, roundabout, curvature, urban_density, surface, toll
+
+  # urban_density is computed at import; must be at least 1 thread or the import crashes.
+  graph.urban_density.threads: 4
+
+  # Cars only, so skip paths and footways to make the import smaller and faster.
+  import.osm.ignored_highways: footway,construction,cycleway,path,steps,pedestrian,bridleway
+
+  # Road trips have long legs between stops (default limit is 1000 km).
+  routing.non_ch.max_waypoint_distance: 3000000
+
+server:
+  application_connectors:
+    - type: http
+      port: 8989
+      bind_host: localhost
+      max_request_header_size: 50k
+  request_log:
+    appenders: []
+  admin_connectors:
+    - type: http
+      port: 8990
+      bind_host: localhost
+
+logging:
+  appenders:
+    - type: console
+      time_zone: UTC
+      log_format: "%d{HH:mm:ss} %-5level %logger{36} - %msg%n"

@@ -1,0 +1,18 @@
+# keys and personal data
+.env
+data/trips.json
+data/trips.json.*.tmp
+data/search-usage.json
+
+# caches the app rebuilds by itself
+data/wikimedia-cache.json
+data/search-cache.json
+data/page-cache.json
+data/region-notes.json
+data/weather-cache.json
+data/along-cache.json
+
+node_modules/
+graphhopper/*.pbf
+graphhopper/graph-*/
+graphhopper/*.jar

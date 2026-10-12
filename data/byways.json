@@ -1,0 +1,2623 @@
+[
+ {
+  "name": "A1A Scenic and Historic Coastal Byway",
+  "wiki": "A1A Scenic and Historic Coastal Byway",
+  "type": "All-American Road",
+  "miles": 72,
+  "states": [
+   "Florida"
+  ],
+  "from": "Gamble Rogers Memorial State Recreation Area",
+  "to": "SR 202 in Ponte Vedra Beach",
+  "description": "Follows Atlantic coast barrier islands",
+  "qualities": "Recreational, Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2477"
+ },
+ {
+  "name": "Acadia All-American Road",
+  "wiki": "Acadia All-American Road",
+  "type": "All-American Road",
+  "miles": 40,
+  "states": [
+   "Maine"
+  ],
+  "from": "Entirety of the Park Loop Road in Acadia National Park",
+  "to": "Ellsworth–Trenton town line on SR 3",
+  "description": "Scenic drive providing access to the coastal mountains of Acadia National Park",
+  "qualities": "Recreational, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13791"
+ },
+ {
+  "name": "Alabama's Coastal Connection",
+  "wiki": "Alabama's Coastal Connection",
+  "type": "National Scenic Byway",
+  "miles": 130,
+  "states": [
+   "Alabama"
+  ],
+  "from": "I-10 and Grand Bay Wilmer Road north of Grand Bay",
+  "to": "I-10 and US 98 south of Spanish Fort",
+  "description": "Scenic and historic drive along Alabama's Gulf Coast",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2442"
+ },
+ {
+  "name": "Alaska's Marine Highway",
+  "wiki": "Alaska's Marine Highway",
+  "type": "All-American Road",
+  "miles": 3500,
+  "states": [
+   "Alaska"
+  ],
+  "from": "Ferry terminal in Unalaska",
+  "to": "Ferry terminal in Metlakatla (with ferry connections to Prince Rupert, BC and Bellingham, WA)",
+  "description": "Ferry system connecting Alaskan coastal communities",
+  "qualities": "Scenic, Cultural, Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/12398"
+ },
+ {
+  "name": "Amish Country Byway",
+  "wiki": "Ohio's Amish Country",
+  "type": "National Scenic Byway",
+  "miles": 76.2,
+  "states": [
+   "Ohio"
+  ],
+  "from": "SR 39 in Loudonville; US 62 near Brinkhaven",
+  "to": "US 62 near Wilmot; SR 39 near Sugarcreek",
+  "description": "Route forms a double loop through the pastoral countryside of eastern Ohio's Amish communities",
+  "qualities": "Cultural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13793"
+ },
+ {
+  "name": "Arroyo Seco Historic Parkway - I-110/SR 110",
+  "wiki": "Arroyo Seco Parkway",
+  "type": "National Scenic Byway",
+  "miles": 9.5,
+  "states": [
+   "California"
+  ],
+  "from": "US 101 in downtown Los Angeles",
+  "to": "Glenarm Street in Pasadena",
+  "description": "The first freeway in the United States connects Los Angeles and Pasadena through the park-like landscape of the Arroyo Seco",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/10246"
+ },
+ {
+  "name": "Ashley River Road",
+  "wiki": "Ashley River Road",
+  "type": "National Scenic Byway",
+  "miles": 11,
+  "states": [
+   "South Carolina"
+  ],
+  "from": "Mile marker 5.84 on SC 61",
+  "to": "Mile marker 15.75 on SC 61",
+  "description": "Traverses a historic plantation district along the Ashley River near Charleston",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13794"
+ },
+ {
+  "name": "Baltimore's Historic Charles Street",
+  "wiki": "Baltimore's Historic Charles Street",
+  "type": "National Scenic Byway",
+  "miles": 12,
+  "states": [
+   "Maryland"
+  ],
+  "from": "Winder Street in South Baltimore",
+  "to": "Bellona Avenue in Lutherville",
+  "description": "Travels the entire length of historic Charles Street through downtown Baltimore",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2271"
+ },
+ {
+  "name": "Bayou Teche National Scenic Byway",
+  "wiki": "Bayou Teche Byway",
+  "type": "National Scenic Byway",
+  "miles": 183.8,
+  "states": [
+   "Louisiana"
+  ],
+  "from": "LA 182 in Morgan City",
+  "to": "LA 31 and LA 93 in Arnaudville",
+  "description": "Follows the original course of the Mississippi along Bayou Teche, a culturally significant and scenic waterway in the Atchafalaya National Heritage Area",
+  "qualities": "Cultural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2066"
+ },
+ {
+  "name": "Bayshore Heritage Scenic Byway",
+  "wiki": "Bayshore Heritage Byway",
+  "type": "National Scenic Byway",
+  "miles": 142,
+  "states": [
+   "New Jersey"
+  ],
+  "from": "Cape May Point State Park",
+  "to": "CR 540 in Mannington",
+  "description": "Traverses the coastal communities and wetlands of the Delaware Bay, a significant birding and migratory destination",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81510"
+ },
+ {
+  "name": "Beartooth Highway",
+  "wiki": "Beartooth Highway",
+  "type": "All-American Road",
+  "miles": 68.7,
+  "states": [
+   "Montana",
+   "Wyoming"
+  ],
+  "from": "Wyoming–Montana state line on US 212 near Cooke City",
+  "to": "US 212 and MT 78 in Red Lodge",
+  "description": "Scenic high-elevation highway to Yellowstone National Park's northeast entrance",
+  "qualities": "Natural, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2281"
+ },
+ {
+  "name": "Big Bend Scenic Byway",
+  "wiki": "Big Bend (Florida)",
+  "type": "National Scenic Byway",
+  "miles": 220,
+  "states": [
+   "Florida"
+  ],
+  "from": "Scipio Creek Marina in Apalachicola",
+  "to": "St. Marks Light in St. Marks National Wildlife Refuge",
+  "description": "Travels along hundreds of acres of wet prairie, wet flatwoods, strand swamp, and bottomland forest",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2599"
+ },
+ {
+  "name": "Billy the Kid Trail",
+  "wiki": "Billy the Kid Trail",
+  "type": "National Scenic Byway",
+  "miles": 84,
+  "states": [
+   "New Mexico"
+  ],
+  "from": "NM 48 and Sudderth Drive in Ruidoso",
+  "to": "US 70 and US 380 near Hondo",
+  "description": "Loop through historic Old West towns in the rugged mountains of the Lincoln National Forest",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2062"
+ },
+ {
+  "name": "Blue Ridge Parkway",
+  "wiki": "Blue Ridge Parkway",
+  "type": "All-American Road",
+  "miles": 469,
+  "states": [
+   "North Carolina",
+   "Virginia"
+  ],
+  "from": "US 441 near Cherokee",
+  "to": "US 250 near Waynesboro",
+  "description": "Scenic drive along America's longest linear park and the winding spine of the Blue Ridge Mountains",
+  "qualities": "Historic, Scenic (NC); Recreational, Cultural (VA)",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2280"
+ },
+ {
+  "name": "Bold Coast Scenic Byway",
+  "wiki": "Bold Coast Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 147,
+  "states": [
+   "Maine"
+  ],
+  "from": "Gouldsboro",
+  "to": "Calais",
+  "description": "Coastal route through Down East Maine to the Canadian border",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81499"
+ },
+ {
+  "name": "Boom or Bust Byway",
+  "wiki": "Boom or Bust Byway",
+  "type": "National Scenic Byway",
+  "miles": 137,
+  "states": [
+   "Louisiana"
+  ],
+  "from": "LA 2 at the Louisiana-Texas state line",
+  "to": "Lake Claiborne State Park",
+  "description": "Explores the rural remnants of the oil and gas, lumber, transportation, farming, and entertainment industries of Ark-La-Tex and Northern Louisiana",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81497"
+ },
+ {
+  "name": "Brandywine Valley Scenic Byway",
+  "wiki": "Brandywine Valley Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 37.3,
+  "states": [
+   "Delaware",
+   "Pennsylvania"
+  ],
+  "from": "King Street and 11th Street in downtown Wilmington",
+  "to": "PA 162 near West Chester",
+  "description": "Historic drive along the Brandywine Creek through the \"Chateau Country\" of northern Delaware and southeastern Pennsylvania",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/64115"
+ },
+ {
+  "name": "Cascade Lakes Scenic Byway",
+  "wiki": "Cascade Lakes Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 66,
+  "states": [
+   "Oregon"
+  ],
+  "from": "Junction of OR 58 and Crescent Cutoff Road (NF-61) near Crescent Lake",
+  "to": "Boundary between Deschutes National Forest and Bend on SW Century Drive",
+  "description": "Traverses forested region of glacial lakes and volcanic mountains in Central Oregon",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2144"
+ },
+ {
+  "name": "Cascade Loop",
+  "wiki": "Cascade Loop",
+  "type": "National Scenic Byway",
+  "miles": 440,
+  "states": [
+   "Washington"
+  ],
+  "from": "Whidbey Island; Everett; Stevens Pass",
+  "to": "North Cascades National Park; Lake Chelan; Wenatchee",
+  "description": "Loop around the Cascade Mountains, Columbia River in Central Washington, and the Skagit Valley",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2063"
+ },
+ {
+  "name": "Cherohala Skyway",
+  "wiki": "Cherohala Skyway",
+  "type": "National Scenic Byway",
+  "miles": 43,
+  "states": [
+   "North Carolina",
+   "Tennessee"
+  ],
+  "from": "SR 165 in Tellico Plains",
+  "to": "NC 143 in Robbinsville",
+  "description": "Ridgetop drive in the Appalachians",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2282"
+ },
+ {
+  "name": "Cherokee Foothills Scenic Highway",
+  "wiki": "Cherokee Foothills Scenic Highway",
+  "type": "National Scenic Byway",
+  "miles": 112,
+  "states": [
+   "South Carolina"
+  ],
+  "from": "I-85 west of Fair Play",
+  "to": "SC 150 in Gaffney",
+  "description": "Follows part of the historic Cherokee Path through the Blue Ridge Escarpment of Upstate South Carolina",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2161"
+ },
+ {
+  "name": "Cherokee Hills Byway",
+  "wiki": "Cherokee Hills Byway",
+  "type": "National Scenic Byway",
+  "miles": 84,
+  "states": [
+   "Oklahoma"
+  ],
+  "from": "I-40 south of Gore",
+  "to": "Oklahoma–Arkansas state line on US 412",
+  "description": "Situated in the foothills of the Ozark Mountains, this route showcases eastern Oklahoma's tremendous natural diversity and rich Cherokee heritage",
+  "qualities": "Cultural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2346"
+ },
+ {
+  "name": "Chesapeake Country Scenic Byway",
+  "wiki": "Chesapeake Country Scenic Byway",
+  "type": "All-American Road",
+  "miles": 85.5,
+  "states": [
+   "Maryland"
+  ],
+  "from": "MD 18 in Stevensville (southern spur) and MD 445 on Eastern Neck Island (northern spur)",
+  "to": "Chesapeake & Delaware Canal on MD 213 in Chesapeake City",
+  "description": "Traverses the historic Eastern Shore of Chesapeake Bay",
+  "qualities": "Cultural, Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2261"
+ },
+ {
+  "name": "Chinook Scenic Byway (Stephen Mather Memorial Parkway)",
+  "wiki": "Chinook Scenic Byway",
+  "type": "All-American Road",
+  "miles": 85,
+  "states": [
+   "Washington"
+  ],
+  "from": "SR 164 and SR 169 in Enumclaw",
+  "to": "US 12 near Naches",
+  "description": "Scenic drive with dramatic views of Mount Rainier",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2226"
+ },
+ {
+  "name": "City of Las Vegas, Las Vegas Boulevard State Scenic Byway",
+  "wiki": "City of Las Vegas, Las Vegas Boulevard State Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 3.4,
+  "states": [
+   "Nevada"
+  ],
+  "from": "Las Vegas Boulevard at Sahara Avenue; Las Vegas Strip",
+  "to": "Las Vegas Boulevard at E Washington Avenue",
+  "description": "Extensive displays of neon art between downtown and the Las Vegas Strip",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/39538"
+ },
+ {
+  "name": "Coal Heritage Trail",
+  "wiki": "Coal Heritage Trail",
+  "type": "National Scenic Byway",
+  "miles": 97.6,
+  "states": [
+   "West Virginia"
+  ],
+  "from": "US 52 at the West Virginia-Virginia state line",
+  "to": "WV 16 at I-77 in Beckley",
+  "description": "Historic drive through coal-producing areas of southwestern West Virginia",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/10346"
+ },
+ {
+  "name": "Colonial Parkway",
+  "wiki": "Colonial Parkway",
+  "type": "All-American Road",
+  "miles": 23,
+  "states": [
+   "Virginia"
+  ],
+  "from": "Historic Jamestowne Visitor Center in Jamestown",
+  "to": "Yorktown Battlefield Visitor Center in Yorktown",
+  "description": "Landscaped parkway connecting three Colonial-era historic sites",
+  "qualities": "Natural, Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/60441"
+ },
+ {
+  "name": "Colorado River Headwaters Byway",
+  "wiki": "Colorado River Headwaters National Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 69,
+  "states": [
+   "Colorado"
+  ],
+  "from": "SH 131 and Trough Road south of Bond",
+  "to": "US 34 and West Portal Road in Grand Lake",
+  "description": "Follows the upper reaches of the Colorado River past alpine reservoirs, lush ranchlands, and dramatic canyon landscapes",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2106"
+ },
+ {
+  "name": "Connecticut River Byway",
+  "wiki": "Connecticut River Byway",
+  "type": "National Scenic Byway",
+  "miles": 498.7,
+  "states": [
+   "Massachusetts",
+   "New Hampshire",
+   "Vermont"
+  ],
+  "from": "Route 116 and Route 47 in South Hadley",
+  "to": "VT 114 at US 3 in West Stewartstown",
+  "description": "Scenic drive on both sides of New England's longest river",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2487"
+ },
+ {
+  "name": "Connecticut State Route 169",
+  "wiki": "Connecticut State Route 169",
+  "type": "National Scenic Byway",
+  "miles": 32,
+  "states": [
+   "Connecticut"
+  ],
+  "from": "Route 138 in Lisbon",
+  "to": "Connecticut–Massachusetts state line on Route 169",
+  "description": "Scenic and historic route through one of the last unspoiled areas in New England",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2451"
+ },
+ {
+  "name": "Copper Country Trail",
+  "wiki": "Copper Country Trail",
+  "type": "National Scenic Byway",
+  "miles": 47,
+  "states": [
+   "Michigan"
+  ],
+  "from": "Portage Lake Lift Bridge in Hancock",
+  "to": "M-26 in Copper Harbor",
+  "description": "Follows US 41 and traverses an area developed for copper mining",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13828"
+ },
+ {
+  "name": "Coronado Trail Scenic Byway",
+  "wiki": "Coronado Trail Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 123,
+  "states": [
+   "Arizona"
+  ],
+  "from": "US 191 and Burro Alley in Morenci",
+  "to": "US 180 and Main Street in Springerville",
+  "description": "Scenic drive from the Chihuahuan Desert to the Colorado Plateau, crossing the Mogollon Rim in Apache-Sitgreaves National Forest",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2059"
+ },
+ {
+  "name": "Coulee Corridor Scenic Byway",
+  "wiki": "Coulee Corridor Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 150,
+  "states": [
+   "Washington"
+  ],
+  "from": "SR 26 and SR 17 near Othello",
+  "to": "SR 155 and US 97 in Omak",
+  "description": "Passes through coulees and the Channeled Scablands formed by receding glaciers",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/54772"
+ },
+ {
+  "name": "Country Music Highway",
+  "wiki": "U.S. Route 23 in Kentucky",
+  "type": "National Scenic Byway",
+  "miles": 144.1,
+  "states": [
+   "Kentucky"
+  ],
+  "from": "US 119 near Whitesburg",
+  "to": "KY 2 in Greenup",
+  "description": "Backwoods drive commemorating eastern Kentucky's cultural heritage",
+  "qualities": "Cultural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2567"
+ },
+ {
+  "name": "Creole Nature Trail",
+  "wiki": "Creole Nature Trail",
+  "type": "All-American Road",
+  "miles": 180,
+  "states": [
+   "Louisiana"
+  ],
+  "from": "LA 27 in Sulphur; LA 82 at Sabine Pass",
+  "to": "LA 27 and LA 385 in Lake Charles; LA 82 near the Rockefeller Wildlife Refuge",
+  "description": "Meanders through the marshes, prairies, and coastal region of Acadiana in southwestern Louisiana",
+  "qualities": "Cultural, Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2454"
+ },
+ {
+  "name": "Crowley's Ridge Parkway",
+  "wiki": "Crowley's Ridge Parkway",
+  "type": "National Scenic Byway",
+  "miles": 212,
+  "states": [
+   "Arkansas",
+   "Missouri"
+  ],
+  "from": "Helena Bridge on US 49 near Helena–West Helena",
+  "to": "J Street and Route 25 near Malden",
+  "description": "Scenic and historic drive along Crowley's Ridge through the Mississippi Embayment and the Missouri Bootheel",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2588"
+ },
+ {
+  "name": "Cumberland Historic Byway",
+  "wiki": "Cumberland Historic Byway",
+  "type": "National Scenic Byway",
+  "miles": 156,
+  "states": [
+   "Tennessee"
+  ],
+  "from": "SR 52 at the Cumberland River in Celina",
+  "to": "SR 63 at US 25E near Cumberland Gap National Historical Park",
+  "description": "Winds through the hidden frontier of the Cumberland Plateau",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81521"
+ },
+ {
+  "name": "Death Valley Scenic Byway",
+  "wiki": "Death Valley Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 81.5,
+  "states": [
+   "California"
+  ],
+  "from": "Death Valley National Park west entrance on SR 190",
+  "to": "Death Valley National Park east entrance on SR 190",
+  "description": "Scenic drive through the expansive desert basin of the lowest place in North America",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2176"
+ },
+ {
+  "name": "Delaware Bayshore Byway",
+  "wiki": "Delaware Bayshore Byway",
+  "type": "National Scenic Byway",
+  "miles": 157,
+  "states": [
+   "Delaware"
+  ],
+  "from": "Lewes",
+  "to": "New Castle",
+  "description": "Scenic and historic drive along the Delaware Bay and Delaware River in Delaware",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81486"
+ },
+ {
+  "name": "Delaware River Scenic Byway",
+  "wiki": "Delaware River Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 32.8,
+  "states": [
+   "New Jersey"
+  ],
+  "from": "I-195/I-295 in Hamilton Township",
+  "to": "Trenton Avenue and Route 12 in Frenchtown",
+  "description": "Scenic and historic drive along the Delaware River in central New Jersey",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2463"
+ },
+ {
+  "name": "Dinosaur Diamond Prehistoric Highway",
+  "wiki": "Dinosaur Diamond Prehistoric Highway",
+  "type": "National Scenic Byway",
+  "miles": 480,
+  "states": [
+   "Colorado",
+   "Utah"
+  ],
+  "from": "US 191 in Price; US 191 in Moab",
+  "to": "US 40/US 191 in Vernal; SH 139 between Rangely and Loma",
+  "description": "Loop through the northern Colorado Plateau, passing many dinosaur fossil sites and museums",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2474"
+ },
+ {
+  "name": "Door County Coastal Byway",
+  "wiki": "Door County Coastal Byway",
+  "type": "National Scenic Byway",
+  "miles": 67.1,
+  "states": [
+   "Wisconsin"
+  ],
+  "from": "WIS 57 and WIS 42 in Sturgeon Bay",
+  "to": "WIS 42 in Northport",
+  "description": "Loop along the coast of Green Bay and Lake Michigan, through the forests and Niagara Escarpment of Door County",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81527"
+ },
+ {
+  "name": "East Tennessee Crossing Byway",
+  "wiki": "East Tennessee Crossing Byway",
+  "type": "National Scenic Byway",
+  "miles": 83,
+  "states": [
+   "Tennessee"
+  ],
+  "from": "North Carolina–Tennessee state line on US 25 near Del Rio",
+  "to": "Tennessee–Kentucky state line on US 25E near Cumberland Gap",
+  "description": "Explores the historic trails, cultural heritage, and recreational opportunities of East Tennessee's Appalachian backcountry",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/76017"
+ },
+ {
+  "name": "Eastern Sierra Scenic Byway",
+  "wiki": "Eastern Sierra Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 245,
+  "states": [
+   "California"
+  ],
+  "from": "U.S. Route 395 just north of Pearsonville",
+  "to": "U.S. Route 395 in Topaz",
+  "description": "Scenic route past natural landmarks like the Inyo National Forest, Sierra Nevada mountains, Sequoia National Forest, Mono Lake, and the Owens Valley",
+  "qualities": "Scenic",
+  "fhwa": ""
+ },
+ {
+  "name": "Ebbetts Pass Scenic Byway",
+  "wiki": "Ebbetts Pass Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 61,
+  "states": [
+   "California"
+  ],
+  "from": "SR 4 in Arnold",
+  "to": "SR 89 near Markleeville",
+  "description": "Traverses the high-alpine Sierra Nevada through Ebbetts Pass, with access to the northernmost groves of giant sequoia",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2305"
+ },
+ {
+  "name": "Edge of the Wilderness",
+  "wiki": "Edge of the Wilderness",
+  "type": "National Scenic Byway",
+  "miles": 47,
+  "states": [
+   "Minnesota"
+  ],
+  "from": "US 2 in Grand Rapids",
+  "to": "MN 1 in Effie",
+  "description": "Scenic drive through forests and rollings hills of the Minnesota Northwoods",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2455"
+ },
+ {
+  "name": "Edisto Island National Scenic Byway",
+  "wiki": "Edisto Island National Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 16.8,
+  "states": [
+   "South Carolina"
+  ],
+  "from": "Palmetto Boulevard and SC 174 in Edisto Beach",
+  "to": "Dawhoo Bridge on SC 174",
+  "description": "Scenic drive through salt marshes and live oak forests in the South Carolina Lowcountry",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/73595"
+ },
+ {
+  "name": "El Camino Real",
+  "wiki": "El Camino Real de Tierra Adentro",
+  "type": "National Scenic Byway",
+  "miles": 299,
+  "states": [
+   "New Mexico"
+  ],
+  "from": "NM 273 at the Rio Grande in Sunland Park",
+  "to": "NM 74 in Ohkay Owingeh",
+  "description": "Historic north–south route through the Rio Grande Valley of central New Mexico",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2065"
+ },
+ {
+  "name": "The Energy Loop: Huntington/Eccles Canyons Scenic Byway",
+  "wiki": "The Energy Loop: Huntington/Eccles Canyons Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 85.9,
+  "states": [
+   "Utah"
+  ],
+  "from": "SR 31 in Huntington; SR 31 in Fairview",
+  "to": "US 6 in Colton",
+  "description": "Scenic route comprising historic towns, coal mining operations, and Manti–La Sal National Forest",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13831"
+ },
+ {
+  "name": "Flaming Gorge-Uintas Scenic Byway",
+  "wiki": "Flaming Gorge-Uintas Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 82,
+  "states": [
+   "Utah"
+  ],
+  "from": "US 191 in Vernal",
+  "to": "SR 44 in Manila; US 191 at the Utah-Wyoming state line",
+  "description": "Scenic drive through the Uinta Mountains and Flaming Gorge National Recreation Area",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2008"
+ },
+ {
+  "name": "Flaming Gorge-Green River Basin Scenic Byway",
+  "wiki": "Flaming Gorge-Green River Basin Scenic Byway",
+  "type": "All-American Road",
+  "miles": 96,
+  "states": [
+   "Wyoming"
+  ],
+  "from": "WYO 530 at the Wyoming-Utah state line; US 191 at the Wyoming-Utah state line",
+  "to": "WY 530 in Green River; US 191 at I-80 in Purple Sage",
+  "description": "Parallel routes through high desert and redrock country on either side of the Flaming Gorge",
+  "qualities": "Natural, Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2290"
+ },
+ {
+  "name": "Flint Hills Scenic Byway",
+  "wiki": "Flint Hills Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 48,
+  "states": [
+   "Kansas"
+  ],
+  "from": "I-35 near Cassoday",
+  "to": "US 56 in Council Grove",
+  "description": "Scenic drive through the Flint Hills and some of the last remaining tallgrass prairie in North America",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2095"
+ },
+ {
+  "name": "Florida Black Bear Scenic Byway",
+  "wiki": "Florida Black Bear Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 123,
+  "states": [
+   "Florida"
+  ],
+  "from": "SR 19 at National Forest boundary; SR 40 in Silver Springs",
+  "to": "SR 19 at National Forest boundary; SR 40 at I-95 in Ormond Beach",
+  "description": "Route connecting natural springs, pine forests, and endangered species' habitats in Ocala National Forest",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/75864"
+ },
+ {
+  "name": "Florida Keys Scenic Highway",
+  "wiki": "Overseas Highway",
+  "type": "All-American Road",
+  "miles": 106.5,
+  "states": [
+   "Florida"
+  ],
+  "from": "Mile marker 0 on US 1 in Key West",
+  "to": "Jewfish Creek Bridge on Key Largo",
+  "description": "Scenic route across a system of open ocean bridges connecting the numerous tropical islands of the Florida Keys",
+  "qualities": "Recreational, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2555"
+ },
+ {
+  "name": "Forest Heritage National Scenic Byway",
+  "wiki": "Forest Heritage National Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 17.6,
+  "states": [
+   "North Carolina"
+  ],
+  "from": "Junction of US 276 and US 64",
+  "to": "US 276 at the Pigeon River near the Shining Rock Wilderness",
+  "description": "Rural route through the Cradle of Forestry in Pisgah National Forest",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/77229"
+ },
+ {
+  "name": "Frontier Pathways Scenic and Historic Byway",
+  "wiki": "Frontier Pathways Scenic and Historic Byway",
+  "type": "National Scenic Byway",
+  "miles": 103,
+  "states": [
+   "Colorado"
+  ],
+  "from": "SH 96 in Westcliffe",
+  "to": "El Pueblo History Museum in Pueblo;",
+  "description": "Follows the paths of early explorers through the Sangre de Cristo Mountains",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2108"
+ },
+ {
+  "name": "The George Parks Highway Scenic Byway",
+  "wiki": "George Parks Highway",
+  "type": "National Scenic Byway",
+  "miles": 203,
+  "states": [
+   "Alaska"
+  ],
+  "from": "Chulitna River Bridge in Denali State Park",
+  "to": "Steese Highway in Fairbanks",
+  "description": "Wilderness route stretching from the Alaska Range through the interior of Alaska",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/12302"
+ },
+ {
+  "name": "George Washington Memorial Parkway",
+  "wiki": "George Washington Memorial Parkway",
+  "type": "All-American Road",
+  "miles": 25,
+  "states": [
+   "Virginia",
+   "Washington",
+   "D.C."
+  ],
+  "from": "SR 235 in Mount Vernon",
+  "to": "I-495 near McLean",
+  "description": "Landscaped greenway connecting national memorials and historic sites along the Potomac River, across from the nation's capital",
+  "qualities": "Natural, Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/60807"
+ },
+ {
+  "name": "Geronimo Trail Scenic Byway",
+  "wiki": "Geronimo Trail Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 154,
+  "states": [
+   "New Mexico"
+  ],
+  "from": "NM 152 in San Lorenzo; NM 59 at Beaverhead station in Gila National Forest",
+  "to": "Geronimo Trail Interpretive Center in Truth or Consequences",
+  "description": "Scenic drive past hot springs, mining towns, and traditional lands of the Apache in southwestern New Mexico",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2091"
+ },
+ {
+  "name": "Glenn Highway",
+  "wiki": "Glenn Highway",
+  "type": "National Scenic Byway",
+  "miles": 135,
+  "states": [
+   "Alaska"
+  ],
+  "from": "Gambell Street in Anchorage",
+  "to": "Lake Louise Road near Mendeltna",
+  "description": "Terrain shaped by receding glaciers",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2483"
+ },
+ {
+  "name": "Gold Belt Tour Scenic and Historic Byway",
+  "wiki": "Gold Belt Tour Scenic and Historic Byway",
+  "type": "National Scenic Byway",
+  "miles": 135,
+  "states": [
+   "Colorado"
+  ],
+  "from": "US 50 in Florence",
+  "to": "Florissant",
+  "description": "Follows stage and rail routes to historic gold mining locations",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2109"
+ },
+ {
+  "name": "Grand Mesa Scenic and Historic Byway",
+  "wiki": "Grand Mesa Scenic and Historic Byway",
+  "type": "National Scenic Byway",
+  "miles": 63,
+  "states": [
+   "Colorado"
+  ],
+  "from": "SH 65 in Cedaredge; Lands End Observatory on FS 100",
+  "to": "Junction of SH 65 and I-70",
+  "description": "Climbs from the Colorado River in the Grand Valley to the Grand Mesa, the largest flat-topped mountain in",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2103"
+ },
+ {
+  "name": "Grand Rounds National Scenic Byway",
+  "wiki": "Grand Rounds National Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 52,
+  "states": [
+   "Minnesota"
+  ],
+  "from": "Loop route",
+  "to": "Northeast spur trail to Cross Golf Course",
+  "description": "Continuous parkway surrounding Minneapolis",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2243"
+ },
+ {
+  "name": "Great Lakes Seaway Trail",
+  "wiki": "Great Lakes Seaway Trail",
+  "type": "National Scenic Byway",
+  "miles": 518,
+  "states": [
+   "New York",
+   "Pennsylvania"
+  ],
+  "from": "Ohio–Pennsylvania state line on US 20 west of Erie, Pennsylvania",
+  "to": "Seaway International Bridge near Massena, New York",
+  "description": "Scenic drive along the shores of Lake Erie, Lake Ontario, and the St. Lawrence River",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2488"
+ },
+ {
+  "name": "Great River Road",
+  "wiki": "Great River Road",
+  "type": "All-American Road",
+  "miles": 2069,
+  "states": [
+   "Arkansas",
+   "Illinois",
+   "Iowa",
+   "Kentucky",
+   "Louisiana",
+   "Minnesota",
+   "Mississippi",
+   "Missouri",
+   "Tennessee",
+   "Wisconsin"
+  ],
+  "from": "LA 23 in Venice, Louisiana",
+  "to": "Itasca State Park north of Park Rapids, Minnesota",
+  "description": "Numerous scenic, historic, and culturally significant roadways paralleling the entire length of the Mississippi River from its headwaters to the Gulf of Mexico",
+  "qualities": "Historic, Cultural, Scenic, Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2279"
+ },
+ {
+  "name": "Gunflint Trail Scenic Byway",
+  "wiki": "Gunflint Trail",
+  "type": "National Scenic Byway",
+  "miles": 57,
+  "states": [
+   "Minnesota"
+  ],
+  "from": "North Shore Scenic Drive in Grand Marais",
+  "to": "Trails End near Sea Gull Lake",
+  "description": "Scenic drive through the Superior National Forest",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13548"
+ },
+ {
+  "name": "Haines Highway-Valley of the Eagles",
+  "wiki": "Haines Highway",
+  "type": "National Scenic Byway",
+  "miles": 44,
+  "states": [
+   "Alaska"
+  ],
+  "from": "AK 7 at the Canadian border",
+  "to": "Ferry terminal in Haines",
+  "description": "Route through the Chilkat River valley, a migratory site for the world's largest congregation of bald eagles",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/12395"
+ },
+ {
+  "name": "Harriet Tubman Underground Railroad Byway",
+  "wiki": "Harriet Tubman Underground Railroad Byway (Maryland)",
+  "type": "All-American Road",
+  "miles": 144,
+  "states": [
+   "Maryland"
+  ],
+  "from": "Rosehill Place and Byrn Street in Cambridge",
+  "to": "Maryland–Delaware state line on MD 287 near Goldsboro",
+  "description": "Threads together numerous historic sites in the Delmarva Peninsula commemorating Harriet Tubman and the Underground Railroad",
+  "qualities": "Cultural, Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2260"
+ },
+ {
+  "name": "Hells Canyon Scenic Byway",
+  "wiki": "Hells Canyon Scenic Byway",
+  "type": "All-American Road",
+  "miles": 218.4,
+  "states": [
+   "Oregon"
+  ],
+  "from": "OR 86 and I-84 near Baker City",
+  "to": "OR 82 and I-84 in La Grande",
+  "description": "Provides views of Hells Canyon on the Snake River",
+  "qualities": "Natural, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2145"
+ },
+ {
+  "name": "Highland Scenic Highway",
+  "wiki": "Highland Scenic Highway",
+  "type": "National Scenic Byway",
+  "miles": 43,
+  "states": [
+   "West Virginia"
+  ],
+  "from": "WV 39 in Fenwick",
+  "to": "Junction of WV 150 and US 219",
+  "description": "Scenic drive through mountains and valleys",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2460"
+ },
+ {
+  "name": "Historic Bluff Country Scenic Byway",
+  "wiki": "Historic Bluff Country Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 88,
+  "states": [
+   "Minnesota"
+  ],
+  "from": "MN 16 and US 14 / Great River Road in La Crescent",
+  "to": "MN 16 and I-90 in Dexter",
+  "description": "Historic and scenic drive through southeastern Minnesota",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2240"
+ },
+ {
+  "name": "Historic Columbia River Highway",
+  "wiki": "Historic Columbia River Highway",
+  "type": "All-American Road",
+  "miles": 70,
+  "states": [
+   "Oregon"
+  ],
+  "from": "Crown Point Highway east of Troutdale (western section); US 30 and I-84 in Mosier (eastern section)",
+  "to": "I-84 near the Bonneville Dam (western section); US 30 and Hostetler Way in The Dalles (eastern section)",
+  "description": "America's oldest scenic highway exists in two discontinuous sections which follow historic routes through the Columbia River Gorge",
+  "qualities": "Historic, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2141"
+ },
+ {
+  "name": "Historic National Road",
+  "wiki": "Historic National Road",
+  "type": "All-American Road",
+  "miles": 824.2,
+  "states": [
+   "Illinois",
+   "Indiana",
+   "Maryland",
+   "Ohio",
+   "Pennsylvania",
+   "West Virginia"
+  ],
+  "from": "Eads Bridge in East St. Louis",
+  "to": "Lombard Street in downtown Baltimore",
+  "description": "Travels the route of the nation's first federally funded interstate highway along a historic corridor to the American Midwest",
+  "qualities": "Cultural, Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2278"
+ },
+ {
+  "name": "Historic Route 66",
+  "wiki": "Historic Route&nbsp;66",
+  "type": "All-American Road",
+  "miles": 1408.6,
+  "states": [
+   "Arizona",
+   "Missouri",
+   "New Mexico",
+   "Oklahoma (AAR); California",
+   "Illinois (NSB)"
+  ],
+  "from": "Main Street in Barstow",
+  "to": "Lakeshore Drive and Jackson Boulevard in Chicago",
+  "description": "Historic \"Mother Road\" linking Chicago to Los Angeles",
+  "qualities": "Historic, Natural, Cultural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2489"
+ },
+ {
+  "name": "Hocking Hills Scenic Byway",
+  "wiki": "Hocking Hills Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 30,
+  "states": [
+   "Ohio"
+  ],
+  "from": "SR 56 and SR 374 near South Bloomingville",
+  "to": "US 33 and SR 374 near Rockbridge",
+  "description": "Scenic route through the forested and geologically varied Hocking Hills",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2598"
+ },
+ {
+  "name": "Illinois River Road (Route of the Voyageurs)",
+  "wiki": "Illinois River Road",
+  "type": "National Scenic Byway",
+  "miles": 291,
+  "states": [
+   "Illinois"
+  ],
+  "from": "Water Street and US 136 in Havana",
+  "to": "Reddick Mansion in Ottawa",
+  "description": "A loop through the scenic Illinois River Valley with routes along both sides of the upper Illinois River",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/58611"
+ },
+ {
+  "name": "Indian River Lagoon National Scenic Byway",
+  "wiki": "Indian River Lagoon Scenic Highway",
+  "type": "National Scenic Byway",
+  "miles": 150,
+  "states": [
+   "Florida"
+  ],
+  "from": "US 1 and 85th Street in Wabasso",
+  "to": "US 1 and Kennedy Parkway near Oak Hill",
+  "description": "Series of connected loops providing access to the most biodiverse lagoon ecosystem in the northern hemisphere, as well as Kennedy Space Center and Cape Canaveral",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/16199"
+ },
+ {
+  "name": "Indiana's Historic Pathways",
+  "wiki": "Indiana's Historic Pathways",
+  "type": "National Scenic Byway",
+  "miles": 250,
+  "states": [
+   "Indiana"
+  ],
+  "from": "US 50 at the Ohio state line near Lawrenceburg; US 150 at Falls of the Ohio State Park in Clarksville",
+  "to": "US 50 at the Wabash River near Vincennes",
+  "description": "Historic Pioneer route through the lower Ohio River Valley",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/76130"
+ },
+ {
+  "name": "International Selkirk Loop",
+  "wiki": "International Selkirk Loop",
+  "type": "All-American Road",
+  "miles": 144.1,
+  "states": [
+   "Idaho",
+   "Washington"
+  ],
+  "from": "British Columbia–Washington border on SR 31",
+  "to": "Idaho–British Columbia border on SH 1",
+  "description": "Internationally designated scenic highway encircles the remote Selkirk Mountains spanning the Canadian border",
+  "qualities": "Historic, Recreational, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2486"
+ },
+ {
+  "name": "Jemez Mountain Trail",
+  "wiki": "Jemez Mountain Trail",
+  "type": "National Scenic Byway",
+  "miles": 163,
+  "states": [
+   "New Mexico"
+  ],
+  "from": "US 550 and NM 126 in Cuba; US 550 and NM 4 in San Ysidro",
+  "to": "NM 4 and NM 501 near Los Alamos",
+  "description": "Scenic drive past geological formations and Indian ruins",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2061"
+ },
+ {
+  "name": "Journey Through Hallowed Ground Byway",
+  "wiki": "Journey Through Hallowed Ground National Heritage Area",
+  "type": "National Scenic Byway",
+  "miles": 180,
+  "states": [
+   "Maryland",
+   "Pennsylvania",
+   "Virginia"
+  ],
+  "from": "A loop that begins and ends at the intersection of SR 20 and SR 231 near Somerset, Virginia",
+  "to": "PA 394 near Gettysburg, Pennsylvania",
+  "description": "Historic corridor featuring hundreds of sites significant to American history, most notably the densest collection of Civil War battlefields in the nation; \"Where America Happened\"",
+  "qualities": "Recreational, Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/23433"
+ },
+ {
+  "name": "Kaibab Plateau–North Rim Parkway",
+  "wiki": "Kaibab Plateau–North Rim Parkway",
+  "type": "National Scenic Byway",
+  "miles": 42,
+  "states": [
+   "Arizona"
+  ],
+  "from": "Bright Angel Point in Grand Canyon National Park",
+  "to": "US 89A in Jacob Lake",
+  "description": "Scenic drive through ponderosa pine forests to the North Rim of the Grand Canyon",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/10465"
+ },
+ {
+  "name": "Kancamagus Scenic Byway",
+  "wiki": "Kancamagus Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 26.5,
+  "states": [
+   "New Hampshire"
+  ],
+  "from": "US 3 in North Woodstock",
+  "to": "NH 113 in Conway",
+  "description": "Scenic drive through the heart of the White Mountains",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2458"
+ },
+ {
+  "name": "Katahdin Woods and Waters Scenic Byway",
+  "wiki": "Katahdin Woods and Waters Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 89,
+  "states": [
+   "Maine"
+  ],
+  "from": "South entrance of Baxter State Park",
+  "to": "Grand Lake Road near Grand Lake Matagamon",
+  "description": "Scenic route around the forested waterways of inland Maine near Mt. Katahdin and the neighboring national monument",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81500"
+ },
+ {
+  "name": "Lake Erie Coastal Ohio Trail",
+  "wiki": "Lake Erie Coastal Ohio Trail",
+  "type": "National Scenic Byway",
+  "miles": 293,
+  "states": [
+   "Ohio"
+  ],
+  "from": "Waterville, Ohio",
+  "to": "US 20 at the Pennsylvania state line",
+  "description": "Follows the south shore of Lake Erie",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/59836"
+ },
+ {
+  "name": "Lake Tahoe - Eastshore Drive",
+  "wiki": "Lake Tahoe - Eastshore Drive",
+  "type": "National Scenic Byway",
+  "miles": 28,
+  "states": [
+   "Nevada"
+  ],
+  "from": "US 50 in Stateline",
+  "to": "SR 28 in Crystal Bay",
+  "description": "Follows the east shore of Lake Tahoe",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2456"
+ },
+ {
+  "name": "Lakes to Locks Passage",
+  "wiki": "Lakes to Locks Passage",
+  "type": "All-American Road",
+  "miles": 234,
+  "states": [
+   "New York"
+  ],
+  "from": "US 4 and NY 32 in Waterford",
+  "to": "US 11 and NY 9B in Rouses Point",
+  "description": "Parallels the interconnected waterways of the Hudson River, Champlain Canal, Lake George, and Lake Champlain between Upstate New York and Quebec",
+  "qualities": "Historic, Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2479"
+ },
+ {
+  "name": "Lariat Loop Scenic and Historic Byway",
+  "wiki": "Lariat Loop Scenic and Historic Byway",
+  "type": "National Scenic Byway",
+  "miles": 40,
+  "states": [
+   "Colorado"
+  ],
+  "from": "Evergreen, Colorado",
+  "to": "Begins and ends at the intersection of 6th Avenue and 19th Street in Golden",
+  "description": "Loops through the historic towns of Morrison, Evergreen and Golden in the foothills west of Denver",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/49776"
+ },
+ {
+  "name": "Las Vegas Strip",
+  "wiki": "Las Vegas Strip",
+  "type": "All-American Road",
+  "miles": 4.5,
+  "states": [
+   "Nevada"
+  ],
+  "from": "Las Vegas Boulevard and Russell Road",
+  "to": "Las Vegas Boulevard and Sahara Avenue",
+  "description": "Urban boulevard lined with the glitz and glamour of Las Vegas's world-famous casinos",
+  "qualities": "Cultural, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2032"
+ },
+ {
+  "name": "Lincoln Heritage Scenic Highway",
+  "wiki": "Lincoln Heritage Scenic Highway",
+  "type": "National Scenic Byway",
+  "miles": 71.2,
+  "states": [
+   "Kentucky"
+  ],
+  "from": "Abraham Lincoln Birthplace National Historical Park",
+  "to": "US 150 in Danville",
+  "description": "Explores aspects of Kentucky history including Abraham Lincoln, the Civil War, and bourbon heritage",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2348"
+ },
+ {
+  "name": "Lincoln Highway",
+  "wiki": "Lincoln Highway in Illinois",
+  "type": "National Scenic Byway",
+  "miles": 178.8,
+  "states": [
+   "Illinois"
+  ],
+  "from": "IL 136 at the Mississippi River in Fulton",
+  "to": "US 30 at the Indiana state line",
+  "description": "A portion of America's first transcontinental highway, the Lincoln Highway",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13750"
+ },
+ {
+  "name": "Lincoln Highway Heritage Byway",
+  "wiki": "Lincoln Highway Heritage Byway",
+  "type": "National Scenic Byway",
+  "miles": 460,
+  "states": [
+   "Iowa"
+  ],
+  "from": "US 30 at the Missouri River near Missouri Valley; I-480/US 6 at the Missouri River in Council Bluffs",
+  "to": "Iowa 136 and US 30 in Clinton",
+  "description": "Portion of the first transcontinental highway, visiting historical communities across the entirety of Iowa",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81493"
+ },
+ {
+  "name": "Lincoln Highway Scenic and Historic Byway",
+  "wiki": "Lincoln Highway Scenic and Historic Byway",
+  "type": "National Scenic Byway",
+  "miles": 450,
+  "states": [
+   "Nebraska"
+  ],
+  "from": "US 30 at the Wyoming state line near Bushnell",
+  "to": "US 30 at the Missouri River in Blair",
+  "description": "Portion of the Main Street of America, following the Platte River across Nebraska",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81508"
+ },
+ {
+  "name": "Loess Hills Scenic Byway",
+  "wiki": "Loess Hills Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 220,
+  "states": [
+   "Iowa"
+  ],
+  "from": "US 275 at the Missouri border",
+  "to": "Iowa 12 and Iowa 48 near Akron",
+  "description": "Unique and expansive silt deposits in the Missouri River Valley",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2187"
+ },
+ {
+  "name": "Logan Canyon Scenic Byway",
+  "wiki": "Logan Canyon Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 41,
+  "states": [
+   "Utah"
+  ],
+  "from": "Main Street and US 89 in downtown Logan",
+  "to": "US 89 and SR 30 in Garden City at Bear Lake",
+  "description": "Follows the Logan River through the forests, meadows, and rock formations of scenic Logan Canyon",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2001"
+ },
+ {
+  "name": "McKenzie Pass-Santiam Pass Scenic Byway",
+  "wiki": "McKenzie Pass-Santiam Pass Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 82,
+  "states": [
+   "Oregon"
+  ],
+  "from": "Junction of OR 126 and OR 242 at the McKenzie River ranger station",
+  "to": "Begins and ends at the intersection of OR 242 and US 20 in Sisters",
+  "description": "Loop around Mount Washington crossing two Cascade passes",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2148"
+ },
+ {
+  "name": "Meeting of the Great Rivers Scenic Route",
+  "wiki": "Meeting of the Great Rivers Scenic Route",
+  "type": "National Scenic Byway",
+  "miles": 33,
+  "states": [
+   "Illinois"
+  ],
+  "from": "IL 108 at the Illinois River near Kampsville",
+  "to": "IL 3 near Alton",
+  "description": "Floodplain where the Illinois, Mississippi, and Missouri rivers meet",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/10393"
+ },
+ {
+  "name": "Merritt Parkway",
+  "wiki": "Merritt Parkway",
+  "type": "National Scenic Byway",
+  "miles": 37,
+  "states": [
+   "Connecticut"
+  ],
+  "from": "New York–Connecticut state line on Route 15",
+  "to": "Sikorsky Bridge on the Housatonic River near Milford",
+  "description": "Historic parkway through Connecticut's Gold Coast known for its elaborate Art Deco bridges",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2452"
+ },
+ {
+  "name": "Midland Trail",
+  "wiki": "Midland Trail in West Virginia",
+  "type": "National Scenic Byway",
+  "miles": 116.8,
+  "states": [
+   "West Virginia"
+  ],
+  "from": "US 60 in Charleston",
+  "to": "US 60 in White Sulphur Springs",
+  "description": "Scenic drive through the New River Gorge",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/10345"
+ },
+ {
+  "name": "Millstone Valley Scenic Byway",
+  "wiki": "Millstone Valley Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 27.5,
+  "states": [
+   "New Jersey"
+  ],
+  "from": "Kingston, New Jersey",
+  "to": "East Millstone, New Jersey",
+  "description": "Scenic and historic drive along the Millstone River in central New Jersey",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2462"
+ },
+ {
+  "name": "Minnesota River Valley Scenic Byway",
+  "wiki": "Minnesota River Valley Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 287,
+  "states": [
+   "Minnesota"
+  ],
+  "from": "MN 7 in Browns Valley",
+  "to": "MN 93 near Belle Plaine",
+  "description": "Historic drive through the Minnesota River Valley",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2211"
+ },
+ {
+  "name": "Mohawk Towpath Byway",
+  "wiki": "Mohawk Towpath Byway",
+  "type": "National Scenic Byway",
+  "miles": 26.2,
+  "states": [
+   "New York"
+  ],
+  "from": "Aqueduct Road in Schenectady",
+  "to": "Fonda Road and NY 32 in Waterford",
+  "description": "Follows the historic Erie Canal",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/57185"
+ },
+ {
+  "name": "Mohawk Trail Scenic Byway",
+  "wiki": "Mohawk Trail",
+  "type": "National Scenic Byway",
+  "miles": 69,
+  "states": [
+   "Massachusetts"
+  ],
+  "from": "Route 2 in Williamstown",
+  "to": "Routee 2A near Athol",
+  "description": "Culturally significant route connecting the Connecticut River Valley and the Hudson River Valley through the Berkshires",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81504"
+ },
+ {
+  "name": "Mountains to Sound Greenway - I-90",
+  "wiki": "Mountains to Sound Greenway - I-90",
+  "type": "National Scenic Byway",
+  "miles": 100,
+  "states": [
+   "Washington"
+  ],
+  "from": "I-90 in Seattle",
+  "to": "I-90 near Thorp",
+  "description": "Scenic drive across Snoqualmie Pass in the Cascades",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2228"
+ },
+ {
+  "name": "Mt. Hood Scenic Byway",
+  "wiki": "Mt. Hood Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 105,
+  "states": [
+   "Oregon"
+  ],
+  "from": "Troutdale Bridge crossing the Sandy River near Troutdale",
+  "to": "OR 35 near Hood River",
+  "description": "Provides scenic views of Mount Hood",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/61400"
+ },
+ {
+  "name": "Natchez Trace Parkway",
+  "wiki": "Natchez Trace Parkway",
+  "type": "All-American Road",
+  "miles": 444,
+  "states": [
+   "Alabama",
+   "Mississippi",
+   "Tennessee"
+  ],
+  "from": "Liberty Road in Natchez",
+  "to": "SR 100 in Pasquo",
+  "description": "Two-lane limited-access parkway through rural countryside commemorating the historic route of the Natchez Trace",
+  "qualities": "Historic, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2285"
+ },
+ {
+  "name": "Native American Scenic Byway<!--AKA Standing Rock Native American Scenic Byway?-->",
+  "wiki": "Native American Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 350,
+  "states": [
+   "North Dakota",
+   "South Dakota"
+  ],
+  "from": "SD 50 and I-90 in Chamberlain",
+  "to": "ND 24 at Lake Oahe near Cannon Ball",
+  "description": "Traverses four Lakota Sioux reservations",
+  "qualities": "Cultural, Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2596"
+ },
+ {
+  "name": "Nebo Loop Scenic Byway",
+  "wiki": "Nebo Loop Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 37,
+  "states": [
+   "Utah"
+  ],
+  "from": "SR 132 near Nephi",
+  "to": "I-15 and SR 115 in Payson",
+  "description": "Alpine backroad through the Mount Nebo Wilderness in the southern Wasatch Range",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2012"
+ },
+ {
+  "name": "Newfound Gap Road Byway",
+  "wiki": "Newfound Gap",
+  "type": "All-American Road",
+  "miles": 31,
+  "states": [
+   "Tennessee",
+   "North Carolina"
+  ],
+  "from": "US 441 at park boundary near Cherokee",
+  "to": "US 441 at park boundary near Gatlinburg",
+  "description": "One of the primary routes, passing through Newfound Gap, through Great Smoky Mountains National Park",
+  "qualities": "Historic, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81520"
+ },
+ {
+  "name": "Norris Freeway",
+  "wiki": "U.S. Route 441 in Tennessee",
+  "type": "National Scenic Byway",
+  "miles": 21,
+  "states": [
+   "Tennessee"
+  ],
+  "from": "US 441 and SR 33 in Halls Crossroads",
+  "to": "US 441 and US 25W in Rocky Top",
+  "description": "Route through rural eastern Tennessee, crossing Norris Dam, the first large-scale project of the TVA",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81522"
+ },
+ {
+  "name": "North Shore Scenic Drive",
+  "wiki": "North Shore Scenic Drive",
+  "type": "All-American Road",
+  "miles": 154,
+  "states": [
+   "Minnesota"
+  ],
+  "from": "Canal Park in Duluth",
+  "to": "Canadian border on MN 61 near Grand Portage",
+  "description": "Follows the scenic North Shore of Lake Superior",
+  "qualities": "Recreational, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/11185"
+ },
+ {
+  "name": "Northwest Passage Scenic Byway",
+  "wiki": "Northwest Passage Scenic Byway",
+  "type": "All-American Road",
+  "miles": 202,
+  "states": [
+   "Idaho"
+  ],
+  "from": "Washington–Idaho state line on US 12 near Lewiston",
+  "to": "Idaho–Montana state line on US 12 at Lolo Pass",
+  "description": "Follows the route of Lewis and Clark's historic search for the Northwest Passage through scenic mountains and river valleys",
+  "qualities": "Historic, Cultural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2043"
+ },
+ {
+  "name": "Ohio & Erie Canalway",
+  "wiki": "Ohio & Erie Canalway Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 110,
+  "states": [
+   "Ohio"
+  ],
+  "from": "New Philadelphia",
+  "to": "Public Square, Cleveland",
+  "description": "Historic drive along the Ohio and Erie Canal through Cuyahoga Valley National Park and Cleveland Metroparks",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/10501"
+ },
+ {
+  "name": "Ohio River Scenic Byway",
+  "wiki": "Ohio River Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 943,
+  "states": [
+   "Illinois",
+   "Indiana",
+   "Ohio"
+  ],
+  "from": "US 60/US 62 at the Cairo Mississippi River Bridge in Cairo",
+  "to": "SR 39 at the Pennsylvania border near East Liverpool",
+  "description": "Follows the north bank of the Ohio River",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2286"
+ },
+ {
+  "name": "Old Canada Road Scenic Byway",
+  "wiki": "Old Canada Road Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 78.2,
+  "states": [
+   "Maine"
+  ],
+  "from": "US 201 and SR 43 near Madison",
+  "to": "US 201 at the Canadian border",
+  "description": "Historic route between Maine and Quebec along the Kennebec River",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/11510"
+ },
+ {
+  "name": "Old Frankfort Pike Historic and Scenic Byway",
+  "wiki": "Old Frankfort Pike Historic and Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 15.5,
+  "states": [
+   "Kentucky"
+  ],
+  "from": "KY 1681 and US 60 near Frankfort",
+  "to": "KY 1681 and KY 4 in Lexington",
+  "description": "Rural route through the historic inner Bluegrass Region",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81495"
+ },
+ {
+  "name": "Old Kings Highway (Route 6A)",
+  "wiki": "Massachusetts Route 6A",
+  "type": "National Scenic Byway",
+  "miles": 34,
+  "states": [
+   "Massachusetts"
+  ],
+  "from": "Sandwich Road and US 6 in Bourne",
+  "to": "Route 6A and US 6 in Orleans",
+  "description": "Route through Cape Cod traversing numerous National Historic Districts",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81505"
+ },
+ {
+  "name": "Ormond Scenic Loop & Trail",
+  "wiki": "Ormond Scenic Loop & Trail",
+  "type": "National Scenic Byway",
+  "miles": 36,
+  "states": [
+   "Florida"
+  ],
+  "from": "SR 40 in Ormond Beach",
+  "to": "Bulow Creek State Park",
+  "description": "Loop route connecting numerous state and local parks along Florida's Surf Coast",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/75866"
+ },
+ {
+  "name": "Outback Scenic Byway",
+  "wiki": "Outback Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 170,
+  "states": [
+   "Oregon"
+  ],
+  "from": "California–Oregon state line on US 395",
+  "to": "OR 31 and US 97 near La Pine",
+  "description": "Scenic drive through rugged backcountry of south-central Oregon",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2142"
+ },
+ {
+  "name": "Outer Banks Scenic Byway",
+  "wiki": "Outer Banks Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 137.8,
+  "states": [
+   "North Carolina"
+  ],
+  "from": "US 70 near Beaufort",
+  "to": "NC 12 and US 64 in Nags Head",
+  "description": "Connects the barrier islands, beaches, and lighthouses of the Outer Banks",
+  "qualities": "Cultural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/12834"
+ },
+ {
+  "name": "Pacific Coast Scenic Byway-Oregon",
+  "wiki": "U.S. Route 101 in Oregon",
+  "type": "All-American Road",
+  "miles": 363,
+  "states": [
+   "Oregon"
+  ],
+  "from": "California–Oregon state line on US 101",
+  "to": "Oregon–Washington state line on US 101",
+  "description": "Scenic drive along the entire length of Oregon's Pacific coast",
+  "qualities": "Natural, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2143"
+ },
+ {
+  "name": "Palisades Scenic Byway",
+  "wiki": "Palisades Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 57.5,
+  "states": [
+   "New Jersey",
+   "New York"
+  ],
+  "from": "Palisades Parkway at US 9 / George Washington Bridge in Fort Lee",
+  "to": "US 6 and US 202 at the Highland Falls, New York in Highland Falls",
+  "description": "Route along the Hudson River and the Palisades cliffs",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/68569"
+ },
+ {
+  "name": "Paul Bunyan Scenic Byway",
+  "wiki": "Paul Bunyan Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 54,
+  "states": [
+   "Minnesota"
+  ],
+  "from": "Loop route connecting: Pequot Lakes, Pine River",
+  "to": "Loop route connecting: Manhattan Beach, Crosslake",
+  "description": "Passes through the North Woods of central Minnesota",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/11180"
+ },
+ {
+  "name": "Payette River Scenic Byway",
+  "wiki": "Payette River Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 112,
+  "states": [
+   "Idaho"
+  ],
+  "from": "SH 55 at SH 44 in Eagle",
+  "to": "ID 55 at US 95 in New Meadows",
+  "description": "Traverses foothills and the Long Valley along the Payette River in Idaho",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2037"
+ },
+ {
+  "name": "Pend Oreille Scenic Byway",
+  "wiki": "Pend Oreille Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 33,
+  "states": [
+   "Idaho"
+  ],
+  "from": "SH 200 at US 2/US 95 in Ponderay",
+  "to": "SH 200 and MT 200 at the Montana state line near Clark Fork",
+  "description": "Scenic drive along Lake Pend Oreille",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2044"
+ },
+ {
+  "name": "Peter Norbeck Scenic Byway",
+  "wiki": "Peter Norbeck Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 68,
+  "states": [
+   "South Dakota"
+  ],
+  "from": "Loop connecting: Custer via SD 87 and SD 89",
+  "to": "Loop connecting: Keyston via US 16A and SD 244",
+  "description": "Scenic drive through the Black Hills National Forest, Custer State Park, and the Mount Rushmore environs of southwestern South Dakota",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2459"
+ },
+ {
+  "name": "Pine Barrens Byway",
+  "wiki": "Pine Barrens Byway",
+  "type": "National Scenic Byway",
+  "miles": 130,
+  "states": [
+   "New Jersey"
+  ],
+  "from": "Route 47 in Maurice River Township",
+  "to": "US 9 in Tuckerton",
+  "description": "Rural route through the largest remaining coastal pine barren ecosystem",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81573"
+ },
+ {
+  "name": "Pioneer Historic Byway",
+  "wiki": "Idaho State Highway 34",
+  "type": "National Scenic Byway",
+  "miles": 127,
+  "states": [
+   "Idaho"
+  ],
+  "from": "US 91 at the Utah state line near Franklin",
+  "to": "SH 34 at the Wyoming state line near Freedom",
+  "description": "Scenic route exploring the rich pioneer history of southeastern Idaho, including Mormon settlements and Oregon Trail ruts",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2049"
+ },
+ {
+  "name": "Pyramid Lake Scenic Byway",
+  "wiki": "Pyramid Lake Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 30.2,
+  "states": [
+   "Nevada"
+  ],
+  "from": "Washeim and Main streets in Wadsworth",
+  "to": "NV 447 near Nixon; NV 446 and Hardscrabble Canyon Road in Sutcliffe",
+  "description": "One of the largest desert lakes in the world",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2457"
+ },
+ {
+  "name": "Rangeley Lakes Scenic Byway",
+  "wiki": "Rangeley Lakes Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 35.6,
+  "states": [
+   "Maine"
+  ],
+  "from": "SR 17 near Houghton",
+  "to": "SR 4 near Madrid",
+  "description": "Scenic drive along the northern Appalachian ridgeline and the forests and lakes of the Western Maine Mountains",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13830"
+ },
+ {
+  "name": "Red River Gorge Scenic Byway",
+  "wiki": "Red River Gorge Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 46,
+  "states": [
+   "Kentucky"
+  ],
+  "from": "KY 11 at KY 715 in Zachariah",
+  "to": "KY 11 at KY 213 in Stanton",
+  "description": "Scenic drive through the Red River Gorge",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2482"
+ },
+ {
+  "name": "Red Rock Scenic Byway",
+  "wiki": "Red Rock Scenic Byway",
+  "type": "All-American Road",
+  "miles": 7.5,
+  "states": [
+   "Arizona"
+  ],
+  "from": "I-17 north of Rimrock",
+  "to": "SR 89A in Sedona",
+  "description": "Scenic drive through the red sandstone canyons of the Coconino National Forest",
+  "qualities": "Scenic, Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/11290"
+ },
+ {
+  "name": "Religious Freedom Byway",
+  "wiki": "List of Maryland Scenic Byways",
+  "type": "National Scenic Byway",
+  "miles": 195,
+  "states": [
+   "Maryland"
+  ],
+  "from": "MD 234 near Port Tobacco",
+  "to": "MD 5 at Point Lookout State Park",
+  "description": "Provides access to historic churches and the first capital of Maryland, St. Mary's City",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/40532"
+ },
+ {
+  "name": "Revolutionary Heritage Byway",
+  "wiki": "Revolutionary Heritage Byway",
+  "type": "National Scenic Byway",
+  "miles": 6,
+  "states": [
+   "Rhode Island"
+  ],
+  "from": "Route 114 at the Mount Hope Bridge",
+  "to": "Route 114 at Bristol-Warren town line",
+  "description": "Exemplifies the culture of colonial New England and the site of the oldest continuous Independence Day celebration",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81518"
+ },
+ {
+  "name": "River of Lakes Heritage Corridor",
+  "wiki": "River of Lakes Heritage Corridor",
+  "type": "National Scenic Byway",
+  "miles": 156,
+  "states": [
+   "Florida"
+  ],
+  "from": "SR 415 in Sanford",
+  "to": "River Drive in Oak Hill; US 17 near Seville",
+  "description": "Tours through the lakelands of the Halifax Area, site of some of the earliest settlements in Florida",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81488"
+ },
+ {
+  "name": "River Road Scenic Byway",
+  "wiki": "River Road Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 23.5,
+  "states": [
+   "Michigan"
+  ],
+  "from": "M-65 and Rollways Road near Hale",
+  "to": "US 23 in Oscoda",
+  "description": "Scenic drive through the Au Sable River Valley",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/10781"
+ },
+ {
+  "name": "Rogue-Umpqua Scenic Byway",
+  "wiki": "Rogue-Umpqua Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 172,
+  "states": [
+   "Oregon"
+  ],
+  "from": "OR 234 at I-5 in Gold Hill",
+  "to": "OR 138 at I-5 in Roseburg",
+  "description": "Follows two scenic rivers through southwestern Oregon",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2147"
+ },
+ {
+  "name": "Route One, Big Sur Coast Highway",
+  "wiki": "Route One, Big Sur Coast Highway",
+  "type": "All-American Road",
+  "miles": 72,
+  "states": [
+   "California"
+  ],
+  "from": "San Luis Obispo–Monterey county line",
+  "to": "Ocean Avenue in Carmel",
+  "description": "Scenic drive along the Pacific coast",
+  "qualities": "Historic, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2301"
+ },
+ {
+  "name": "Route One, San Luis Obispo North Coast Byway",
+  "wiki": "Route One, San Luis Obispo North Coast Byway",
+  "type": "All-American Road",
+  "miles": 57,
+  "states": [
+   "California"
+  ],
+  "from": "US 101 in San Luis Obispo",
+  "to": "San Luis Obispo–Monterey county line",
+  "description": "Scenic drive along the Pacific coast",
+  "qualities": "Historic, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2475"
+ },
+ {
+  "name": "Russell-Brasstown Scenic Byway",
+  "wiki": "Russell-Brasstown Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 40.6,
+  "states": [
+   "Georgia"
+  ],
+  "from": "SR 348, SR 17, SR 75 near Robertstown",
+  "to": "SR 180 at Brasstown Bald",
+  "description": "Winds through the southern Appalachians and the highest point in Georgia",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13739"
+ },
+ {
+  "name": "San Juan Skyway",
+  "wiki": "San Juan Skyway",
+  "type": "All-American Road",
+  "miles": 233,
+  "states": [
+   "Colorado"
+  ],
+  "from": "US 160 in Durango; SSR 145 in Cortez",
+  "to": "SR 62 in Ridgway; US 550 in Ouray",
+  "description": "Loop through the San Juan Mountains, Colorado's most rugged and isolated mountain range",
+  "qualities": "Historic, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2101"
+ },
+ {
+  "name": "Sandhills Journey Scenic Byway",
+  "wiki": "Sandhills Journey Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 272,
+  "states": [
+   "Nebraska"
+  ],
+  "from": "N-2 in Alliance",
+  "to": "NE 2 in Grand Island",
+  "description": "Route through the ecologically unique Sand Hills, the largest dunefield in the western hemisphere",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81509"
+ },
+ {
+  "name": "Santa Fe Trail Scenic and Historic Byway",
+  "wiki": "Santa Fe Trail Scenic and Historic Byway",
+  "type": "National Scenic Byway",
+  "miles": 565,
+  "states": [
+   "Colorado",
+   "New Mexico"
+  ],
+  "from": "Santa Fe Plaza in Santa Fe",
+  "to": "US 50/US 400 at the Kansas state line near Holly; NM 410 at the Oklahoma state line near Clayton",
+  "description": "Follows part of the route of the historic Santa Fe Trail through scenic mountains and high plains",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2287"
+ },
+ {
+  "name": "Savannah River Scenic Byway",
+  "wiki": "South Carolina Scenic Byways",
+  "type": "National Scenic Byway",
+  "miles": 110,
+  "states": [
+   "South Carolina"
+  ],
+  "from": "SC 28 at the Georgia border near Clarks Hill",
+  "to": "SC 24 in Oakway",
+  "description": "Scenic drive along the Savannah River in rural South Carolina",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2162"
+ },
+ {
+  "name": "Scenic Byway 12 (Journey Through Time)",
+  "wiki": "Utah's Scenic Byway 12 - A Journey Through Time",
+  "type": "All-American Road",
+  "miles": 124,
+  "states": [
+   "Utah"
+  ],
+  "from": "US 89 near Panguitch",
+  "to": "SR 24 near Torrey",
+  "description": "Scenic drive through canyons, plateaus, and valleys",
+  "qualities": "Historic, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2020"
+ },
+ {
+  "name": "Scenic Byway 143 - Utah's Patchwork Parkway",
+  "wiki": "Utah's Patchwork Parkway",
+  "type": "National Scenic Byway",
+  "miles": 51,
+  "states": [
+   "Utah"
+  ],
+  "from": "SR 143 at I-15 in Parowan",
+  "to": "UT 143 at US 89 in Panguitch",
+  "description": "Scenic drive through Dixie National Forest and Cedar Breaks National Monument",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2023"
+ },
+ {
+  "name": "Scenic Highway 30A",
+  "wiki": "Scenic Highway 30A",
+  "type": "National Scenic Byway",
+  "miles": 32,
+  "states": [
+   "Florida"
+  ],
+  "from": "CR 30A at US 98 near Santa Rosa Beach",
+  "to": "CR 30A at US 98 near Rosemary Beach",
+  "description": "Local route through historic beach communities on Florida's Emerald Coast",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81489"
+ },
+ {
+  "name": "Scenic Highway of Legends",
+  "wiki": "Scenic Highway of Legends",
+  "type": "National Scenic Byway",
+  "miles": 82,
+  "states": [
+   "Colorado"
+  ],
+  "from": "SH 12 near Stonewall",
+  "to": "US 160 in Walsenburg; SH 12 in Trinidad",
+  "description": "Route through undisturbed cultural crossroads in the Spanish Peaks",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81484"
+ },
+ {
+  "name": "Schoodic Scenic Byway",
+  "wiki": "Schoodic Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 29,
+  "states": [
+   "Maine"
+  ],
+  "from": "US 1 in Hancock",
+  "to": "SSR 186 at SR 195 in Prospect Harbor",
+  "description": "Unspoiled coastline through the Schoodic Peninsula and the \"quiet side\" of Acadia National Park",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13792"
+ },
+ {
+  "name": "Selma to Montgomery March Byway",
+  "wiki": "Selma to Montgomery March Byway",
+  "type": "All-American Road",
+  "miles": 54,
+  "states": [
+   "Alabama"
+  ],
+  "from": "J.L. Chestnut Jr. Boulevard and Martin Luther King Street in Selma",
+  "to": "Alabama State Capitol in Montgomery",
+  "description": "Historic route of the 1965 Selma to Montgomery marches led by Martin Luther King Jr.",
+  "qualities": "Historic, Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2050"
+ },
+ {
+  "name": "Sequatchie Valley Scenic Byway",
+  "wiki": "Sequatchie Valley Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 65,
+  "states": [
+   "Tennessee"
+  ],
+  "from": "SR 28 at I-24 in Jasper",
+  "to": "SR 28 / US 127 at I-40 in Crossville",
+  "description": "Route through one of the most undisturbed valleys in the Appalachians",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81523"
+ },
+ {
+  "name": "Seward Highway",
+  "wiki": "Seward Highway",
+  "type": "All-American Road",
+  "miles": 125.3,
+  "states": [
+   "Alaska"
+  ],
+  "from": "Railway Avenue in Seward",
+  "to": "East 5th Avenue in Anchorage",
+  "description": "Showcases the peaks and fjords of south-central Alaska",
+  "qualities": "Recreational, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/10390"
+ },
+ {
+  "name": "Sheyenne River Valley Scenic Byway",
+  "wiki": "Sheyenne River Valley Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 63,
+  "states": [
+   "North Dakota"
+  ],
+  "from": "ND 32 in Lisbon",
+  "to": "CR 21 north of Valley City",
+  "description": "Historic drive through quaint farmland along the Sheyenne River",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/16406"
+ },
+ {
+  "name": "Silver Thread Colorado Scenic & Historic Byway",
+  "wiki": "Silver Thread Scenic and Historic Byway",
+  "type": "National Scenic Byway",
+  "miles": 117,
+  "states": [
+   "Colorado"
+  ],
+  "from": "SH 149 and US 160 in South Fork",
+  "to": "SH 149 and US 50 in Curecanti National Recreation Area",
+  "description": "Route tracing the geological and mining history in the San Juan Mountains",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81485"
+ },
+ {
+  "name": "Sky Island Scenic Byway",
+  "wiki": "Sky Island Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 27.2,
+  "states": [
+   "Arizona"
+  ],
+  "from": "Catalina Highway north of Tucson",
+  "to": "Catalina Highway in Summerhaven",
+  "description": "Climb from the Sonoran Desert through Coronado National Forest to the peak of Mount Lemmon in the Catalina Mountains",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/50186"
+ },
+ {
+  "name": "Skyline Drive",
+  "wiki": "Skyline Drive",
+  "type": "National Scenic Byway",
+  "miles": 105,
+  "states": [
+   "Virginia"
+  ],
+  "from": "US 250 near I-64 in Rockfish Gap",
+  "to": "US 340 near Front Royal",
+  "description": "Scenic drive through Shenandoah National Park",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/60646"
+ },
+ {
+  "name": "St. John Valley Cultural Byway/Fish River Scenic Byway",
+  "wiki": "St. John Valley Cultural Byway/Fish River Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 134,
+  "states": [
+   "Maine"
+  ],
+  "from": "SR 161 in Allagash; SR 11 at Portage Lake",
+  "to": "US 1 in Hamlin",
+  "description": "Route through the Saint John and Fish river valleys in the rural \"County\" of northern Maine",
+  "qualities": "Cultural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81501"
+ },
+ {
+  "name": "Staunton-Parkersburg Turnpike",
+  "wiki": "Staunton-Parkersburg Turnpike",
+  "type": "National Scenic Byway",
+  "miles": 180,
+  "states": [
+   "West Virginia"
+  ],
+  "from": "WV 47 and WV 618 in Parkersburg",
+  "to": "West Virginia–Virginia state line on US 250",
+  "description": "Historic drive through West Virginia forests and backcountry",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/10351"
+ },
+ {
+  "name": "Stevens Pass Greenway",
+  "wiki": "Stevens Pass Greenway",
+  "type": "National Scenic Byway",
+  "miles": 89.2,
+  "states": [
+   "Washington"
+  ],
+  "from": "US 2 near Monroe",
+  "to": "US 2 in Cashmere",
+  "description": "Scenic drive across the Cascades",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2231"
+ },
+ {
+  "name": "Strait of Juan de Fuca Highway - SR 112",
+  "wiki": "Strait of Juan de Fuca Highway - SR 112",
+  "type": "National Scenic Byway",
+  "miles": 61.1,
+  "states": [
+   "Washington"
+  ],
+  "from": "Makah Indian Reservation boundary near Neah Bay",
+  "to": "US 101 near Port Angeles",
+  "description": "Follows the shoreline of the Olympic Peninsula where it meets the Strait of Juan de Fuca",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13740"
+ },
+ {
+  "name": "Talimena Scenic Drive",
+  "wiki": "Talimena Scenic Drive",
+  "type": "National Scenic Byway",
+  "miles": 54,
+  "states": [
+   "Arkansas",
+   "Oklahoma"
+  ],
+  "from": "SH 1 and US 271 near Talihina",
+  "to": "AR 88 and US 71 in Mena",
+  "description": "Crest drive through the Ouachita Mountains, some of the highest ridges between the Appalachians and Rockies",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2485"
+ },
+ {
+  "name": "Talladega Scenic Drive",
+  "wiki": "Talladega Scenic Drive",
+  "type": "National Scenic Byway",
+  "miles": 26.4,
+  "states": [
+   "Alabama"
+  ],
+  "from": "Adams Gap Road southwest of Cheaha State Park",
+  "to": "US 78 west of Heflin",
+  "description": "Scenic drive through the southernmost extension of the Appalachian Mountains",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2057"
+ },
+ {
+  "name": "The Battle Road Scenic Byway",
+  "wiki": "Battle Road",
+  "type": "All-American Road",
+  "miles": 16,
+  "states": [
+   "Massachusetts"
+  ],
+  "from": "Barrett's Mill Road near Minuteman National Historical Park in Concord",
+  "to": "Massachusetts Avenue at Alewife Brook in Arlington",
+  "description": "Connects sites of literary, technological, and environmental importance to the American Revolution",
+  "qualities": "Historic, Cultural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81503"
+ },
+ {
+  "name": "Tioga Road/Big Oak Flat Road",
+  "wiki": "Tioga Road/Big Oak Flat Road",
+  "type": "National Scenic Byway",
+  "miles": 64,
+  "states": [
+   "California"
+  ],
+  "from": "Big Oak Flat entrance gate to Yosemite",
+  "to": "Tioga Pass entrance gate to Yosemite",
+  "description": "High mountain pass through Yosemite National Park",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2302"
+ },
+ {
+  "name": "Top of the Rockies",
+  "wiki": "Top of the Rockies",
+  "type": "National Scenic Byway",
+  "miles": 75,
+  "states": [
+   "Colorado"
+  ],
+  "from": "SH 82 in Aspen",
+  "to": "I-70 west of Vail; I-70 near Copper Mountain",
+  "description": "Scenic high-altitude drive through the Rocky Mountains and historic Leadville",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2119"
+ },
+ {
+  "name": "Trail of the Ancients",
+  "wiki": "Trail of the Ancients",
+  "type": "National Scenic Byway",
+  "miles": 1271,
+  "states": [
+   "Colorado",
+   "Utah",
+   "New Mexico"
+  ],
+  "from": "Loop connecting: Monument Valley, Zuni Pueblo, El Malpais National Monument",
+  "to": "Loop connecting: Natural Bridges National Monument, Monticello, Mesa Verde National Park",
+  "description": "Scenic drive through the Native American history of the Four Corners region",
+  "qualities": "Archeological",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2597"
+ },
+ {
+  "name": "Trail of the Mountain Spirits Scenic Byway",
+  "wiki": "Trail of the Mountain Spirits Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 95,
+  "states": [
+   "New Mexico"
+  ],
+  "from": "US 180 in Silver City; NM 35 and NM 152 in San Lorenzo",
+  "to": "NM 15 at Gila Cliff Dwellings National Monument",
+  "description": "Scenic drive through the mountains of southwestern New Mexico",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2092"
+ },
+ {
+  "name": "Trail Ridge Road/Beaver Meadow Road",
+  "wiki": "Trail Ridge Road/Beaver Meadow Road",
+  "type": "All-American Road",
+  "miles": 48,
+  "states": [
+   "Colorado"
+  ],
+  "from": "US 34 near Grand Lake",
+  "to": "Loop connecting: Moraine Avenue and West Elkhorn Avenue in Estes Park",
+  "description": "America's highest continuously paved road crosses the alpine tundra of Rocky Mountain National Park",
+  "qualities": "Natural, Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2102"
+ },
+ {
+  "name": "Turquoise Trail",
+  "wiki": "Turquoise Trail",
+  "type": "National Scenic Byway",
+  "miles": 62,
+  "states": [
+   "New Mexico"
+  ],
+  "from": "NM 14 at NM 333 in Tijeras",
+  "to": "NM 14 at I-25 in Santa Fe",
+  "description": "High route between Albuquerque and Santa Fe",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2094"
+ },
+ {
+  "name": "Volcanic Legacy Scenic Byway",
+  "wiki": "Volcanic Legacy Scenic Byway",
+  "type": "All-American Road",
+  "miles": 500,
+  "states": [
+   "California",
+   "Oregon"
+  ],
+  "from": "A bypass around Lake Almanor",
+  "to": "US 97 and OR 138 at Diamond Lake Junction",
+  "description": "Scenic drive through the Cascade Volcanic Arc",
+  "qualities": "Natural, Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2587"
+ },
+ {
+  "name": "Washington Heritage Trail",
+  "wiki": "Washington Heritage Trail",
+  "type": "National Scenic Byway",
+  "miles": 136,
+  "states": [
+   "West Virginia"
+  ],
+  "from": "WV 9 in Paw Paw",
+  "to": "WV 51 in Harpers Ferry",
+  "description": "Scenic drive tracing the footsteps of George Washington through West Virginia's Eastern Panhandle",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13753"
+ },
+ {
+  "name": "West Cascades Scenic Byway",
+  "wiki": "West Cascades Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 220,
+  "states": [
+   "Oregon"
+  ],
+  "from": "OR 58 in Oakridge",
+  "to": "OR 224 in Estacada",
+  "description": "Intimate backcountry tour of old-growth forests, rivers, and lakes along the west side of the Cascades",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13832"
+ },
+ {
+  "name": "Western Heritage Historic Byway",
+  "wiki": "Western Heritage Historic Byway",
+  "type": "National Scenic Byway",
+  "miles": 40,
+  "states": [
+   "Idaho"
+  ],
+  "from": "Swan Falls Road at the Swan Falls Dam",
+  "to": "SH 69 at I-84 in Meridian",
+  "description": "Scenic drive to the Snake River Canyon",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2593"
+ },
+ {
+  "name": "Western Highlands Scenic Byway",
+  "wiki": "Western Highlands Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 21.4,
+  "states": [
+   "New Jersey"
+  ],
+  "from": "CR 515 at Route 23 in Hardyston Township",
+  "to": "Route 94 at the New York state line in Vernon Township",
+  "description": "Route through the central Appalachian Highlands in the Skylands Region of New Jersey",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81512"
+ },
+ {
+  "name": "Wetlands and Wildlife Scenic Byway",
+  "wiki": "Wetlands and Wildlife Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 76.7,
+  "states": [
+   "Kansas"
+  ],
+  "from": "NE 70th Street and US 281 near St. John",
+  "to": "US 281 and K-4 near Hoisington",
+  "description": "Scenic drive through wetlands of central Kansas",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/59011"
+ },
+ {
+  "name": "White Mountain Trail",
+  "wiki": "White Mountain Trail",
+  "type": "National Scenic Byway",
+  "miles": 100,
+  "states": [
+   "New Hampshire"
+  ],
+  "from": "US 3 near Lincoln",
+  "to": "US 302 in Conway",
+  "description": "Passes through the White Mountains and past Mount Washington",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2256"
+ },
+ {
+  "name": "White Pass Scenic Byway",
+  "wiki": "White Pass Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 120,
+  "states": [
+   "Washington"
+  ],
+  "from": "US 12 at I-5 near Chehalis",
+  "to": "US 12 at SR 410 near Naches",
+  "description": "Scenic route through Wenatchee and Gifford Pinchot National Forests, across the Cascades through White Pass",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2064"
+ },
+ {
+  "name": "Whitewater Canal Scenic Byway",
+  "wiki": "Whitewater Canal Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 430,
+  "states": [
+   "Indiana"
+  ],
+  "from": "Loop connecting: Lawrenceburg, Batesville on SR 101, SR 46, SR 350",
+  "to": "Loop connecting: Hagestown, West Harrison on SR 1, SR 121, US 52, US 27, US 40",
+  "description": "Follows a canalway connecting the National Road to the Ohio River Valley",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/74696"
+ },
+ {
+  "name": "Wichita Mountains Byway",
+  "wiki": "Wichita Mountains Byway",
+  "type": "National Scenic Byway",
+  "miles": 93,
+  "states": [
+   "Oklahoma"
+  ],
+  "from": "Loop connecting: Wichita Mountains Wildlife Refuge, Medicine Park on SH 49",
+  "to": "Loop connecting: Carnegie, Apache on SH 115, SH 58, SH 19",
+  "description": "Guides drivers through the protected valleys of the 550 million-year-old Wichita Mountains",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/6334"
+ },
+ {
+  "name": "Wilderness Road Heritage Highway",
+  "wiki": "Wilderness Road Heritage Highway",
+  "type": "National Scenic Byway",
+  "miles": 93.8,
+  "states": [
+   "Kentucky"
+  ],
+  "from": "US 25E at the Cumberland Gap near Middlesboro",
+  "to": "US 25 in Berea",
+  "description": "Follows Daniel Boone's historic entrance to the valleys of Kentucky",
+  "qualities": "Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2566"
+ },
+ {
+  "name": "Wisconsin Lake Superior Scenic Byway",
+  "wiki": "Wisconsin Lake Superior Scenic Byway",
+  "type": "National Scenic Byway",
+  "miles": 70.4,
+  "states": [
+   "Wisconsin"
+  ],
+  "from": "WIS 13 near Brule",
+  "to": "WIS 13 and US 2 near Ashland",
+  "description": "Follows the Lake Superior coastline through the Bayfield Peninsula near Apostle Islands National Lakeshore",
+  "qualities": "Natural",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81528"
+ },
+ {
+  "name": "Woodlands Trace",
+  "wiki": "The Trace (Land Between the Lakes)",
+  "type": "National Scenic Byway",
+  "miles": 43,
+  "states": [
+   "Kentucky",
+   "Tennessee"
+  ],
+  "from": "SR 49 near Dover",
+  "to": "KY 453 near Grand Rivers",
+  "description": "Ridge-top route through Land Between the Lakes National Recreation Area",
+  "qualities": "Recreational",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/2345"
+ },
+ {
+  "name": "Woodward Avenue (M-1) – Automotive Heritage Trail",
+  "wiki": "Woodward Avenue",
+  "type": "All-American Road",
+  "miles": 25.5,
+  "states": [
+   "Michigan"
+  ],
+  "from": "Jefferson Avenue in Detroit",
+  "to": "Cesar E. Chavez Boulevard in Pontiac",
+  "description": "Connects automobile-related historic sites of the \"Motor City\"",
+  "qualities": "Cultural, Historic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/13754"
+ },
+ {
+  "name": "Zion Scenic Byway",
+  "wiki": "Utah State Route 9",
+  "type": "National Scenic Byway",
+  "miles": 28,
+  "states": [
+   "Utah"
+  ],
+  "from": "SR 9 at SR 17 in La Verkin",
+  "to": "SR 9 at Zion National Park boundary near Mt. Carmel Junction",
+  "description": "Scenic route through Zion Canyon, the Mt. Carmel Tunnel, and the red rock country of southern Utah",
+  "qualities": "Scenic",
+  "fhwa": "https://fhwaapps.fhwa.dot.gov/bywaysp/StateMaps/Show/byway/81524"
+ }
+]
