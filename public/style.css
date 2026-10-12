@@ -241,7 +241,7 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
 }
 .coverage-note { display: flex; align-items: center; gap: 6px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
-.hero-inner .btn.ghost { background: rgba(255, 255, 255, 0.16); color: #fff; backdrop-filter: blur(12px); }
+.hero-inner .btn.ghost { background: rgba(255, 255, 255, 0.16); color: #fff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 
 .stats {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
@@ -420,7 +420,7 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
   position: absolute; top: 10px; left: 10px;
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 10px; border-radius: 999px;
-  background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   font-size: 12px; font-weight: 700;
 }
 .spot-body { display: flex; flex-direction: column; flex: 1; padding: 14px 16px 16px; }
@@ -792,7 +792,7 @@ body[data-view="home"] #trip-name, body[data-view="home"] #save-state { display:
 .home-top { position: absolute; top: 88px; left: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; pointer-events: auto; }
 .home-continue {
   display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 14px; color: #fff;
-  background: rgba(20, 22, 30, 0.75); border: 1px solid rgba(255, 214, 10, 0.35); backdrop-filter: blur(12px);
+  background: rgba(20, 22, 30, 0.75); border: 1px solid rgba(255, 214, 10, 0.35); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   font-size: 14px; max-width: min(420px, calc(100vw - 40px));
 }
 .home-continue span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1123,7 +1123,7 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
 .flight-banner {
   position: fixed; z-index: 25; top: 86px; left: 50%; transform: translateX(-50%);
   display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border-radius: 999px;
-  background: var(--panel); backdrop-filter: blur(20px); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 14px;
+  background: var(--panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 14px;
 }
 .flight-banner span { color: var(--muted); }
 
