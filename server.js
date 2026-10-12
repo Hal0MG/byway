@@ -2582,15 +2582,45 @@ async function lmsInstalled() {
   }
 }
 
+// LM Link: other computers signed in to the same LM Studio account, whose models this one can use (his PC's GPU from the
+// Mac). Which ones are connected, which have the planning model, and where it's loaded now. Null without other devices.
+async function linkInfo() {
+  if (!(await lmsInstalled())) return null;
+  const json = async (args) => {
+    const r = await run(LMS, [...args, "--json"], 15000);
+    try {
+      return JSON.parse(r.out);
+    } catch {
+      return null;
+    }
+  };
+  const st = await json(["link", "status"]);
+  if (!asArray(st?.peers).length) return null;
+  const models = asArray(await json(["ls"])).filter((m) => m.modelKey === LOCAL_MODEL);
+  const loaded = asArray(await json(["ps"])).find((m) => m.identifier === LOCAL_MODEL || m.modelKey === LOCAL_MODEL);
+  return {
+    self: st.deviceIdentifier,
+    on: loaded ? loaded.deviceIdentifier || "local" : null,
+    devices: [
+      { id: "local", name: "", connected: true, has: models.some((m) => !m.deviceIdentifier) },
+      ...st.peers.map((p) => ({
+        id: p.deviceIdentifier, name: p.deviceName, connected: p.status === "connected",
+        has: models.some((m) => m.deviceIdentifier === p.deviceIdentifier),
+      })),
+    ],
+  };
+}
+
 app.get("/api/setup", localOnly, async (req, res) => {
   const local = await localStatus();
+  const link = await linkInfo();
   res.json({
     ors: { set: !!ORS_KEY, hint: mask(ORS_KEY) },
     tavily: { set: !!TAVILY_KEY, hint: mask(TAVILY_KEY) },
     gemini: { set: !!GEMINI_KEY, hint: mask(GEMINI_KEY) },
     contact: CONTACT,
     provider: AI_PROVIDER,
-    local: { ...local, model: LOCAL_MODEL, lms: await lmsInstalled(), job: lmsJob && { ...lmsJob, out: lmsJob.out.slice(-400) } },
+    local: { ...local, model: LOCAL_MODEL, lms: await lmsInstalled(), link, job: lmsJob && { ...lmsJob, out: lmsJob.out.slice(-400) } },
     gpu: await gpu(),
     node: process.version,
     platform: process.platform,
@@ -2650,12 +2680,26 @@ app.post("/api/setup/lms", localOnly, async (req, res) => {
     const r = await run(LMS, ["server", "start"], 30000);
     return res.json({ ok: r.ok, out: r.out.slice(-400) });
   }
+  // "use" { device }: run the model on another LM Link computer (or "local"): unload it everywhere, make that device
+  // the preferred one, then load it there like "load".
+  if (action === "use") {
+    const info = await linkInfo();
+    const dev = info?.devices.find((d) => d.id === req.body.device);
+    if (!dev) return res.status(400).json({ error: "That computer isn't connected over LM Link." });
+    if (!dev.has) return res.status(400).json({ error: `${dev.name || "This computer"} doesn't have ${LOCAL_MODEL} yet. Download it in LM Studio there first.` });
+    // `lms unload <name>` stops to ask which device when two have it loaded, so unload everything
+    await run(LMS, ["unload", "--all"], 60000);
+    const pref = await run(LMS, ["link", "set-preferred-device", dev.id === "local" ? info.self : dev.id], 15000);
+    if (!pref.ok) return res.status(500).json({ error: `LM Studio: ${pref.out.slice(-300)}` });
+    thinkCache.at = 0; // thinking depends on where the model runs
+  }
   // downloading (about 6 GB) and loading take a while: run in the background, the app polls GET /api/setup
   const args = action === "download" ? ["get", LOCAL_MODEL, "-y"]
-    : action === "load" ? ["load", LOCAL_MODEL, "--context-length", "32768", "--gpu", "max", "-y"]
+    : action === "load" || action === "use" ? ["load", LOCAL_MODEL, "--context-length", "32768", "--gpu", "max", "-y"]
     : null;
   if (!args) return res.status(400).json({ error: "Unknown action" });
-  if (action === "load") await run(LMS, ["server", "start"], 30000);
+  if (action === "load" || action === "use") await run(LMS, ["server", "start"], 30000);
+  if (action === "load") thinkCache.at = 0;
   lmsJob = { action, started: Date.now(), done: false, ok: false, out: "" };
   const job = lmsJob;
   const p = spawn(LMS, args, { windowsHide: true });

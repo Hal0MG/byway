@@ -875,6 +875,8 @@ body[data-view="home"] #trip-name, body[data-view="home"] #save-state { display:
 .su-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 .su-choice button { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 14px; text-align: left; background: var(--surface); border: 2px solid transparent; }
 .su-choice button.on { border-color: var(--blue); }
+.su-choice button:disabled:not(.on) { opacity: 0.5; cursor: default; }
+.su-sub { margin: 14px 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .su-choice b { font-size: 15px; }
 .su-choice small { font-size: 13px; color: var(--muted); line-height: 1.4; }
 .su-gpu { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 13px; color: var(--muted); }

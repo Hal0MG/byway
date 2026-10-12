@@ -36,11 +36,17 @@ function setupHtml() {
     : s.gpu?.name
       ? `${s.gpu.name}, ${s.gpu.gb} GB. ${s.gpu.gb >= 8 ? "Plenty for the local model." : "That's tight for the local model (it wants about 6 GB free); Gemini may suit this PC better."}`
       : "No NVIDIA graphics card found. The local model needs a good GPU (about 8 GB) or an Apple Silicon Mac; without one, use Gemini.";
+  // LM Link: other computers on the same LM Studio account that can run the model instead
+  const link = L.link;
+  const here = s.platform === "darwin" ? "This Mac" : "This PC";
+  const devName = (d) => (d.id === "local" ? here : d.name);
+  const onName = link?.on ? devName(link.devices.find((d) => d.id === link.on) || { id: link.on, name: "another computer" }) : "";
   const localSteps = [
     [L.lms, "LM Studio installed", L.lms ? "" : `<a class="btn ghost small" href="https://lmstudio.ai/download" target="_blank" rel="noopener">Get LM Studio (free) ${icon("external", 12)}</a> <small>Install it and open it once, then press Check again.</small>`],
     [L.running, "LM Studio's server running", !L.lms || L.running ? "" : `<button class="btn ghost small" data-su="lms-start">Start it</button>`],
     [L.downloaded, `The planning model (${esc(L.model)}, about 6 GB)`, !L.running || L.downloaded ? "" : `<button class="btn ghost small" data-su="lms-download" ${job ? "disabled" : ""}>Download it</button>`],
-    [L.loaded, "Model loaded on the graphics card", !L.downloaded || L.loaded ? "" : `<button class="btn ghost small" data-su="lms-load" ${job ? "disabled" : ""}>Load it</button>`],
+    [L.loaded, link?.on && link.on !== "local" ? `Model loaded on ${esc(onName)}` : "Model loaded on the graphics card",
+      !L.downloaded || L.loaded ? "" : `<button class="btn ghost small" data-su="lms-load" ${job ? "disabled" : ""}>Load it</button>`],
   ];
   return `${sheetHead("Setup")}
     <p class="su-lede">Everything here is free. Keys stay on this PC, in the app's .env file.</p>
@@ -55,13 +61,22 @@ function setupHtml() {
       <h3>${tick(s.ready && s.ors.set ? true : provider === "gemini" ? s.gemini.set : L.loaded)} 2. The trip planner AI <em>needed</em></h3>
       <div class="su-choice" role="radiogroup">
         <button class="${provider === "local" ? "on" : ""}" data-su="provider" data-v="local" role="radio" aria-checked="${provider === "local"}">
-          <b>On this PC</b><small>Free and unlimited, private. Needs a good graphics card. Uses LM Studio.</small></button>
+          <b>On this ${s.platform === "darwin" ? "Mac" : "PC"}</b><small>Free and unlimited, private. Needs a good graphics card or an Apple Silicon Mac. Uses LM Studio.</small></button>
         <button class="${provider === "gemini" ? "on" : ""}" data-su="provider" data-v="gemini" role="radio" aria-checked="${provider === "gemini"}">
           <b>Google Gemini</b><small>Free key, no graphics card needed, but only about 20 plans a day.</small></button>
       </div>
       ${provider === "local"
         ? `<p class="su-gpu">${icon("gauge", 14)} ${esc(gpuText)}</p>
            <ul class="su-list">${localSteps.map(([ok, label, action]) => `<li>${tick(ok)}<span>${label}</span>${action}</li>`).join("")}</ul>
+           ${link ? `<p class="su-sub">Run the model on</p>
+             <div class="su-choice" role="radiogroup" aria-label="Where the model runs">
+               ${link.devices.map((d) => {
+                 const why = !d.connected ? "Not connected" : !d.has ? "Model not downloaded there" : link.on === d.id ? "Running the model now" : d.id === "local" ? "Uses this computer's chip" : "Over LM Link, uses that computer's GPU";
+                 return `<button class="${link.on === d.id ? "on" : ""}" data-su="lms-use" data-v="${esc(d.id)}" role="radio" aria-checked="${link.on === d.id}"
+                   ${!d.connected || !d.has || job || link.on === d.id ? "disabled" : ""}><b>${esc(devName(d))}</b><small>${why}</small></button>`;
+               }).join("")}
+             </div>` : ""}
+           ${setupState.msgs.lms ? `<p class="su-bad">${esc(setupState.msgs.lms.text)}</p>` : ""}
            ${job ? `<p class="su-job"><span class="spinner"></span> ${job.action === "download" ? "Downloading the model. This can take a while; you can keep using the app." : "Loading the model..."}
              <small>${esc(job.out.split(/\r|\n/).filter(Boolean).pop() || "")}</small></p>` : ""}
            ${L.job?.done && !L.job.ok ? `<p class="su-bad">That didn't work: ${esc(L.job.out.split(/\r|\n/).filter(Boolean).slice(-2).join(" "))}</p>` : ""}
@@ -134,7 +149,8 @@ async function setupClick(e) {
     updateSetupBadge();
   } else if (act.startsWith("lms-")) {
     b.disabled = true;
-    const r = await api("/api/setup/lms", { action: act.slice(4) }).catch((err) => ({ error: err.message }));
+    delete setupState.msgs.lms;
+    const r = await api("/api/setup/lms", { action: act.slice(4), device: b.dataset.v }).catch((err) => ({ error: err.message }));
     if (r.error) setupState.msgs.lms = { ok: false, text: r.error };
     // LM Studio's server takes a few seconds to answer after starting
     for (let i = 0; i < (act === "lms-start" ? 10 : 1); i++) {
