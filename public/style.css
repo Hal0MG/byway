@@ -1200,3 +1200,8 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .btn:active { transform: none; }
   .step.doing .step-ico { animation: none; border-top-color: var(--blue); }
 }
+
+/* Editing on the map */
+.via-pin.ghost { opacity: 0.8; outline: 3px solid var(--blue); pointer-events: none; }
+.edit-menu { display: flex; flex-direction: column; gap: 6px; padding: 2px; }
+.edit-menu .btn { justify-content: flex-start; }

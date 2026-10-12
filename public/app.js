@@ -433,13 +433,20 @@ function actionButtons(i, s, extra = []) {
   return actions;
 }
 
+// A stop's or via's pin; dragging it moves the point (moveOnMap in features.js).
+function pinMarker(el, s, i) {
+  const m = new maplibregl.Marker({ element: el, draggable: !READONLY }).setLngLat([s.lng, s.lat]).addTo(map);
+  m.on("dragend", () => moveOnMap(i, m.getLngLat()));
+  return m;
+}
+
 const flyTo = (s) => map.flyTo({ center: [s.lng, s.lat], zoom: Math.max(map.getZoom(), 9), padding: pad() });
 
 function stopRow(s, i, num) {
   const pin = document.createElement("div");
   pin.className = "pin";
   pin.textContent = num;
-  pins.push(new maplibregl.Marker({ element: pin }).setLngLat([s.lng, s.lat]).addTo(map));
+  pins.push(pinMarker(pin, s, i));
 
   const li = document.createElement("li");
   li.className = "stop";
@@ -488,7 +495,7 @@ function viaRow(s, i) {
   const dot = document.createElement("div");
   dot.className = "via-pin";
   dot.title = `via ${s.name}`;
-  pins.push(new maplibregl.Marker({ element: dot }).setLngLat([s.lng, s.lat]).addTo(map));
+  pins.push(pinMarker(dot, s, i));
 
   const li = document.createElement("li");
   li.className = "via";

@@ -1131,6 +1131,30 @@ app.post("/api/along", async (req, res) => {
   }
 });
 
+// GET /api/place-name?lat=&lng= -> { name }: a name for a spot picked on the map. The town or village there, else
+// "near" the nearest one within 25 km (OpenStreetMap), else the road and county.
+app.get("/api/place-name", async (req, res) => {
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  if (!isFinite(lat) || !isFinite(lng)) return res.status(400).json({ error: "lat and lng" });
+  const d = await nominatimJson(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=16&lat=${lat}&lon=${lng}`);
+  const a = d?.address || {};
+  const region = a.state || a.region || a.province || "";
+  const country = a.country_code && a.country_code !== "us" ? a.country : "";
+  const tail = [region, country].filter(Boolean);
+  const town = a.village || a.town || a.city || a.hamlet || a.suburb || a.municipality;
+  if (town) return res.json({ name: [town, ...tail].join(", ") });
+  try {
+    const o = await overpass(`node["place"~"^(city|town|village|hamlet)$"]["name"](around:25000,${lat},${lng});out 40;`);
+    const near = asArray(o.elements).map((e) => ({ name: e.tags.name, d: haversine([lng, lat], [e.lon, e.lat]) })).sort((x, y) => x.d - y.d)[0];
+    if (near) return res.json({ name: [`near ${near.name}`, ...tail].join(", ") });
+  } catch {
+    // fall through to the road
+  }
+  const road = a.road || d?.name || "";
+  res.json({ name: [road, a.county, ...tail].filter(Boolean).join(", ") || `${lat.toFixed(4)}, ${lng.toFixed(4)}` });
+});
+
 // The PC's addresses on the local network, for share links a phone on the same Wi-Fi can open.
 app.get("/api/lan", async (req, res) => {
   const { networkInterfaces } = await import("node:os");

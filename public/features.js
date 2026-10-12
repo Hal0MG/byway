@@ -1567,6 +1567,133 @@ IT.addEventListener("submit", (e) => {
   if (list.length) runBatch(list, readOptions(e.target));
 });
 
+// ---------- editing the route on the map ----------
+// Drag a pin to move that point, drag the route line to pull it through a new via point, and right-click (long-press on
+// a phone) the map to add a stop or route through a place. Each edit re-routes; nothing asks the AI.
+
+// A name for a spot on the map: the town there, or "near" the closest one, with its state (see /api/place-name).
+async function placeName(lng, lat) {
+  try {
+    return (await (await fetch(`/api/place-name?lat=${lat}&lng=${lng}`)).json()).name;
+  } catch {
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+}
+async function rerouteAfterEdit(msg) {
+  normalizeDays();
+  renderStops();
+  scheduleSave();
+  renderItinerary();
+  if (stops.length >= 2) await findRoutes({ fit: false });
+  if (msg) setStatus([msg, $("status").textContent].filter(Boolean).join(" "));
+}
+// Where a new point adds the least distance: between two points, or (for a stop) at the end.
+function cheapestSpot(p, asStop) {
+  const at = (s) => [s.lng, s.lat];
+  let best = { i: stops.length, cost: stops.length ? haversine(at(stops[stops.length - 1]), p) : 0 };
+  if (!asStop) best.cost = Infinity;
+  for (let i = 0; i < stops.length - 1; i++) {
+    const cost = haversine(at(stops[i]), p) + haversine(p, at(stops[i + 1])) - haversine(at(stops[i]), at(stops[i + 1]));
+    if (cost < best.cost) best = { i: i + 1, cost };
+  }
+  return best.i;
+}
+async function addOnMap(ll, kind) {
+  const name = await placeName(ll.lng, ll.lat);
+  const i = kind === "via" && stops.length < 2 ? stops.length : cheapestSpot([ll.lng, ll.lat], kind === "stop");
+  // the leg into a point belongs to that point's day
+  const day = stops[i]?.day ?? stops[stops.length - 1]?.day ?? 1;
+  stops.splice(i, 0, { name, lng: ll.lng, lat: ll.lat, kind, day, road: "", note: "Added on the map" });
+  await rerouteAfterEdit(kind === "via" ? `Routing through ${shortName(name)}.` : `Added ${shortName(name)}.`);
+}
+async function moveOnMap(i, ll) {
+  const s = stops[i];
+  if (!s) return;
+  const old = s.name;
+  s.lng = ll.lng;
+  s.lat = ll.lat;
+  s.name = await placeName(ll.lng, ll.lat);
+  if (s.name !== old) {
+    delete s.photos;
+    delete s.photosP;
+    s.photoQuery = "";
+    // a day that ended there now ends at the new place
+    for (const d of plan?.days || []) if (d.overnight === old) d.overnight = s.name;
+  }
+  await rerouteAfterEdit(`Moved ${shortName(old)} to ${shortName(s.name)}.`);
+}
+
+// Dragging the route line: a ghost via follows the pointer; letting go adds a via there, in the leg that was grabbed.
+const routeLayers = () => [`route-${selected}-line`, `route-${selected}-casing`].filter((l) => map.getLayer(l));
+map.on("mousedown", (e) => {
+  if (READONLY || !routes[selected] || e.originalEvent.button !== 0 || document.body.dataset.view !== "map") return;
+  // a press on a pin drags the pin, even where it sits on the route line
+  if (e.originalEvent.target?.closest?.(".maplibregl-marker")) return;
+  if (!map.queryRenderedFeatures(e.point, { layers: routeLayers() }).length) return;
+  e.preventDefault(); // this drag moves the route, not the map
+  const el = document.createElement("div");
+  el.className = "via-pin ghost";
+  const ghost = new maplibregl.Marker({ element: el }).setLngLat(e.lngLat).addTo(map);
+  const start = e.point;
+  const grabbed = e.lngLat;
+  const onMove = (ev) => ghost.setLngLat(ev.lngLat);
+  map.on("mousemove", onMove);
+  map.once("mouseup", async (ev) => {
+    map.off("mousemove", onMove);
+    ghost.remove();
+    if (Math.hypot(ev.point.x - start.x, ev.point.y - start.y) < 8) return; // a click, not a drag
+    // the leg that was grabbed: nearest point of the route line, then the leg whose geometry holds it
+    const r = routes[selected];
+    const coords = r.geometry.coordinates;
+    let k = 0;
+    let bestD = Infinity;
+    coords.forEach((c, j) => {
+      const d = (c[0] - grabbed.lng) ** 2 + (c[1] - grabbed.lat) ** 2;
+      if (d < bestD) [bestD, k] = [d, j];
+    });
+    const leg = Math.max(0, r.legs.findIndex((l) => k >= l.from && k <= l.to));
+    const endIdx = r.idx[leg + 1];
+    const ll = ev.lngLat;
+    const name = await placeName(ll.lng, ll.lat);
+    stops.splice(endIdx, 0, { name, lng: ll.lng, lat: ll.lat, kind: "via", day: stops[endIdx].day, road: "", note: "Added on the map" });
+    await rerouteAfterEdit(`Routing through ${shortName(name)}.`);
+  });
+});
+map.on("mousemove", (e) => {
+  if (READONLY || !routes[selected] || document.body.dataset.view !== "map" || e.originalEvent.buttons) return;
+  map.getCanvas().style.cursor = map.queryRenderedFeatures(e.point, { layers: routeLayers() }).length ? "grab" : "";
+});
+
+// Right-click (or long-press) the map: add a stop or route through there.
+let editPopup = null;
+function editMenu(ll) {
+  if (READONLY || document.body.dataset.view !== "map") return;
+  editPopup?.remove();
+  const box = document.createElement("div");
+  box.className = "edit-menu";
+  const btn = (label, kind) => {
+    const b = document.createElement("button");
+    b.className = "btn ghost small";
+    b.textContent = label;
+    b.onclick = () => {
+      editPopup?.remove();
+      addOnMap(ll, kind);
+    };
+    box.appendChild(b);
+  };
+  btn(stops.length ? "Add a stop here" : "Start here", "stop");
+  if (stops.length >= 2) btn("Route through here", "via");
+  editPopup = new maplibregl.Popup({ closeButton: false, offset: 8 }).setLngLat(ll).setDOMContent(box).addTo(map);
+}
+map.on("contextmenu", (e) => editMenu(e.lngLat));
+let pressTimer = 0;
+map.on("touchstart", (e) => {
+  clearTimeout(pressTimer);
+  if (e.originalEvent.touches.length !== 1) return;
+  pressTimer = setTimeout(() => editMenu(e.lngLat), 600);
+});
+for (const ev of ["touchend", "touchmove", "touchcancel", "movestart"]) map.on(ev, () => clearTimeout(pressTimer));
+
 // ---------- installable app (PWA) ----------
 
 if ("serviceWorker" in navigator && isSecureContext) {
