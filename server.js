@@ -5,6 +5,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { execFile, spawn } from "node:child_process";
+import { Agent, fetch as undiciFetch } from "undici";
 
 const app = express();
 app.use(express.json({ limit: "15mb" }));
@@ -1544,22 +1545,25 @@ function clientGone(res) {
   return c.signal;
 }
 
+// LM Studio sends nothing until the whole answer is written, and Node's fetch gives up after 300 s without response
+// headers (undici's headersTimeout). That cut every long answer on the Mac at 5 minutes, so LOCAL_TIMEOUT is the only limit.
+const LM_AGENT = new Agent({ headersTimeout: 0, bodyTimeout: 0 });
+
 async function lmChat(body, signal) {
   let r;
   try {
-    r = await fetch(`${LOCAL_URL}/chat/completions`, {
+    r = await undiciFetch(`${LOCAL_URL}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model: LOCAL_MODEL, temperature: 0.3, ...body }), // low: steadier routes from a small model
       signal: signal ? AbortSignal.any([AbortSignal.timeout(LOCAL_TIMEOUT), signal]) : AbortSignal.timeout(LOCAL_TIMEOUT),
+      dispatcher: LM_AGENT,
     });
   } catch (e) {
     if (signal?.aborted) throw new Error("Cancelled.");
-    throw new Error(
-      e.name === "TimeoutError"
-        ? "The local model took too long to answer."
-        : "LM Studio isn't running. Start it with start-ai.cmd in the app folder."
-    );
+    if (e.name === "TimeoutError") throw new Error("The local model took too long to answer.");
+    console.log(`LM Studio request failed: ${e.message}${e.cause ? ` (${e.cause.code || e.cause.message})` : ""}`);
+    throw new Error("LM Studio isn't running. Open Setup (the gear button) to start it.");
   }
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(`LM Studio: ${d?.error?.message || d?.error || `HTTP ${r.status}`}`);
