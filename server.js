@@ -1276,6 +1276,9 @@ const LOCAL_MODEL = process.env.LOCAL_MODEL || "qwen/qwen3.5-9b";
 const LOCAL_TIMEOUT = Number(process.env.LOCAL_TIMEOUT_S || (process.platform === "darwin" ? 900 : 290)) * 1000;
 const LOCAL_SEARCHES_PLAN = Number(process.env.LOCAL_SEARCHES_PLAN ?? 4);
 const LOCAL_SEARCHES_DETAILS = Number(process.env.LOCAL_SEARCHES_DETAILS ?? 6);
+// Qwen3.5 thinks for thousands of tokens per research turn. Fine on a desktop GPU, but an M3 writes ~17 tokens/s,
+// so one turn could think for 6 minutes. Off by default on macOS (LOCAL_THINK=1 turns it back on).
+const LOCAL_THINK = (process.env.LOCAL_THINK ?? (process.platform === "darwin" ? "0" : "1")) !== "0";
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 const CLAUDE_EFFORT = process.env.CLAUDE_EFFORT || "medium"; // low | medium | high
 // Web searches allowed per call ($10 per 1,000 searches). 0 turns search off.
@@ -1596,12 +1599,19 @@ async function callLocal({ system, user, searches = 0, schema, signal, region })
         `${user}\n\n${earlier ? `Notes from earlier research on this region (still useful background):\n${earlier}\n\n` : ""}` +
         `First research with the tools (at most ${searches} tool calls): check what road trip and driving ` +
         "communities (Reddit, forums, travel writers) recommend for this route and region, and any current road closures. " +
-        "Then write your answer as concise notes covering everything the JSON needs. Don't write the JSON yet.",
+        "Then write your answer as concise notes (at most about 500 words: the days, overnight towns, roads and spots) " +
+        "covering everything the JSON needs. Don't write the JSON yet.",
     });
     for (let turn = 0; turn < searches + 3; turn++) {
       if (signal?.aborted) throw new Error("Cancelled.");
       const allowTools = used < searches;
-      const turnBody = { messages, max_tokens: 6000, ...(allowTools && { tools: LOCAL_TOOLS, tool_choice: "auto" }) };
+      const turnBody = {
+        messages,
+        // Without thinking the model reasons in its notes instead, and once filled all 6,000 tokens (8 minutes on an M3).
+        max_tokens: LOCAL_THINK ? 6000 : 2000,
+        ...(!LOCAL_THINK && NO_THINK),
+        ...(allowTools && { tools: LOCAL_TOOLS, tool_choice: "auto" }),
+      };
       let m = await lmChat(turnBody, signal);
       // Qwen3.5 sometimes thinks until it runs out of tokens and says nothing. Redo that turn without thinking.
       if (m.finish === "length" && !stripThink(m.content) && !m.tool_calls?.length) {
@@ -1633,7 +1643,7 @@ async function callLocal({ system, user, searches = 0, schema, signal, region })
         messages.push({ role: "tool", tool_call_id: c.id, content: result });
       }
       if (used >= searches) {
-        messages.push({ role: "user", content: "That's all the research. Write your notes now." });
+        messages.push({ role: "user", content: "That's all the research. Write your notes now, at most about 500 words." });
       }
     }
   }
