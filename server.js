@@ -37,11 +37,13 @@ if (!CONTACT && !process.env.USER_AGENT) {
 // ---------- a small JSON cache on disk ----------
 
 // { key: { at, value } } in data/<file>. Entries older than maxDays are ignored and dropped on the next write.
-function diskCache(file, maxDays, maxEntries = 2000) {
+// `keepDays` (default maxDays): how long an entry stays on disk, for getStale when the source is down.
+function diskCache(file, maxDays, maxEntries = 2000, keepDays = maxDays) {
   const full = path.resolve("data", file);
   let map = null;
   let timer = null;
   const fresh = (e) => e && Date.now() - e.at < maxDays * 86400000;
+  const kept = (e) => e && Date.now() - e.at < keepDays * 86400000;
   const load = async () => {
     if (!map) {
       try {
@@ -57,12 +59,17 @@ function diskCache(file, maxDays, maxEntries = 2000) {
       const e = (await load()).get(k);
       return fresh(e) ? e.value : undefined;
     },
+    // an entry past maxDays but still kept: better than nothing when the source is down
+    async getStale(k) {
+      const e = (await load()).get(k);
+      return kept(e) ? e.value : undefined;
+    },
     async set(k, value) {
       (await load()).delete(k);
       map.set(k, { at: Date.now(), value });
       clearTimeout(timer);
       timer = setTimeout(() => {
-        const keep = Object.fromEntries([...map].filter(([, e]) => fresh(e)).slice(-maxEntries));
+        const keep = Object.fromEntries([...map].filter(([, e]) => kept(e)).slice(-maxEntries));
         fs.mkdir(path.dirname(full), { recursive: true })
           .then(() => fs.writeFile(full, JSON.stringify(keep)))
           .catch(() => {});
@@ -864,40 +871,58 @@ app.post("/api/weather", async (req, res) => {
 //        stay: [{ name, k, lng, lat, web }] (nearest named places to stay), food: [{ name, cuisine, lng, lat, web }] }
 // k: fuel | ev | evfast | view | falls | spring | diner. Overpass is free and public, so one query per day, cached 14 days.
 const alongCache = diskCache("along-cache.json", 14, 500);
-// (other public instances, like overpass.kumi.systems, timed out on every test in October 2026)
-const OVERPASS = ["https://overpass-api.de/api/interpreter"];
+// The main public server first, then other public instances. In October 2026 overpass-api.de was the only one that
+// answered from here (overpass.private.coffee, maps.mail.ru and overpass.kumi.systems timed out), and it was itself
+// unreachable for a while one day, so a server that fails is skipped for a few minutes and the next one tried.
+// OVERPASS_URLS (comma-separated) replaces the list, for example with your own Overpass server.
+const OVERPASS = process.env.OVERPASS_URLS?.split(",").map((x) => x.trim()).filter(Boolean) || [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+];
+const overpassRest = new Map(); // url -> skip until (ms)
 // Busy public servers turn away big queries ("Dispatcher_Client::request_read_and_idx::timeout"), so every query
 // declares a short timeout and a small memory budget, covers only a few boxes, and is retried after a pause.
 async function overpass(body) {
   const query = `[out:json][timeout:25][maxsize:67108864];${body}`;
   let last = null;
-  for (const [i, url] of [OVERPASS[0], OVERPASS[0], OVERPASS[0]].entries()) {
-    // the public server allows a few queries at a time per address and refuses the rest, so wait it out
-    if (i) await new Promise((ok) => setTimeout(ok, 8000 * i));
-    try {
-      const r = await fetch(url, {
-        method: "POST",
-        headers: { "User-Agent": UA, "Content-Type": "application/x-www-form-urlencoded" },
-        body: "data=" + encodeURIComponent(query),
-        signal: AbortSignal.timeout(30000),
-      });
-      if (r.ok) {
-        const d = await r.json();
-        // a query that ran out of time or memory still answers 200, with the error in "remark"
-        if (/error/i.test(d.remark || "")) throw new Error(d.remark);
-        return d;
-      }
-      last = new Error(`Overpass ${r.status}`);
-    } catch (e) {
-      last = e;
-      console.log(`Overpass: ${e.message}${e.cause ? ` (${e.cause.code || e.cause.message})` : ""}`);
-      // can't even connect: the server is down, so don't wait through the retries
-      if (/CONNECT_TIMEOUT|ECONNREFUSED|ENOTFOUND|EAI_AGAIN/.test(e.cause?.code || "")) {
-        const down = new Error("OpenStreetMap's search server is unreachable right now");
-        down.down = true;
-        throw down;
+  let reached = false;
+  for (let round = 0; round < 2; round++) {
+    // the servers allow a few queries at a time per address and refuse the rest, so wait it out once
+    if (round) await new Promise((ok) => setTimeout(ok, 10000));
+    for (const [i, url] of OVERPASS.entries()) {
+      if ((overpassRest.get(url) || 0) > Date.now()) continue;
+      try {
+        const r = await fetch(url, {
+          method: "POST",
+          headers: { "User-Agent": UA, "Content-Type": "application/x-www-form-urlencoded" },
+          body: "data=" + encodeURIComponent(query),
+          // the backups often hang without answering
+          signal: AbortSignal.timeout(i ? 20000 : 30000),
+        });
+        reached = true;
+        if (r.ok) {
+          const d = await r.json();
+          // a query that ran out of time or memory still answers 200, with the error in "remark"
+          if (/error/i.test(d.remark || "")) throw new Error(d.remark);
+          return d;
+        }
+        last = new Error(`Overpass ${r.status}`);
+        if (r.status === 429 || r.status >= 500) overpassRest.set(url, Date.now() + 60000);
+      } catch (e) {
+        last = e;
+        console.log(`Overpass ${new URL(url).host}: ${e.message}${e.cause ? ` (${e.cause.code || e.cause.message})` : ""}`);
+        // can't connect or no answer at all: rest that server for a while
+        if (e.name === "TimeoutError" || /CONNECT_TIMEOUT|ECONNREFUSED|ENOTFOUND|EAI_AGAIN/.test(e.cause?.code || "")) {
+          overpassRest.set(url, Date.now() + 10 * 60000);
+        }
       }
     }
+  }
+  if (!reached) {
+    const down = new Error("OpenStreetMap's search servers are unreachable right now");
+    down.down = true;
+    throw down;
   }
   throw last || new Error("Overpass failed");
 }
@@ -951,6 +976,30 @@ function evFast(t) {
   return FAST_NAMES.test(`${t.name || ""} ${t.brand || ""} ${t.operator || ""} ${t.network || ""}`);
 }
 
+// Fuel, chargers and sights are fetched and kept per tile (0.25°, about 28 by 20 km), so trips through the same area
+// share them, and when every Overpass server is down, tiles fetched before (kept a year) still answer.
+const TILE = 0.25;
+const alongTiles = diskCache("along-tiles.json", 60, 5000, 365);
+function tilesFor(line) {
+  const keys = new Set();
+  for (const [s, w, n, e] of lineBoxes(line)) {
+    for (let a = Math.floor(s / TILE); a <= Math.floor(n / TILE); a++) {
+      for (let b = Math.floor(w / TILE); b <= Math.floor(e / TILE); b++) keys.add(`${a},${b}`);
+    }
+  }
+  return [...keys];
+}
+const tileBox = (k) => {
+  const [a, b] = k.split(",").map(Number);
+  return [a * TILE, b * TILE, (a + 1) * TILE, (b + 1) * TILE].map((v) => +v.toFixed(4));
+};
+const KEEP_TAG = /^(name|brand|operator|network|amenity|tourism|waterway|natural|cuisine|access)$|^socket:/;
+// What's kept of an element: where it is and the tags the app reads.
+function slimElement(el) {
+  const tags = Object.fromEntries(Object.entries(el.tags || {}).filter(([k]) => KEEP_TAG.test(k)));
+  return { type: el.type, id: el.id, lat: el.lat ?? el.center?.lat, lon: el.lon ?? el.center?.lon, tags };
+}
+
 app.post("/api/along", async (req, res) => {
   const line = asArray(req.body?.line)
     .filter((p) => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1]))
@@ -962,8 +1011,8 @@ app.post("/api/along", async (req, res) => {
   const hit = await alongCache.get(key);
   if (hit) return res.json(hit);
 
-  // Small boxes along the line (a few per query), then keep what's within reach of the route.
-  const boxes = lineBoxes(line);
+  // The tiles along the line (cached ones first, the rest a few per query), then keep what's within reach of the route.
+  const tiles = tilesFor(line);
   const parts = (b) => {
     const bb = b.join(",");
     // (searching restaurant names for "diner" ran the public server out of memory, so only places tagged as diners)
@@ -972,25 +1021,49 @@ app.post("/api/along", async (req, res) => {
   };
   try {
     const elements = [];
-    // a piece that still fails after the retries is skipped, and the answer says it's partial
+    const have = new Map();
+    const missing = [];
+    for (const k of tiles) {
+      const v = await alongTiles.get(k);
+      if (v) have.set(k, v);
+      else missing.push(k);
+    }
+    // a tile that still fails after the retries uses its old copy if there is one; otherwise the answer is partial
     let failed = 0;
-    let tried = 0;
+    let stale = 0;
     let lastError = null;
-    for (let i = 0; i < boxes.length; i += 3) {
-      tried++;
-      if (i) await new Promise((ok) => setTimeout(ok, 1500));
-      try {
-        const d = await overpass(`(${boxes.slice(i, i + 3).map(parts).join("")});out center tags;`);
-        elements.push(...(d.elements || []));
-      } catch (e) {
-        failed++;
-        lastError = e;
-        if (e.down) {
-          failed = tried;
-          break;
+    let down = false;
+    for (let i = 0; i < missing.length; i += 4) {
+      const group = missing.slice(i, i + 4);
+      if (!down) {
+        if (i) await new Promise((ok) => setTimeout(ok, 1500));
+        try {
+          const d = await overpass(`(${group.map((k) => parts(tileBox(k))).join("")});out center tags;`);
+          const byTile = new Map(group.map((k) => [k, []]));
+          for (const el of d.elements || []) {
+            const e = slimElement(el);
+            if (e.lat == null) continue;
+            byTile.get(`${Math.floor(e.lat / TILE)},${Math.floor(e.lon / TILE)}`)?.push(e);
+          }
+          for (const [k, list] of byTile) {
+            have.set(k, list);
+            alongTiles.set(k, list);
+          }
+          continue;
+        } catch (e) {
+          lastError = e;
+          down = !!e.down;
         }
       }
+      for (const k of group) {
+        const v = await alongTiles.getStale(k);
+        if (v) {
+          have.set(k, v);
+          stale++;
+        } else failed++;
+      }
     }
+    for (const list of have.values()) elements.push(...list);
     if (night) {
       const dy = 8 / 110.5;
       const dx = 8 / (111.3 * Math.cos((night[1] * Math.PI) / 180));
@@ -1007,7 +1080,7 @@ app.post("/api/along", async (req, res) => {
         // lodging and food near the overnight are a nice extra
       }
     }
-    if (failed === tried) throw lastError || new Error("no answer");
+    if (failed && !have.size) throw lastError || new Error("no answer");
     const pois = [];
     const lodging = { hotel: 0, motel: 0, guest: 0, camp: 0 };
     const stay = [];
@@ -1047,8 +1120,9 @@ app.post("/api/along", async (req, res) => {
     // the nearest ones, with a website first when it's a close call
     const nearest = (list, n) => list.sort((a, b) => a.d - (a.web ? 500 : 0) - (b.d - (b.web ? 500 : 0))).slice(0, n).map(({ d, ...x }) => x);
     const out = { pois, lodging: night ? lodging : null, stay: night ? nearest(stay, 8) : null, food: night ? nearest(food, 8) : null, partial: failed > 0 };
-    console.log(`Along: ${boxes.length} boxes, ${elements.length} found, ${pois.length} near the route${failed ? `, ${failed} of ${tried} pieces failed` : ""}`);
-    if (!failed) alongCache.set(key, out);
+    console.log(`Along: ${tiles.length} tiles (${tiles.length - missing.length} cached${stale ? `, ${stale} old copies` : ""}), ` +
+      `${elements.length} found, ${pois.length} near the route${failed ? `, ${failed} tiles failed` : ""}`);
+    if (!failed && !stale) alongCache.set(key, out);
     res.json(out);
   } catch (e) {
     res.status(502).json({

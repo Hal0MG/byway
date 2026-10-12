@@ -11,6 +11,7 @@ data/page-cache.json
 data/region-notes.json
 data/weather-cache.json
 data/along-cache.json
+data/along-tiles.json
 
 node_modules/
 graphhopper/*.pbf
