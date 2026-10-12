@@ -1277,8 +1277,26 @@ const LOCAL_TIMEOUT = Number(process.env.LOCAL_TIMEOUT_S || (process.platform ==
 const LOCAL_SEARCHES_PLAN = Number(process.env.LOCAL_SEARCHES_PLAN ?? 4);
 const LOCAL_SEARCHES_DETAILS = Number(process.env.LOCAL_SEARCHES_DETAILS ?? 6);
 // Qwen3.5 thinks for thousands of tokens per research turn. Fine on a desktop GPU, but an M3 writes ~17 tokens/s,
-// so one turn could think for 6 minutes. Off by default on macOS (LOCAL_THINK=1 turns it back on).
-const LOCAL_THINK = (process.env.LOCAL_THINK ?? (process.platform === "darwin" ? "0" : "1")) !== "0";
+// so one turn could think for 6 minutes. On a Mac it thinks only when LM Studio runs the model on another computer
+// over LM Link (his PC: Denver to Moab in 30 s with thinking). LOCAL_THINK=1 or 0 forces it.
+let thinkCache = { at: 0, value: true };
+async function localThink() {
+  if (process.env.LOCAL_THINK != null) return process.env.LOCAL_THINK !== "0";
+  if (process.platform !== "darwin") return true;
+  if (Date.now() - thinkCache.at < 60000) return thinkCache.value;
+  const remote = await new Promise((resolve) =>
+    execFile(LMS, ["ps", "--json"], { timeout: 10000 }, (err, out) => {
+      try {
+        const m = JSON.parse(out).find((x) => x.identifier === LOCAL_MODEL || x.modelKey === LOCAL_MODEL);
+        resolve(!!m?.deviceIdentifier);
+      } catch {
+        resolve(false);
+      }
+    })
+  );
+  thinkCache = { at: Date.now(), value: remote };
+  return remote;
+}
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 const CLAUDE_EFFORT = process.env.CLAUDE_EFFORT || "medium"; // low | medium | high
 // Web searches allowed per call ($10 per 1,000 searches). 0 turns search off.
@@ -1685,6 +1703,7 @@ async function callLocal({ system, user, searches = 0, schema, signal, region, o
   const sources = new Map();
   const messages = [{ role: "system", content: system }];
   let used = 0;
+  const think = searches > 0 && (await localThink());
 
   // Research notes from an earlier trip in the same region (kept 30 days) go in as background, with fewer searches.
   const earlier = region ? await regionNotes(region) : null;
@@ -1706,8 +1725,8 @@ async function callLocal({ system, user, searches = 0, schema, signal, region, o
       const turnBody = {
         messages,
         // Without thinking the model reasons in its notes instead, and once filled all 6,000 tokens (8 minutes on an M3).
-        max_tokens: LOCAL_THINK ? 6000 : 2000,
-        ...(!LOCAL_THINK && NO_THINK),
+        max_tokens: think ? 6000 : 2000,
+        ...(!think && NO_THINK),
         ...(allowTools && { tools: LOCAL_TOOLS, tool_choice: "auto" }),
       };
       let m = await lmChat(turnBody, signal, notesOut);
