@@ -860,7 +860,8 @@ app.post("/api/weather", async (req, res) => {
 // ---------- along the route: fuel, chargers, viewpoints, waterfalls, hot springs, diners, lodging (OpenStreetMap) ----------
 
 // POST { line: [[lng, lat], ...] (one day, simplified), overnight: [lng, lat] }
-//   -> { pois: [{ k, lng, lat, name }], lodging: { hotel, motel, guest, camp } }
+//   -> { pois: [{ k, lng, lat, name }], lodging: { hotel, motel, guest, camp },
+//        stay: [{ name, k, lng, lat, web }] (nearest named places to stay), food: [{ name, cuisine, lng, lat, web }] }
 // k: fuel | ev | evfast | view | falls | spring | diner. Overpass is free and public, so one query per day, cached 14 days.
 const alongCache = diskCache("along-cache.json", 14, 500);
 // (other public instances, like overpass.kumi.systems, timed out on every test in October 2026)
@@ -994,16 +995,24 @@ app.post("/api/along", async (req, res) => {
       const dy = 8 / 110.5;
       const dx = 8 / (111.3 * Math.cos((night[1] * Math.PI) / 180));
       const bb = [night[1] - dy, night[0] - dx, night[1] + dy, night[0] + dx].map((v) => v.toFixed(4)).join(",");
+      // restaurants only close to town (3 km), or a city returns hundreds
+      const fy = 3 / 110.5;
+      const fx = 3 / (111.3 * Math.cos((night[1] * Math.PI) / 180));
+      const fb = [night[1] - fy, night[0] - fx, night[1] + fy, night[0] + fx].map((v) => v.toFixed(4)).join(",");
       try {
-        const d = await overpass(`(nwr["tourism"~"^(hotel|motel|guest_house|hostel|camp_site|caravan_site|chalet)$"](${bb}););out center tags;`);
+        const d = await overpass(`(nwr["tourism"~"^(hotel|motel|guest_house|hostel|camp_site|caravan_site|chalet)$"](${bb});` +
+          `nwr["amenity"~"^(restaurant|cafe|pub)$"]["name"](${fb}););out center tags;`);
         for (const el of d.elements || []) elements.push({ ...el, lodging: true });
       } catch {
-        // lodging counts are a nice extra
+        // lodging and food near the overnight are a nice extra
       }
     }
     if (failed === tried) throw lastError || new Error("no answer");
     const pois = [];
     const lodging = { hotel: 0, motel: 0, guest: 0, camp: 0 };
+    const stay = [];
+    const food = [];
+    const web = (t) => String(t.website || t["contact:website"] || "").slice(0, 200);
     const seen = new Set();
     for (const el of elements) {
       if (seen.has(`${el.type}${el.id}${el.lodging ? "l" : ""}`)) continue;
@@ -1014,8 +1023,14 @@ app.post("/api/along", async (req, res) => {
       if (lng == null) continue;
       const name = t.name || t.brand || "";
       if (el.lodging) {
+        const at = { lng: +lng.toFixed(5), lat: +lat.toFixed(5), d: haversine(night, [lng, lat]) };
+        if (t.amenity) {
+          food.push({ name: String(t.name).slice(0, 80), cuisine: String(t.cuisine || t.amenity).replace(/_/g, " ").split(";")[0], web: web(t), ...at });
+          continue;
+        }
         const k = t.tourism === "motel" ? "motel" : /camp|caravan/.test(t.tourism) ? "camp" : /hotel/.test(t.tourism) ? "hotel" : "guest";
         lodging[k]++;
+        if (t.name) stay.push({ name: String(t.name).slice(0, 80), k, web: web(t), ...at });
         continue;
       }
       const k = t.amenity === "fuel" ? "fuel"
@@ -1029,7 +1044,9 @@ app.post("/api/along", async (req, res) => {
       if (distToLine([lng, lat], line) > ALONG_RADIUS[k]) continue;
       pois.push({ k, lng: +lng.toFixed(5), lat: +lat.toFixed(5), name: String(name).slice(0, 80) });
     }
-    const out = { pois, lodging: night ? lodging : null, partial: failed > 0 };
+    // the nearest ones, with a website first when it's a close call
+    const nearest = (list, n) => list.sort((a, b) => a.d - (a.web ? 500 : 0) - (b.d - (b.web ? 500 : 0))).slice(0, n).map(({ d, ...x }) => x);
+    const out = { pois, lodging: night ? lodging : null, stay: night ? nearest(stay, 8) : null, food: night ? nearest(food, 8) : null, partial: failed > 0 };
     console.log(`Along: ${boxes.length} boxes, ${elements.length} found, ${pois.length} near the route${failed ? `, ${failed} of ${tried} pieces failed` : ""}`);
     if (!failed) alongCache.set(key, out);
     res.json(out);

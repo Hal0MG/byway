@@ -811,6 +811,8 @@ async function loadAlong() {
         sights: uniqSights.map(({ k, name, lng, lat, along }) => ({ k, name, lng, lat, along: Math.round(along) })),
         pins: [...fuel.map((p) => ["fuel", p.lng, p.lat, p.name]), ...fast.map((p) => ["evfast", p.lng, p.lat, p.name]), ...slow.map((p) => ["ev", p.lng, p.lat, p.name])].slice(0, 400),
         lodging: d.lodging,
+        stay: d.stay || null,
+        food: d.food || null,
         partial: !!d.partial,
       };
       if (d.partial) failedDays++;

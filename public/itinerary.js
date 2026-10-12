@@ -843,6 +843,7 @@ function renderDay(g, gi, groups, segs) {
        lodging.camp ? `${lodging.camp} campgrounds` : ""].filter(Boolean).join(", ")
     : "";
   const endStop = stops[endIdx];
+  const stayHtml = isLast ? "" : stayLinks(endStop, date, alongFor(day));
   return `<section class="day" id="day-${day}">
     <div class="day-hero">
       ${img ? `<img src="${esc(img)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
@@ -878,7 +879,36 @@ function renderDay(g, gi, groups, segs) {
         ${lodgingText || endStop ? `<p class="stay-meta">${lodgingText ? `${esc(lodgingText)} within 8 km · ` : ""}<a href="https://www.google.com/maps/search/${encodeURIComponent(`lodging near ${endStop?.name || ""}`)}/@${endStop?.lat},${endStop?.lng},12z" target="_blank" rel="noopener">See places to stay ${icon("external", 12)}</a></p>` : ""}
       </div></div>
     </div>
+    ${stayHtml}
   </section>`;
+}
+
+// Places to stay and eat near an overnight (from "Along the route"), and booking searches for that night's dates.
+const STAY_KIND = { hotel: "Hotel", motel: "Motel", guest: "Inn / B&B", camp: "Campground" };
+function stayLinks(stop, date, along) {
+  if (!stop) return "";
+  const town = shortName(stop.name);
+  const where = stop.name.split(",").slice(0, 2).join(",").trim();
+  const next = date ? new Date(Date.parse(`${date}T12:00:00Z`) + 86400000).toISOString().slice(0, 10) : "";
+  const dates = (inName, outName) => (date ? `&${inName}=${date}&${outName}=${next}` : "");
+  const book = [
+    ["Booking.com", `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(where)}${dates("checkin", "checkout")}&group_adults=2`],
+    ["Airbnb", `https://www.airbnb.com/s/${encodeURIComponent(where)}/homes?${dates("checkin", "checkout").slice(1)}`],
+    ["Restaurants on Google Maps", `https://www.google.com/maps/search/${encodeURIComponent(`restaurants near ${where}`)}/@${stop.lat},${stop.lng},14z`],
+  ];
+  const place = (x, label) => {
+    const href = x.web || `https://www.google.com/maps/search/${encodeURIComponent(`${x.name}, ${town}`)}/@${x.lat},${x.lng},16z`;
+    return `<a class="stay-place" href="${esc(href)}" target="_blank" rel="noopener"><b>${esc(x.name)}</b><small>${esc(label)}</small></a>`;
+  };
+  const stays = along?.stay || [];
+  const food = along?.food || [];
+  return `<div class="stay-more">
+      ${stays.length ? `<p class="stay-h">${icon("moon", 14)} Places to stay nearby</p><div class="stay-list">${stays.map((x) => place(x, STAY_KIND[x.k] || "")).join("")}</div>` : ""}
+      ${food.length ? `<p class="stay-h">${icon("food", 14)} Food in town</p><div class="stay-list">${food.map((x) => place(x, x.cuisine)).join("")}</div>` : ""}
+      <p class="stay-book">${date ? `Night of ${esc(new Date(`${date}T12:00:00Z`).toLocaleDateString([], { month: "short", day: "numeric", timeZone: "UTC" }))}:` : "Search:"}
+        ${book.map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)} ${icon("external", 12)}</a>`).join(" · ")}</p>
+      ${!along?.stay && !READONLY ? `<p class="fine">Names of hotels and restaurants here come with "Along the route" (fuel, chargers and sights).</p>` : ""}
+    </div>`;
 }
 
 // Write the day guides for a trip whose details are missing (for example after an AI error).

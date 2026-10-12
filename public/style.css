@@ -554,6 +554,15 @@ body[data-view="itinerary"] .maplibregl-ctrl-top-right { display: none; }
 .on-text { position: relative; width: 100%; display: flex; align-items: center; gap: 12px; padding: 18px 20px; }
 .on-text small { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.75; }
 .on-text b { font-size: 19px; }
+.stay-more { margin-top: 10px; padding: 4px 4px 0; }
+.stay-h { display: flex; align-items: center; gap: 6px; margin: 12px 0 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.stay-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.stay-place { display: block; padding: 10px 12px; border-radius: 14px; background: var(--card); color: var(--text); text-decoration: none; min-width: 0; }
+.stay-place:hover { background: var(--card-strong); }
+.stay-place b { display: block; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stay-place small { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); text-transform: capitalize; }
+.stay-book { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.stay-book a { font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
 
 /* ---------- Map view panel ---------- */
 #panel {
