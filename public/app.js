@@ -1608,9 +1608,13 @@ async function findRoutes({ fit = true } = {}) {
         if (data.note) notes.add(data.note);
       }
       if (!failed) break;
+      // "coordinate 5" names the point; "between points 4 (...) and 5 (...)" (one of them on a road cut off from the
+      // rest of the map, seen near Bryce Canyon) names two: drop whichever is a via, the later one first.
+      const pair = failed.message.match(/between points (\d+) .*? and (\d+)/);
       const n = failed.message.match(/coordinate (\d+)/)?.[1];
-      const i = n != null ? failed.idx[Number(n)] : null;
-      if (i == null || !isVia(stops[i]) || attempt >= 6) throw new Error(failed.message);
+      const cands = (pair ? [pair[2], pair[1]] : n != null ? [n] : []).map((k) => failed.idx[Number(k)]);
+      const i = cands.find((k) => k != null && isVia(stops[k]));
+      if (i == null || attempt >= 6) throw new Error(failed.message);
       dropped.push(stops[i].name);
       stops.splice(i, 1);
     }
