@@ -1158,9 +1158,14 @@ app.get("/api/place-name", async (req, res) => {
 // The PC's addresses on the local network, for share links a phone on the same Wi-Fi can open.
 app.get("/api/lan", async (req, res) => {
   const { networkInterfaces } = await import("node:os");
-  const ips = Object.values(networkInterfaces())
-    .flat()
-    .filter((n) => n && n.family === "IPv4" && !n.internal && !/^169\.254\./.test(n.address))
+  // Wi-Fi and Ethernet addresses, without VPN tunnels and virtual adapters a phone can't reach (a Mac VPN showed up as
+  // utun6). Tailscale's 100.64.0.0/10 addresses stay: phones on the same tailnet reach those.
+  const tunnel = /^(utun|ipsec|ppp|tun|tap|docker|vboxnet|vmnet|bridge|awdl|llw|veth|br-)/i;
+  const tailscale = (ip) => /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(ip);
+  const ips = Object.entries(networkInterfaces())
+    .flatMap(([name, list]) => (list || []).map((n) => ({ ...n, name })))
+    .filter((n) => n.family === "IPv4" && !n.internal && !/^169\.254\./.test(n.address))
+    .filter((n) => !tunnel.test(n.name) || tailscale(n.address))
     .map((n) => n.address);
   res.json({ ips, port: Number(process.env.PORT || 3000) });
 });

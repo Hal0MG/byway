@@ -98,11 +98,51 @@ function setupHtml() {
         ${setupState.msgs.contact ? `<small class="${setupState.msgs.contact.ok ? "su-ok" : "su-bad"}">${esc(setupState.msgs.contact.text)}</small>` : ""}</label>
     </section>
 
+    <section class="su-step">
+      <h3>${icon("pin", 16)} 5. On your phone <em>optional</em></h3>
+      <p>Use the whole app on your phone while this ${s.platform === "darwin" ? "Mac" : "PC"} is on and the app is running, on the same Wi-Fi.
+        Scan the code with the phone's camera. On an iPhone, Safari's Share button, then <b>Add to Home Screen</b>, makes it open like an app.
+        Setup stays on this ${s.platform === "darwin" ? "Mac" : "PC"}.</p>
+      <div id="su-phone">${phoneHtml()}</div>
+    </section>
+
     <div class="sheet-actions su-actions">
       <span class="su-status">${s.ready ? `${icon("check", 16)} Ready to plan trips` : "Not ready yet"}</span>
       <button class="btn ghost" data-su="check">${icon("refresh", 16)} Check again</button>
       <button class="btn blue" data-su="save" ${setupState.busy ? "disabled" : ""}>${setupState.busy ? `<span class="spinner"></span> ${esc(setupState.busy)}` : "Save"}</button>
     </div>`;
+}
+
+// The app's address on the local network, with a QR code (qrcode-generator, loaded when Setup opens).
+let lanInfo = null;
+function phoneHtml() {
+  if (!lanInfo) return `<p class="fine">Looking up this computer's address...</p>`;
+  if (!lanInfo.ips.length) return `<p class="fine">This computer isn't on a network right now.</p>`;
+  const url = (ip) => `http://${ip}:${lanInfo.port}/`;
+  const qr = (text) => {
+    if (typeof qrcode !== "function") return "";
+    const q = qrcode(0, "M");
+    q.addData(text);
+    q.make();
+    return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+  };
+  return lanInfo.ips
+    .map((ip) => `<div class="su-phone"><div class="su-qr">${qr(url(ip))}</div>
+      <div><b>${esc(url(ip))}</b><small>${ip.startsWith("100.") ? "Tailscale: works anywhere your phone is on the same tailnet" : "Same Wi-Fi as this computer"}</small>
+      <button class="btn ghost small" data-copy="${esc(url(ip))}">Copy</button></div></div>`)
+    .join("");
+}
+async function loadPhone() {
+  const lib = typeof qrcode === "function" ? null : new Promise((ok) => {
+    const sc = document.createElement("script");
+    sc.src = "https://unpkg.com/qrcode-generator@1.4.4/qrcode.js";
+    sc.onload = sc.onerror = ok;
+    document.head.appendChild(sc);
+  });
+  lanInfo = await fetch("/api/lan").then((r) => r.json()).catch(() => ({ ips: [], port: 3000 }));
+  await lib;
+  const box = setupEl?.querySelector("#su-phone");
+  if (box) box.innerHTML = phoneHtml();
 }
 
 let setupEl = null;
@@ -113,6 +153,7 @@ async function openSetup() {
   setupEl = openSheet(setupHtml(), "wide setup");
   setupEl.addEventListener("click", setupClick);
   pollSetup();
+  loadPhone();
 }
 function redrawSetup() {
   if (!setupEl?.isConnected) return;
@@ -137,6 +178,11 @@ function pollSetup() {
   }
 }
 async function setupClick(e) {
+  const c = e.target.closest("[data-copy]");
+  if (c) {
+    navigator.clipboard?.writeText(c.dataset.copy).then(() => (c.textContent = "Copied"), () => {});
+    return;
+  }
   const b = e.target.closest("[data-su]");
   if (!b) return;
   const act = b.dataset.su;
