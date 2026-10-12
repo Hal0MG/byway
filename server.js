@@ -1428,18 +1428,23 @@ const SEARCHES_DETAILS = Number(process.env.CLAUDE_SEARCHES_DETAILS ?? 5);
 // Free-tier Gemini models are often overloaded (503), rate limited (429) or drop long answers part way,
 // and non-streamed requests get cut off around 60 s. So: stream the answer, and move to the next model on any failure.
 const GEMINI_MODELS = [GEMINI_MODEL, ...GEMINI_FALLBACKS].filter((m, i, a) => m && a.indexOf(m) === i);
-async function callGemini(prompt) {
+// GEMINI_BASE_URL: another endpoint with the same API (a proxy, or a stand-in for tests).
+const GEMINI_BASE = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/$/, "");
+// `onText` (optional) gets the answer so far as it streams; `signal` cancels.
+async function callGemini(prompt, { signal, onText } = {}) {
   const errors = [];
   for (const model of GEMINI_MODELS) {
+    if (signal?.aborted) throw new Error("Cancelled.");
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`, {
+      const r = await fetch(`${GEMINI_BASE}/v1beta/models/${model}:streamGenerateContent?alt=sse`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: { responseMimeType: "application/json" },
         }),
-        signal: AbortSignal.timeout(240000), // a stalled stream moves on to the next model
+        // a stalled stream moves on to the next model
+        signal: signal ? AbortSignal.any([AbortSignal.timeout(240000), signal]) : AbortSignal.timeout(240000),
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
@@ -1460,11 +1465,13 @@ async function callGemini(prompt) {
           if (d.error) throw new Error(d.error.message || "stream error");
           version = d.modelVersion || version;
           text += (d.candidates?.[0]?.content?.parts || []).map((p) => (p.thought ? "" : p.text || "")).join("");
+          onText?.(text);
         }
       }
       JSON.parse(text); // a cut-off answer fails here and moves on to the next model
       return { text, model: version };
     } catch (e) {
+      if (signal?.aborted) throw new Error("Cancelled.");
       errors.push(`${model}: ${e.message}`);
       console.log(`Gemini ${model} failed: ${e.message}`);
     }
@@ -1556,7 +1563,21 @@ async function callAI({ system, user, searches = 0, schema, signal, region, onEv
       console.log("Falling back to Gemini");
     }
   }
-  const { text, model } = await callGemini(`${system}\n\n${user}\n\nReturn JSON only.`);
+  // Gemini streams too, so the app shows the plan as it's written (the same partial events as the local model)
+  onEvent?.({ type: "status", text: writing || "Writing the plan" });
+  let lastPartial = "";
+  let lastLen = 0;
+  const partialOut = every(400, (text) => {
+    if (text.length < lastLen) lastPartial = ""; // the next model started over
+    lastLen = text.length;
+    const data = partialJson(text);
+    const key = data ? JSON.stringify(data) : "";
+    if (key.length > lastPartial.length) {
+      lastPartial = key;
+      onEvent?.({ type: "partial", data });
+    }
+  });
+  const { text, model } = await callGemini(`${system}\n\n${user}\n\nReturn JSON only.`, { signal, onText: partialOut });
   return { data: JSON.parse(text), model, sources: [] };
 }
 
