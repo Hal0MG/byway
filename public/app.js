@@ -345,6 +345,7 @@ function toggleOvernight(i) {
 
 function renderStops() {
   updateUnits();
+  $("change-form").hidden = !plan || READONLY;
   pins.forEach((p) => p.remove());
   pins.length = 0;
   const ol = $("stops");

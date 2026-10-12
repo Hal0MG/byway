@@ -1212,3 +1212,19 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
 .su-phone small { display: block; margin: 2px 0 8px; font-size: 12px; color: var(--muted); }
 .su-qr { flex: none; width: 116px; height: 116px; padding: 6px; border-radius: 12px; background: #fff; }
 .su-qr svg { display: block; width: 100%; height: 100%; }
+
+/* Live changes */
+#live-bar {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 60;
+  display: flex; align-items: center; gap: 10px; max-width: min(640px, calc(100vw - 32px));
+  padding: 10px 12px 10px 16px; border-radius: 999px; font-size: 14px;
+  background: var(--panel); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+}
+#live-bar[hidden] { display: none; }
+#live-bar > span { flex: 1; min-width: 0; }
+#live-bar small { color: var(--muted); }
+#live-bar .link-btn { font-weight: 700; white-space: nowrap; }
+#live-bar .lb-x { width: 28px; height: 28px; border-radius: 50%; background: var(--card); color: var(--text); flex: none; }
+#live-bar > .ico { color: var(--green); flex: none; }
+.search.change { margin-top: -4px; }

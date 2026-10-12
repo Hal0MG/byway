@@ -63,7 +63,7 @@ function setupHtml() {
         <button class="${provider === "local" ? "on" : ""}" data-su="provider" data-v="local" role="radio" aria-checked="${provider === "local"}">
           <b>On this ${s.platform === "darwin" ? "Mac" : "PC"}</b><small>Free and unlimited, private. Needs a good graphics card or an Apple Silicon Mac. Uses LM Studio.</small></button>
         <button class="${provider === "gemini" ? "on" : ""}" data-su="provider" data-v="gemini" role="radio" aria-checked="${provider === "gemini"}">
-          <b>Google Gemini</b><small>Free key, no graphics card needed, but only about 20 plans a day.</small></button>
+          <b>Google Gemini</b><small>Free key, no graphics card needed. Plans in seconds (Flash-Lite), with a daily limit on free requests.</small></button>
       </div>
       ${provider === "local"
         ? `<p class="su-gpu">${icon("gauge", 14)} ${esc(gpuText)}</p>

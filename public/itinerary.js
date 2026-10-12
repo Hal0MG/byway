@@ -464,7 +464,7 @@ function requestCard() {
       ? `<form class="rc-form" id="edit-form">
           <textarea id="edit-text" rows="2" aria-label="Ask for a change"
             placeholder="Ask for a change: “add a day in the Adirondacks”, “more switchbacks, fewer highways”, “end in Boston”"></textarea>
-          <button class="btn blue" type="submit">${icon("refresh", 18)} Update trip</button>
+          <button class="btn blue" type="submit" ${typeof liveState !== "undefined" && liveState.busy ? "disabled" : ""}>${icon("refresh", 18)} Update trip</button>
         </form>`
       : ""}
   </section>`;
@@ -942,7 +942,16 @@ IT.addEventListener("submit", (e) => {
   if (e.target.id !== "edit-form") return;
   e.preventDefault();
   const text = $("edit-text").value.trim();
-  if (text) revisePlan({ feedback: text, title: "Changing the trip" });
+  if (!text) return;
+  $("edit-text").value = "";
+  liveChange(text);
+});
+// Enter sends the change (Shift+Enter for a new line)
+IT.addEventListener("keydown", (e) => {
+  if (e.target.id === "edit-text" && e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    e.target.form.requestSubmit();
+  }
 });
 
 IT.addEventListener("click", (e) => {

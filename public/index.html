@@ -47,6 +47,11 @@
       <input id="search" type="text" placeholder="Add a stop" autocomplete="off" aria-label="Add a stop" />
       <button id="add-btn" class="chip-btn">Add</button>
     </div>
+    <form id="change-form" class="search change" hidden>
+      <span data-icon="sparkle"></span>
+      <input id="change-text" type="text" placeholder="Change the trip: “skip Winnipeg”" autocomplete="off" aria-label="Change the trip" />
+      <button class="chip-btn" type="submit">Go</button>
+    </form>
 
     <div id="scroll">
       <p id="empty">Add a stop, or plan a trip from the Itinerary tab.</p>
@@ -97,6 +102,7 @@
   <div id="map-profile" hidden></div>
 
   <div id="toast" role="status" hidden></div>
+  <div id="live-bar" role="status" aria-live="polite" hidden></div>
 
   <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
   <script src="icons.js"></script>

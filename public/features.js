@@ -1567,6 +1567,106 @@ IT.addEventListener("submit", (e) => {
   if (list.length) runBatch(list, readOptions(e.target));
 });
 
+// ---------- live changes: "skip Winnipeg" applied in place ----------
+// The trip stays on screen while the AI changes it: a bar at the bottom shows the steps, then what changed with an
+// Undo (the version saved just before). The day guides and photos catch up in the background.
+
+const liveState = { busy: false, step: "", text: "", result: "", error: "", bg: "", undo: null, last: "", run: 0 };
+function renderLiveBar() {
+  const el = $("live-bar");
+  if (!el) return;
+  const s = liveState;
+  el.hidden = !s.busy && !s.result && !s.error;
+  el.innerHTML = s.error
+    ? `${icon("alert", 16)}<span>${esc(s.error)}</span><button class="link-btn" data-live="retry">Try again</button><button class="lb-x" data-live="close" aria-label="Close">×</button>`
+    : s.busy
+      ? `<span class="spinner"></span><span><b>${esc(s.step)}</b> ${esc(s.text)}</span>`
+      : `${icon("check", 16)}<span>${esc(s.result)}${s.bg ? ` <small>${esc(s.bg)}</small>` : ""}</span>
+         ${s.undo ? `<button class="link-btn" data-live="undo">Undo</button>` : ""}<button class="lb-x" data-live="close" aria-label="Close">×</button>`;
+}
+function liveStep(step) {
+  liveState.step = step;
+  renderLiveBar();
+}
+async function liveChange(text) {
+  if (READONLY || !plan || liveState.busy || (progress && !progress.error)) return;
+  const run = ++liveState.run;
+  const before = routes.scenic?.distance_m || 0;
+  Object.assign(liveState, { busy: true, step: "Asking the AI", text: `“${text}”`, result: "", error: "", bg: "", undo: null, last: text });
+  renderLiveBar();
+  renderItinerary();
+  try {
+    const resp = await api("/api/plan", {
+      prompt: trip.prompt || trip.name, current: skeletonOf(), feedback: text, states: tripStates(), settings: tripSettings(),
+    });
+    snapshotVersion(text); // the trip as it was, for Undo
+    const undo = trip.versions?.at(-1)?.id || null;
+    trip.edits = [...(trip.edits || []), { text, at: new Date().toISOString() }];
+    liveStep("Placing the stops");
+    await placePoints(resp.plan);
+    addSources(resp.sources);
+    liveStep("Measuring the drive");
+    if (!(await findRoutes({ fit: false }))) throw new Error($("status").textContent || "Routing failed.");
+    renderSpotMarkers();
+    scheduleSave();
+    const km = routes.scenic?.distance_m || 0;
+    const diff = km - before;
+    const n = dayGroups().length;
+    const long = longDays();
+    Object.assign(liveState, {
+      busy: false, undo,
+      result: `Updated: ${n} day${n > 1 ? "s" : ""}, ${fmtMi(km)}${before && Math.abs(diff) > 1000 ? ` (${diff > 0 ? "+" : "−"}${fmtMi(Math.abs(diff))})` : ""}.` +
+        (long.length ? ` Day ${long.join(", ")} ${long.length > 1 ? "are" : "is"} long.` : ""),
+      bg: "Rewriting the day guides...",
+    });
+    renderLiveBar();
+    renderItinerary();
+    // the guides and photos catch up; a newer change takes over from here
+    const d = await requestDetails(trip.prompt || trip.name, skeletonOf());
+    if (run !== liveState.run) return;
+    if (!d.error) {
+      mergeDetails(d.details);
+      addSources(d.sources);
+    }
+    liveState.bg = "Finding photos...";
+    renderLiveBar();
+    renderItinerary();
+    await enrichPlan().catch(() => {});
+    if (run !== liveState.run) return;
+    liveState.bg = "";
+    renderLiveBar();
+    renderSpotMarkers();
+    renderItinerary();
+    scheduleSave();
+  } catch (e) {
+    if (run !== liveState.run) return;
+    Object.assign(liveState, { busy: false, error: e.message });
+    renderLiveBar();
+    renderItinerary();
+  }
+}
+$("live-bar")?.addEventListener("click", async (e) => {
+  const act = e.target.closest("[data-live]")?.dataset.live;
+  if (act === "close") Object.assign(liveState, { result: "", error: "" });
+  if (act === "retry") return liveChange(liveState.last);
+  if (act === "undo" && liveState.undo) {
+    const id = liveState.undo;
+    liveState.run++; // stop the background work of the change being undone
+    Object.assign(liveState, { busy: true, step: "Undoing", text: "", undo: null, bg: "" });
+    renderLiveBar();
+    await restoreVersion(id);
+    Object.assign(liveState, { busy: false, result: "Undone." });
+  }
+  renderLiveBar();
+});
+$("change-form")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = $("change-text").value.trim();
+  if (!text) return;
+  $("change-text").value = "";
+  liveChange(text);
+});
+
 // ---------- editing the route on the map ----------
 // Drag a pin to move that point, drag the route line to pull it through a new via point, and right-click (long-press on
 // a phone) the map to add a stop or route through a place. Each edit re-routes; nothing asks the AI.

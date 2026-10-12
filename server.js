@@ -18,9 +18,11 @@ app.use(express.static("public"));
 let ORS_KEY = process.env.ORS_API_KEY;
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 let GEMINI_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
-// Tried in order when the main model is busy. Comma separated in .env to override.
-const GEMINI_FALLBACKS = (process.env.GEMINI_FALLBACK_MODELS || "gemini-3.6-flash,gemini-3.7-flash,gemini-3.5-flash,gemini-3.5-flash-lite")
+// Flash-Lite: Denver to Moab in 3 s (Flash took 191 s, mostly thinking), clean plans in tests, and the free tier allows
+// far more requests a day than Flash. Flash stays as the last fallback.
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-lite-latest";
+// Tried in order when the main model is busy or out of free requests. Comma separated in .env to override.
+const GEMINI_FALLBACKS = (process.env.GEMINI_FALLBACK_MODELS || "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-latest")
   .split(",")
   .map((s) => s.trim());
 const GH_URL = (process.env.GRAPHHOPPER_URL || "http://localhost:8989").replace(/\/$/, "");
