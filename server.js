@@ -1399,9 +1399,9 @@ function extractJson(text) {
 
 // Ask the configured AI for a JSON answer. Returns { data, model, sources }.
 // signal: stop when the app stops waiting (local model only). region: a key for reusing research notes.
-async function callAI({ system, user, searches = 0, schema, signal, region, onEvent }) {
+async function callAI({ system, user, searches = 0, schema, signal, region, onEvent, writing }) {
   // Local model: no fallback, so a stopped LM Studio shows its own clear error instead of a Gemini quota message.
-  if (AI_PROVIDER === "local") return callLocal({ system, user, searches, schema, signal, region, onEvent });
+  if (AI_PROVIDER === "local") return callLocal({ system, user, searches, schema, signal, region, onEvent, writing });
   if (AI_PROVIDER === "claude" && anthropic) {
     try {
       const ending = searches > 0
@@ -1688,7 +1688,7 @@ const NO_THINK = { reasoning_effort: "none" };
 //    so a small model can't produce broken JSON.
 // `onEvent` (optional) hears the progress: { type: "status", text }, { type: "notes", text } with the notes so far,
 // and { type: "partial", data } with the finished part of the JSON answer.
-async function callLocal({ system, user, searches = 0, schema, signal, region, onEvent }) {
+async function callLocal({ system, user, searches = 0, schema, signal, region, onEvent, writing = "Writing the plan" }) {
   const notesOut = every(500, (text) => onEvent?.({ type: "notes", text: stripThink(text) }));
   let lastPartial = "";
   const partialOut = every(400, (text) => {
@@ -1783,7 +1783,7 @@ async function callLocal({ system, user, searches = 0, schema, signal, region, o
     },
   ];
   let data = null;
-  onEvent?.({ type: "status", text: "Writing the plan" });
+  onEvent?.({ type: "status", text: writing });
   for (let attempt = 0; attempt < 2 && !data; attempt++) {
     lastPartial = "";
     const m = await lmChat({
@@ -2001,6 +2001,28 @@ const noAI = () => AI_PROVIDER !== "local" && !anthropic && !GEMINI_KEY;
 
 // Step 1: the route. Days, stops, via points and featured roads, with the byway catalog as reference.
 // With current + dayHours it revises an existing plan using drive times the app measured.
+// With `stream: true` in the body, an AI endpoint answers newline-separated JSON events (status, notes, partial; see
+// callLocal) and ends with { type: "done", ... } or { type: "error", error }. Returns emit(event) (a no-op otherwise).
+function eventStream(req, res) {
+  if (!req.body?.stream) return () => {};
+  res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  res.flushHeaders();
+  return (e) => !res.writableEnded && res.write(`${JSON.stringify(e)}\n`);
+}
+// The final answer: the "done" event when streaming, plain JSON otherwise.
+function finish(req, res, emit, body) {
+  if (!req.body?.stream) return res.json(body);
+  emit({ type: "done", ...body });
+  res.end();
+}
+function fail(res, emit, e) {
+  const error = e.message || String(e);
+  if (!res.headersSent) return res.status(500).json({ error });
+  emit({ type: "error", error });
+  res.end();
+}
+
 // ---------- checking a plan before it's used ----------
 // Any model (small local ones most) can break the plan's own rules. These checks are plain code, so they hold whichever
 // model plans; the problems found go back to the model once, worded so it can fix them.
@@ -2114,13 +2136,7 @@ app.post("/api/plan", async (req, res) => {
     if (!prompt) return res.status(400).json({ error: "Describe the trip first." });
     const signal = clientGone(res);
     const maxH = maxHoursOf(settings);
-    // With `stream`, the answer is newline-separated JSON events (see callLocal), ending in { type: "done", ... }.
-    if (req.body.stream) {
-      res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
-      res.setHeader("Cache-Control", "no-store");
-      res.flushHeaders();
-    }
-    const emit = (e) => req.body.stream && !res.writableEnded && res.write(`${JSON.stringify(e)}\n`);
+    const emit = eventStream(req, res);
 
     // The local model gets only the byways in the states the trip crosses (shorter prompt, better focus).
     // A revision already knows its states (the client sends them); a new trip asks the model first.
@@ -2273,17 +2289,9 @@ Request: ${prompt}`;
         picked.has(String(r.name).toLowerCase()) ||
         !/^(I|Interstate)[ -]?\d|^M\d|^(ON )?4\d\d\b|^Highway 4\d\d\b|^(A-|Autoroute )\d/i.test(`${r.ref || ""}`.trim() || `${r.name || ""}`.trim())
     );
-    if (req.body.stream) {
-      emit({ type: "done", plan, model, sources, checks });
-      res.end();
-    } else res.json({ plan, model, sources, checks });
+    finish(req, res, emit, { plan, model, sources, checks });
   } catch (e) {
-    const error = e.message || String(e);
-    if (!res.headersSent) res.status(500).json({ error });
-    else {
-      emit({ type: "error", error });
-      res.end();
-    }
+    fail(res, emit, e);
   }
 });
 
@@ -2450,6 +2458,7 @@ app.post("/api/details", async (req, res) => {
     const { prompt, plan, settings, states } = req.body;
     if (!plan?.points?.length) return res.status(400).json({ error: "Plan the route first." });
     const signal = clientGone(res);
+    const emit = eventStream(req, res);
 
     const route = {
       days: asArray(plan.days).map((d) => ({ day: d.day, title: d.title, overnight: d.overnight })),
@@ -2494,10 +2503,12 @@ The traveler's request: ${prompt || ""}`;
       schema: DETAILS_SCHEMA,
       signal,
       region: asArray(states).length ? `details:${regionKey(states)}` : "",
+      onEvent: emit,
+      writing: "Writing the day guides",
     });
-    res.json({ details: { days: asArray(d.days), roads: asArray(d.roads), spots: asArray(d.spots) }, model, sources });
+    finish(req, res, emit, { details: { days: asArray(d.days), roads: asArray(d.roads), spots: asArray(d.spots) }, model, sources });
   } catch (e) {
-    res.status(500).json({ error: e.message || String(e) });
+    fail(res, emit, e);
   }
 });
 

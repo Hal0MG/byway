@@ -87,6 +87,38 @@ function renderStart() {
 
 // What the AI is doing right now: its current step, its notes as they're written, then the days as the plan comes in.
 let liveShown = 0; // days already on screen, so only new ones slide in
+// The end of the AI's notes, from a line start, without markdown marks.
+function notesTail(notes) {
+  let text = String(notes || "").replace(/[*#]+/g, "").trim();
+  if (text.length > 700) text = text.slice(text.indexOf("\n", text.length - 700) + 1 || text.length - 700);
+  return `<div class="live-notes">${esc(text)}</div>`;
+}
+// The day guides as they're written: each day's spots, and how many roads are written up.
+function liveDetails(live) {
+  const d = live.plan || {};
+  const days = Array.isArray(d.days) ? d.days : [];
+  const spots = Array.isArray(d.spots) ? d.spots : [];
+  const roads = Array.isArray(d.roads) ? d.roads : [];
+  const nums = [...new Set([...days.map((x) => Number(x.day)), ...spots.map((x) => Number(x.day))])].filter(Boolean).sort((a, b) => a - b);
+  let body = "";
+  if (nums.length || roads.length) {
+    body = `<ol class="live-days">
+        ${nums
+          .map((n) => {
+            const names = spots.filter((x) => Number(x.day) === n).map((x) => x.name);
+            const sum = days.find((x) => Number(x.day) === n)?.summary || "";
+            return `<li><span class="live-num">${n}</span><div><b>${names.length ? esc(names.join(" · ")) : "Day " + n}</b>
+              ${sum ? `<small>${esc(sum)}</small>` : ""}</div></li>`;
+          })
+          .join("")}
+      </ol>
+      ${roads.length ? `<div class="live-roads">${roads.map((r) => `<span class="chip">${esc(r.name)}</span>`).join("")}</div>` : ""}`;
+  } else if (live.notes) body = notesTail(live.notes);
+  return `<div class="live">
+      ${live.status ? `<p class="live-status">${esc(live.status)}</p>` : ""}
+      ${body}
+    </div>`;
+}
 function liveBlock(live) {
   const lp = live.plan || {};
   const days = Array.isArray(lp.days) ? lp.days : [];
@@ -110,12 +142,7 @@ function liveBlock(live) {
           .join("")}
       </ol>
       ${roads.length ? `<div class="live-roads">${roads.map((r) => `<span class="chip">${esc(r.name)}</span>`).join("")}</div>` : ""}`;
-  } else if (live.notes) {
-    // the end of the notes, from a line start, without markdown marks
-    let text = String(live.notes).replace(/[*#]+/g, "").trim();
-    if (text.length > 700) text = text.slice(text.indexOf("\n", text.length - 700) + 1 || text.length - 700);
-    body = `<div class="live-notes">${esc(text)}</div>`;
-  }
+  } else if (live.notes) body = notesTail(live.notes);
   liveShown = days.length;
   return `<div class="live">
       ${live.status ? `<p class="live-status">${esc(live.status)}</p>` : ""}
@@ -137,7 +164,7 @@ function renderProgress() {
               (s) => `<li class="step ${s.state}">
                 <span class="step-ico">${s.state === "done" ? icon("check", 16) : s.state === "error" ? icon("alert", 16) : ""}</span>
                 <div><b>${esc(s.label)}</b><small>${esc(s.detail || "")}</small></div>
-              </li>${s.id === p.live?.step && !p.error ? `<li class="live-li">${liveBlock(p.live)}</li>` : ""}`
+              </li>${p.lives?.[s.id] && !p.error ? `<li class="live-li">${s.id === "details" ? liveDetails(p.lives[s.id]) : liveBlock(p.lives[s.id])}</li>` : ""}`
             )
             .join("")}
         </ol>

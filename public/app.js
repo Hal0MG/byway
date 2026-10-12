@@ -586,15 +586,16 @@ async function api(path, body, signal) {
   return data;
 }
 
-// /api/plan with { stream: true }: newline-separated JSON events while the AI works (status lines, its notes, the
-// finished part of the plan), then { type: "done" } with the plan. Shown live on the planning screen.
-async function planStream(body, step = "route") {
-  const r = await fetch("/api/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, stream: true }) });
+// An AI endpoint with { stream: true }: newline-separated JSON events while the AI works (status lines, its notes, the
+// finished part of the answer), then { type: "done" } with the answer. Shown live under that step of the planning screen.
+async function aiStream(path, body, step, signal) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, stream: true }), signal });
   if (!r.ok) {
     const data = await r.json().catch(() => ({}));
     throw new Error(data.error || `Request failed (${r.status})`);
   }
-  if (progress) progress.live = { step }; // shown under that progress step
+  const lives = progress ? (progress.lives ||= {}) : {};
+  const live = (lives[step] = {});
   const reader = r.body.getReader();
   const dec = new TextDecoder();
   let buf = "";
@@ -611,8 +612,6 @@ async function planStream(body, step = "route") {
         const e = JSON.parse(line);
         if (e.type === "done") return e;
         if (e.type === "error") throw new Error(e.error);
-        const live = progress?.live;
-        if (!live) continue;
         if (e.type === "status") live.status = e.text;
         else if (e.type === "notes") live.notes = e.text;
         else if (e.type === "partial") live.plan = e.data;
@@ -620,10 +619,12 @@ async function planStream(body, step = "route") {
       }
     }
   } finally {
-    if (progress) progress.live = null;
+    if (lives[step] === live) delete lives[step];
+    renderLive();
   }
-  throw new Error("The planner stopped before finishing. Try again.");
+  throw new Error("The AI stopped before finishing. Try again.");
 }
+const planStream = (body, step = "route") => aiStream("/api/plan", body, step);
 // Events can come several times a second; redraw at most every 300 ms.
 let liveTimer = 0;
 function renderLive() {
@@ -725,7 +726,7 @@ let detailsCtl = null;
 function requestDetails(prompt, skel) {
   detailsCtl?.abort();
   detailsCtl = new AbortController();
-  return api("/api/details", { prompt, plan: skel, settings: tripSettings(), states: tripStates() }, detailsCtl.signal)
+  return aiStream("/api/details", { prompt, plan: skel, settings: tripSettings(), states: tripStates() }, "details", detailsCtl.signal)
     .catch((error) => ({ error }));
 }
 
@@ -1614,7 +1615,27 @@ async function findRoutes({ fit = true } = {}) {
       const n = failed.message.match(/coordinate (\d+)/)?.[1];
       const cands = (pair ? [pair[2], pair[1]] : n != null ? [n] : []).map((k) => failed.idx[Number(k)]);
       const i = cands.find((k) => k != null && isVia(stops[k]));
-      if (i == null || attempt >= 6) throw new Error(failed.message);
+      if (attempt >= 6) throw new Error(failed.message);
+      if (i == null) {
+        // Two stops the router can't connect (Bryce Canyon Lodge sits on roads the map has cut off): move one of them
+        // a little toward the other, onto a road it can reach, once.
+        if (!pair || cands.some((k) => k == null)) throw new Error(failed.message);
+        const [a, b] = cands;
+        let moved = false;
+        for (const [k, other] of [[a, b], [b, a]]) {
+          if (stops[k].moved) continue;
+          const to = await reachableNear(stops[k], stops[other]);
+          if (!to) continue;
+          stops[k].lng = to.lng;
+          stops[k].lat = to.lat;
+          stops[k].moved = true;
+          notes.add(`Moved ${stops[k].name.split(",")[0]} ${to.km} km to the nearest road the router can reach.`);
+          moved = true;
+          break;
+        }
+        if (!moved) throw new Error(failed.message);
+        continue;
+      }
       dropped.push(stops[i].name);
       stops.splice(i, 1);
     }
@@ -1637,6 +1658,23 @@ async function findRoutes({ fit = true } = {}) {
   }
 }
 $("route-btn").onclick = () => findRoutes();
+
+// A point 1, 2, 4 or 8 km from `p` toward `from` that the router can reach from `from`, or null.
+async function reachableNear(p, from) {
+  const d = haversine([p.lng, p.lat], [from.lng, from.lat]);
+  for (const km of [1, 2, 4, 8]) {
+    if (km * 1000 >= d) break;
+    const f = (km * 1000) / d;
+    const c = { lng: p.lng + (from.lng - p.lng) * f, lat: p.lat + (from.lat - p.lat) * f, km };
+    const r = await fetch("/api/route", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ coordinates: [[from.lng, from.lat], [c.lng, c.lat]], mode: "fastest" }),
+    }).catch(() => null);
+    if (r?.ok) return c;
+  }
+  return null;
+}
 
 // ---------- saving trips ----------
 
