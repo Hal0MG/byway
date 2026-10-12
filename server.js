@@ -9,6 +9,8 @@ import { Agent, fetch as undiciFetch } from "undici";
 
 const app = express();
 app.use(express.json({ limit: "15mb" }));
+// An error that escapes a route is logged instead of stopping the app (one in the day guides' error handler once did).
+process.on("unhandledRejection", (e) => console.log(`Unhandled error: ${e?.stack || e}`));
 app.use(express.static("public"));
 
 // Keys and choices that the in-app setup can change while the server runs (see "setup" below): reloaded from
@@ -2248,6 +2250,7 @@ function asPlan(data) {
 }
 
 app.post("/api/plan", async (req, res) => {
+  let emit = () => {}; // set once the answer starts streaming; the catch needs it too
   try {
     if (noAI()) return res.status(500).json({ error: "Add ANTHROPIC_API_KEY (or GEMINI_API_KEY) to .env" });
     // Revisions send `current` (the plan so far) with any of: dayHours (measured drive times), feedback (the traveler's
@@ -2256,7 +2259,7 @@ app.post("/api/plan", async (req, res) => {
     if (!prompt) return res.status(400).json({ error: "Describe the trip first." });
     const signal = clientGone(res);
     const maxH = maxHoursOf(settings);
-    const emit = eventStream(req, res);
+    emit = eventStream(req, res);
 
     // The local model gets only the byways in the states the trip crosses (shorter prompt, better focus).
     // A revision already knows its states (the client sends them); a new trip asks the model first.
@@ -2573,12 +2576,13 @@ app.post("/api/road-points", async (req, res) => {
 
 // Step 2: the details for a planned route. Day write-ups, what each featured road is like, and spots to stop at.
 app.post("/api/details", async (req, res) => {
+  let emit = () => {}; // set once the answer starts streaming; the catch needs it too
   try {
     if (noAI()) return res.status(500).json({ error: "Add ANTHROPIC_API_KEY (or GEMINI_API_KEY) to .env" });
     const { prompt, plan, settings, states } = req.body;
     if (!plan?.points?.length) return res.status(400).json({ error: "Plan the route first." });
     const signal = clientGone(res);
-    const emit = eventStream(req, res);
+    emit = eventStream(req, res);
 
     const route = {
       days: asArray(plan.days).map((d) => ({ day: d.day, title: d.title, overnight: d.overnight })),
