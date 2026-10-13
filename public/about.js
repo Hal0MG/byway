@@ -60,7 +60,7 @@ function aboutHtml() {
 
     <section class="ab-where ab-in">
       <h2 class="ab-h">Where it plans</h2>
-      <p>The United States, Canada, Australia, New Zealand, the United Kingdom and Ireland, the Alps, Norway, Iceland, Spain and Portugal. Anywhere else, routing still works, but the planner has no list of scenic roads there yet.</p>
+      <p>Anywhere in the world. In the United States, Canada, Australia, New Zealand, the United Kingdom and Ireland, the Alps, Norway, Iceland, Spain and Portugal the planner also works from a hand-checked list of celebrated roads, with seasonal closures and local road numbers. Elsewhere it picks roads from what it knows.</p>
     </section>
 
     <section class="ab-credits ab-in">

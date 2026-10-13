@@ -528,10 +528,10 @@ function onViewChange(v, prev) {
     if (prev === "home" && stops.length) fitStops();
   }
 }
-// The trip's own layers (route, coverage mask, fuel dots) are hidden on the globe.
+// The trip's own layers (route, fuel dots) are hidden on the globe.
 function setHomeLayers(show) {
   const vis = show ? "visible" : "none";
-  for (const id of ["coverage-mask", "route-scenic-casing", "route-scenic-line", "route-fastest-casing", "route-fastest-line", "day-hl", "along"]) {
+  for (const id of ["route-scenic-casing", "route-scenic-line", "route-fastest-casing", "route-fastest-line", "day-hl", "along"]) {
     if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
   }
 }

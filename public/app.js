@@ -33,9 +33,10 @@ let TEMP_F = true;
 const isAU = (p) => p.lng > 110 && p.lat < -9 && p.lng < 160;
 // Canada: inside a covered Canadian province, or north of the 49th parallel in the west (rough, for uncovered ones).
 const isCA = (p) => coverageCountry(p) === "CA" || (p.lat >= 49 && p.lng > -141 && p.lng < -95);
-// The country a point is in: the covered regions first, then rough boxes for the rest.
+// The country a point is in (ISO code): the covered regions first (their outlines are finer), then the world's
+// countries (countries.json), then rough boxes while that file is still loading.
 function countryOf(p) {
-  const c = coverageCountry(p);
+  const c = coverageCountry(p) || worldCountry(p);
   if (c) return c;
   if (isAU(p)) return "AU";
   if (isCA(p)) return "CA";
@@ -44,11 +45,14 @@ function countryOf(p) {
   if (p.lng < -50 && p.lat > 15) return "US";
   return null;
 }
+// Miles: the US, the UK, Liberia and Myanmar. Fahrenheit: the US and a few places that follow it.
+const MILES_CC = new Set(["US", "GB", "LR", "MM"]);
+const FAHRENHEIT_CC = new Set(["US", "BS", "BZ", "KY", "PW", "LR"]);
 function updateUnits() {
   const cs = stops.filter((s) => !isVia(s)).map(countryOf);
   const share = (test) => cs.filter(test).length * 2 >= cs.length;
-  KM = cs.length > 0 && !share((c) => c === "US" || c === "GB");
-  TEMP_F = !cs.length || share((c) => c === "US");
+  KM = cs.length > 0 && !share((c) => MILES_CC.has(c));
+  TEMP_F = !cs.length || share((c) => FAHRENHEIT_CC.has(c));
 }
 const fmtMi = (m) => (KM ? `${Math.round(m / 1000).toLocaleString()} km` : `${Math.round(miles(m)).toLocaleString()} mi`);
 const fmtMiles = (mi) => fmtMi(Number(mi) * 1609.34); // a length given in miles
@@ -697,12 +701,7 @@ $("add-btn").onclick = async () => {
     await addStop(q);
     $("search").value = "";
     changed();
-    const added = stops[stops.length - 1];
-    setStatus(
-      coverage && !coverageCountry(added)
-        ? `${shortName(added.name)} is outside the covered areas (grey on the map). Routing works, but the planner has no road list there yet.`
-        : ""
-    );
+    setStatus("");
   } catch (e) {
     setStatus(e.message);
   }
@@ -879,7 +878,6 @@ async function placePoints(skel) {
     missed.length ? `Couldn't find ${missed.join(", ")}` : "",
     dropped.length ? `Skipped off-route ${dropped.map(shortName).join(", ")}` : "",
     saved ? `Reordered to avoid backtracking, ${fmtMi(saved)} shorter` : "",
-    uncoveredStops().length ? `Outside the covered areas: ${uncoveredStops().map((s) => shortName(s.name)).join(", ")}` : "",
   ].filter(Boolean);
   progressSet("places", "done", notes.join(". ") || `${next.length} places`);
   return { reordered: saved > 0 };
@@ -1443,24 +1441,38 @@ fetch("/coverage.json")
   })
   .catch(() => {});
 
-function drawCoverage() {
-  if (!styleReady || !coverage) return;
-  const dark = theme === "dark";
-  if (!map.getSource("coverage-mask")) map.addSource("coverage-mask", { type: "geojson", data: coverage.mask });
-  if (!map.getLayer("coverage-mask")) {
-    // under the route lines, which are added after this
-    map.addLayer({ id: "coverage-mask", type: "fill", source: "coverage-mask",
-      // hidden on the home globe (home.js shows it again for the map view)
-      layout: { visibility: document.body.dataset.view === "home" ? "none" : "visible" },
-      // a lighter grey on the dark map, so it reads as "greyed out" rather than just darker
-      paint: { "fill-color": dark ? "#48484a" : "#8e8e93", "fill-opacity": dark ? 0.6 : 0.4 } });
+// Since 1.0 the app plans anywhere: nothing is greyed out. The covered regions (coverage.json) are the ones with a
+// curated road list, used for road lookups and units, not drawn.
+function drawCoverage() {}
+
+// The world's countries (countries.json, Natural Earth outlines), for units, currency and regions anywhere.
+let worldCountries = null;
+fetch("/countries.json")
+  .then((r) => r.json())
+  .then((c) => {
+    worldCountries = c.features;
+    updateUnits();
+  })
+  .catch(() => {});
+const worldMemo = new Map();
+function worldCountry(p) {
+  if (!worldCountries) return null;
+  const key = `${p.lng.toFixed(2)},${p.lat.toFixed(2)}`;
+  if (worldMemo.has(key)) return worldMemo.get(key);
+  const at = (pt) => worldCountries.find((f) => inGeometry(pt, f.geometry))?.properties.cc || null;
+  // coasts are simplified, so a harbour town can fall in the sea: try points ~5 and ~15 km around it
+  let c = at([p.lng, p.lat]);
+  for (const r of [0.045, 0.135]) {
+    if (c) break;
+    const dx = r / Math.cos((p.lat * Math.PI) / 180);
+    for (const [ox, oy] of [[dx, 0], [-dx, 0], [0, r], [0, -r], [dx, r], [-dx, r], [dx, -r], [-dx, -r]]) {
+      if ((c = at([p.lng + ox, p.lat + oy]))) break;
+    }
   }
-  if (!map.getSource("coverage-edge")) map.addSource("coverage-edge", { type: "geojson", data: coverage.covered });
-  if (!map.getLayer("coverage-edge")) {
-    map.addLayer({ id: "coverage-edge", type: "line", source: "coverage-edge",
-      paint: { "line-color": "#30d1c6", "line-opacity": 0.35, "line-width": 1 } });
-  }
+  worldMemo.set(key, c);
+  return c;
 }
+const worldCountryName = (cc) => worldCountries?.find((f) => f.properties.cc === cc)?.properties.name || "";
 
 // Ray casting over a polygon's rings: inside the outer ring and not inside a hole.
 function inRing(pt, ring) {
@@ -1580,6 +1592,11 @@ function tripStates() {
     const cc = countryOf(s);
     if (COUNTRY_NAME[cc]) {
       out.add(COUNTRY_NAME[cc]);
+      continue;
+    }
+    // anywhere without a curated road list: the country's name
+    if (cc && !["US", "CA", "AU"].includes(cc)) {
+      if (worldCountryName(cc)) out.add(worldCountryName(cc));
       continue;
     }
     // Australian points use Australian states ("WA" is Western Australia there, Washington in the US)

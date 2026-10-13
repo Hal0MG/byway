@@ -6,14 +6,18 @@
 const libState = { mine: null, ready: null, loading: false, q: "", show: "all", region: "", length: "", sort: "recent", open: null };
 const REGIONS = [
   ["", "Anywhere"], ["US", "United States"], ["CA", "Canada"], ["AU", "Australia"], ["NZ", "New Zealand"], ["GB", "UK"], ["IE", "Ireland"],
-  ["ALPS", "The Alps"], ["NO", "Norway"], ["IS", "Iceland"], ["ES", "Spain"], ["PT", "Portugal"],
+  ["ALPS", "The Alps"], ["NO", "Norway"], ["IS", "Iceland"], ["ES", "Spain"], ["PT", "Portugal"], ["WORLD", "Elsewhere"],
 ];
 const LENGTHS = [["", "Any length"], ["1-2", "1 to 2 days"], ["3-4", "3 to 4 days"], ["5-7", "5 to 7 days"], ["8-99", "8 days or more"]];
 const SKETCH_COLORS = ["#0a84ff", "#30d1c6", "#ff9f0a", "#bf5af2", "#30d158", "#ff375f", "#ffd60a", "#64d2ff"];
 
+// The Alps only where the covered Alpine regions are (Rome is Italy, not the Alps); countries without their own
+// entry are "Elsewhere"
 const regionOf = (t) => {
-  const c = t.start ? countryOf(t.start) : null;
-  return ["CH", "AT", "IT", "FR", "DE", "LI"].includes(c) ? "ALPS" : c || "";
+  if (!t.start) return "";
+  if (["CH", "AT", "IT", "FR", "DE", "LI"].includes(coverageCountry(t.start))) return "ALPS";
+  const c = countryOf(t.start);
+  return !c ? "" : REGIONS.some(([k]) => k === c) ? c : "WORLD";
 };
 const regionName = (t) => (REGIONS.find(([k]) => k === regionOf(t)) || [, ""])[1];
 // distances in miles for US and UK trips, km elsewhere (like the itinerary)

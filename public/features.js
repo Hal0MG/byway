@@ -149,12 +149,15 @@ const COST_REGION = {
   IE: { cur: "EUR", fuel: 1.75, kwh: 0.6, stay: 1.05 },
   ES: { cur: "EUR", fuel: 1.6, kwh: 0.5, stay: 0.8 },
   PT: { cur: "EUR", fuel: 1.75, kwh: 0.55, stay: 0.72 },
+  // anywhere else: a rough world average in US dollars (fuel per litre)
+  WORLD: { cur: "USD", fuel: 1.3, kwh: 0.3, stay: 0.8, rough: true },
 };
+const EURO_CC = new Set(["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SK", "SI"]);
 // a night for two in a typical room, in US dollars, by price level (scaled by the region's `stay`)
 const STAY_USD = { $: [70, 120], $$: [120, 190], $$$: [190, 320], $$$$: [320, 550] };
 function costSetup() {
   const c = stops.length ? countryOf(stops[0]) || "US" : "US";
-  const reg = COST_REGION[c] || (c === "LI" ? COST_REGION.CH : ["AT", "IT", "FR", "DE"].includes(c) ? COST_REGION.EU : COST_REGION.US);
+  const reg = COST_REGION[c] || (c === "LI" ? COST_REGION.CH : EURO_CC.has(c) ? COST_REGION.EU : COST_REGION.WORLD);
   const ev = !!tripSettings().ev;
   const miles = c === "US" || c === "GB";
   const econ = ev
@@ -214,7 +217,7 @@ function costCard() {
         <tbody>${rows.join("")}</tbody>
         <tfoot><tr><td>Total</td><td>${fmtMi(groups.reduce((a, g) => a + (dayStats(g, "scenic")?.dist || 0), 0))}</td><td>${money(fuel)}</td><td>${nights ? `${money(lo)} to ${money(hi)}` : ""}</td></tr></tfoot>
       </table>
-      <p class="fine">A rough guide for planning, not a quote. Lodging is a typical room for two at each night's price level ($ to $$$$, from the planner)${guessed ? ` (“?”: no level from the planner, $$ assumed)` : ""}.
+      <p class="fine">A rough guide for planning, not a quote.${k.reg.rough ? " Prices here are a world average in US dollars: change them to local ones." : ""} Lodging is a typical room for two at each night's price level ($ to $$$$, from the planner)${guessed ? ` (“?”: no level from the planner, $$ assumed)` : ""}.
         ${toll > 1000 ? `Tolls or park fees on ${fmtMi(toll)} of the route are not included.` : ""}
         ${ferry > 500 ? `Ferry fares (${fmtMi(ferry)} by ferry) are not included.` : ""} Food and park passes aren't counted.</p>
     </div>
@@ -1219,7 +1222,7 @@ function applyTerrain() {
     if (!satelliteOn && !map.getLayer("hillshade")) {
       map.addLayer({ id: "hillshade", type: "hillshade", source: "dem-hs",
         paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": theme === "dark" ? "#000" : "#5a5a5a" } },
-        map.getLayer("coverage-mask") ? "coverage-mask" : undefined);
+        map.getStyle().layers.find((l) => l.type === "symbol")?.id);
     }
     map.setTerrain({ source: "dem", exaggeration: 1.35 });
   } else {
@@ -1647,7 +1650,7 @@ function suggestedItems() {
   if (routes.scenic?.unpaved_m > 1500) out.push("Check the car is fine on gravel (or plan around the unpaved stretch)");
   if ((wx.results || []).some((w) => w?.tmax >= 33)) out.push("Extra water for hot days");
   if ((wx.results || []).some((w) => w?.tmin != null && w.tmin <= 2)) out.push("Warm layers for cold mornings");
-  if (uncoveredStops().length || countries.size > 1) out.push("Passport and car insurance for every country");
+  if (countries.size > 1) out.push("Passport and car insurance for every country");
   out.push("Offline maps downloaded in Google or Apple Maps", "Phone mount and car charger", "Sunglasses, water and snacks", "Lodging booked for every night");
   const have = new Set(notesOf().items.map((x) => x.text.toLowerCase()));
   return out.filter((x) => !have.has(x.toLowerCase()));
