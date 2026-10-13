@@ -33,7 +33,7 @@ const USE_GH = /^(1|true|yes)$/i.test(process.env.USE_GRAPHHOPPER || "");
 // Without CONTACT in .env, Wikimedia throttles photo lookups hard ("You are making too many requests").
 let CONTACT = (process.env.CONTACT || "").trim();
 const userAgent = () =>
-  process.env.USER_AGENT || `RoadtripPlanner/1.13 (personal non-commercial trip planner${CONTACT ? `; ${CONTACT}` : ""})`;
+  process.env.USER_AGENT || `Byway/1.14 (personal non-commercial road trip planner${CONTACT ? `; ${CONTACT}` : ""})`;
 let UA = userAgent();
 if (!CONTACT && !process.env.USER_AGENT) {
   console.log("Tip: add your email or a website in Setup (the gear button) so Wikipedia doesn't throttle photo lookups.");
@@ -3003,7 +3003,7 @@ async function writeEnv(values) {
   try {
     text = await fs.readFile(ENV_FILE, "utf8");
   } catch {
-    text = "# Settings for Roadtrip Planner. The Setup screen in the app (the gear button) writes these.\n";
+    text = "# Settings for Byway. The Setup screen in the app (the gear button) writes these.\n";
   }
   for (const [k, v] of Object.entries(values)) {
     const clean = String(v ?? "").replace(/[\r\n]/g, "").trim();
@@ -3190,7 +3190,7 @@ app.listen(port, () => {
 }).on("error", (e) => {
   if (e.code !== "EADDRINUSE") throw e;
   // already running (started twice): just show it
-  console.log(`Roadtrip Planner is already running on ${url}`);
+  console.log(`Byway is already running on ${url}`);
   openBrowser();
   setTimeout(() => process.exit(0), 500);
 });

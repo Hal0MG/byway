@@ -2,16 +2,16 @@
 // what .gitignore leaves out (keys, your trips, caches, node_modules). Written by hand, without a zip library, so the
 // Mac start files keep their "executable" permission (Windows' own zip tool drops it, and then a double-click won't
 // run them) and get Unix line endings.
-// Usage: node tools/package.mjs [output.zip]   (default: ../roadtrip-planner-<version>.zip)
+// Usage: node tools/package.mjs [output.zip]   (default: ../byway-<version>.zip)
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
-const version = path.basename(root).replace(/^roadtrip-planner/, "") || "app";
-const out = path.resolve(process.argv[2] || path.join(root, "..", `roadtrip-planner-${version}.zip`));
-const PREFIX = "roadtrip-planner/";
+const version = path.basename(root).replace(/^(roadtrip-planner|byway)-?/, "") || "app";
+const out = path.resolve(process.argv[2] || path.join(root, "..", `byway-${version}.zip`));
+const PREFIX = "byway/";
 
 // .gitignore patterns, plus things that never belong in a package
 const ignore = [".git/", "dist/", "*.zip",

@@ -4,7 +4,7 @@ import fs from "node:fs";
 
 const file = new URL("../public/seasonal-roads.json", import.meta.url);
 const { roads } = JSON.parse(fs.readFileSync(file, "utf8"));
-const UA = "RoadtripPlanner/1.12 (personal trip planner, data check)";
+const UA = "Byway/1.14 (personal trip planner, data check)";
 const toRad = (d) => (d * Math.PI) / 180;
 const km = (a, b) => {
   const x = Math.sin(toRad(b[1] - a[1]) / 2) ** 2 + Math.cos(toRad(a[1])) * Math.cos(toRad(b[1])) * Math.sin(toRad(b[0] - a[0]) / 2) ** 2;

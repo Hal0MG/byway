@@ -2040,7 +2040,7 @@ function gpx(route, name) {
     })
     .join("");
   const all = `<trk><name>${x(name)}</name><trkseg>${coords.map((c) => pt("trkpt", c)).join("")}</trkseg></trk>`;
-  return `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="roadtrip-planner" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>${x(name)}</name></metadata>${wpts}${tracks || all}</gpx>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="Byway" xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>${x(name)}</name></metadata>${wpts}${tracks || all}</gpx>`;
 }
 
 function downloadFile(text, filename, type) {
@@ -2050,7 +2050,7 @@ function downloadFile(text, filename, type) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-const fileName = () => trip.name.replace(/[^\w -]+/g, "").trim() || "roadtrip";
+const fileName = () => trip.name.replace(/[^\w -]+/g, "").trim() || "byway";
 
 function exportGpx() {
   const route = routes[selected];

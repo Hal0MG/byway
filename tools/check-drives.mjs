@@ -5,7 +5,7 @@ import fs from "node:fs";
 
 const dir = new URL("../data/", import.meta.url);
 const files = fs.readdirSync(dir).filter((f) => f.endsWith("-drives.json"));
-const UA = "RoadtripPlanner/1.12 (personal trip planner, data check)";
+const UA = "Byway/1.14 (personal trip planner, data check)";
 let problems = 0;
 for (const f of files) {
   const list = JSON.parse(fs.readFileSync(new URL(f, dir), "utf8"));
