@@ -1275,11 +1275,10 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .hero-inner { padding: 22px 18px; }
   .trip-hero h1, .rename-input { font-size: 30px; letter-spacing: -0.025em; }
   .trip-hero .lede { font-size: 15px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
-  /* the trip's buttons: one swipeable row instead of three rows of big buttons */
-  .hero-inner { min-width: 0; width: 100%; } /* the hero is a flex box: without this the row of buttons widens it */
-  .hero-actions { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-right: -18px; padding-right: 18px; }
-  .hero-actions::-webkit-scrollbar { display: none; }
-  .hero-actions .btn { flex: none; padding: 8px 12px; font-size: 13px; }
+  /* the trip's few buttons (the rest are under More): small, wrapping */
+  .hero-inner { min-width: 0; width: 100%; } /* the hero is a flex box: without this a row of buttons can widen it */
+  .hero-actions { gap: 8px; margin-top: 18px; }
+  .hero-actions .btn { padding: 8px 12px; font-size: 13px; }
   .day-summary { font-size: 15px; line-height: 1.6; }
   /* the day's numbers and map buttons: small, so they fit a row or two */
   .day-stats { gap: 6px; }
@@ -1661,4 +1660,21 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .su-actions .su-status { flex: 1; min-width: 0; font-size: 13px; }
   .su-actions .btn { padding: 8px 10px; font-size: 13px; }
 }
+
+/* the trip's More menu */
+.more-menu { position: relative; flex: none; }
+.more-menu > summary { list-style: none; cursor: pointer; }
+.more-menu > summary::-webkit-details-marker { display: none; }
+.more-chev { transform: rotate(90deg); transition: transform 0.15s; }
+.more-menu[open] .more-chev { transform: rotate(-90deg); }
+.more-list {
+  position: fixed; z-index: 30; width: 290px; padding: 6px;
+  display: flex; flex-direction: column; gap: 2px; border-radius: 8px;
+  background: var(--surface); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow); text-shadow: none;
+}
+.more-list button { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: 6px; text-align: left; }
+.more-list button:hover, .more-list button:focus-visible { background: var(--card); }
+.more-list .ico { margin-top: 2px; color: var(--muted); }
+.more-list b { display: block; font-size: 14px; font-weight: 600; }
+.more-list small { display: block; font-size: 12px; color: var(--muted); }
 

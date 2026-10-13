@@ -396,10 +396,7 @@ function renderTrip() {
           ${long.length && plan && !READONLY ? `<button class="btn warn" data-act="fix">${icon("alert", 18)} Fix long days (${long.map((d) => `D${d}`).join(", ")})</button>` : ""}
           ${reorderSaves ? `<button class="btn warn" data-act="order-fix">${icon("route", 18)} Fix backtracking (${fmtMi(reorderSaves)} shorter)</button>` : ""}
           ${plan && !(plan.spots || []).length && !READONLY ? `<button class="btn ghost" data-act="details">${icon("sparkle", 18)} Write the day guides</button>` : ""}
-          ${plan && (plan.spots || []).length && missingPhotos() > 2 && !READONLY ? `<button class="btn ghost" data-act="photos">${icon("photo", 18)} Find missing photos (${missingPhotos()})</button>` : ""}
-          ${routes.scenic && plan && !READONLY ? `<button class="btn ghost" data-act="alternatives">${icon("route", 18)} Other versions</button>` : ""}
-          ${routes.scenic ? `<button class="btn ghost" data-act="export">${icon("share", 18)} Export and share</button>` : ""}
-          ${READONLY ? "" : `<button class="btn ghost" data-act="new">${icon("plus", 18)} New trip</button>`}
+          ${moreMenu()}
         </div>
       </div>
     </header>
@@ -454,7 +451,7 @@ function renderTrip() {
 
   const alongBtn = alongButton();
   IT.innerHTML = `${hero}${requestCard()}${plan && !READONLY ? roadsPanel() : ""}<div class="it-layout">${index}<div class="days">
-    ${alongBtn ? `<div class="along-bar">${alongBtn}</div>` : ""}${days}${notesSection()}${sourceList}
+    ${alongBtn ? `<div class="along-bar">${alongBtn}</div>` : ""}${days}${notesShown() ? notesSection() : ""}${sourceList}
     <p class="credit">Routes and elevation by OpenRouteService. Road details from the AI planner, the FHWA America's Byways program and Wikipedia.
     Photos from Wikipedia and Wikimedia Commons; tap a photo for its author and license. Fuel, chargers, sights and lodging counts
     from OpenStreetMap contributors. Weather by Open-Meteo. Terrain from Mapzen terrain tiles.</p></div></div>`;
@@ -493,7 +490,7 @@ function requestCard() {
       ? `<div class="rc-side">
         <div class="rc-tabs" role="tablist">
           ${READONLY ? "" : `<button role="tab" data-act="rc-mode" data-v="change" aria-selected="${askState.mode === "change"}" class="${askState.mode === "change" ? "on" : ""}">${icon("refresh", 14)} Change the trip</button>`}
-          <button role="tab" data-act="rc-mode" data-v="ask" aria-selected="${askState.mode === "ask" || READONLY}" class="${askState.mode === "ask" || READONLY ? "on" : ""}">${icon("sparkle", 14)} Ask about it</button>
+          ${askState.mode === "ask" || READONLY || trip.qa?.length ? `<button role="tab" data-act="rc-mode" data-v="ask" aria-selected="${askState.mode === "ask" || READONLY}" class="${askState.mode === "ask" || READONLY ? "on" : ""}">${icon("sparkle", 14)} Ask about it</button>` : ""}
         </div>
         ${askState.mode === "ask" || READONLY
           ? `<form class="rc-form" id="ask-form">
@@ -1035,6 +1032,44 @@ async function loadRoadReviews(name) {
   renderItinerary();
 }
 
+// The trip's less-used tools in one menu, so the page leads with the days, roads and maps.
+let notesOpen = false;
+const notesShown = () => notesOpen || !!(notesOf().text || notesOf().items.length);
+function moreMenu() {
+  const items = [
+    routes.scenic && plan && !READONLY && ["alternatives", "route", "Other versions", "Easier, more scenic or another way, side by side"],
+    plan && ["ask", "sparkle", "Ask about the trip", "Questions answered from its own days and places"],
+    routes.scenic && ["export", "share", "Export and share", "GPX, print or PDF, a web page, a Wi-Fi link"],
+    !notesShown() && ["notes", "list", "Notes and checklist", "Reservations, numbers, things to pack"],
+    plan && (plan.spots || []).length && missingPhotos() > 2 && !READONLY && ["photos", "photo", `Find missing photos (${missingPhotos()})`, ""],
+    !READONLY && ["new", "plus", "New trip", ""],
+  ].filter(Boolean);
+  if (!items.length) return "";
+  return `<details class="more-menu"><summary class="btn ghost">${icon("chevron", 16, "more-chev")} More</summary>
+    <div class="more-list" role="menu">${items.map(([act, ico, label, sub]) => `<button role="menuitem" data-act="${act === "ask" ? "more-ask" : act === "notes" ? "more-notes" : act}">${icon(ico, 16)}<span><b>${esc(label)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span></button>`).join("")}</div></details>`;
+}
+// a click anywhere else, or Esc, closes it; choosing an item does too
+document.addEventListener("click", (e) => {
+  document.querySelectorAll(".more-menu[open]").forEach((d) => {
+    if (!d.contains(e.target) || e.target.closest(".more-list button")) d.open = false;
+  });
+});
+addEventListener("keydown", (e) => e.key === "Escape" && document.querySelectorAll(".more-menu[open]").forEach((d) => (d.open = false)));
+// the hero clips what overflows it, so the list is placed on the screen under the button (above it near the bottom)
+document.addEventListener("toggle", (e) => {
+  const d = e.target;
+  if (!d.classList?.contains("more-menu") || !d.open) return;
+  const b = d.querySelector("summary").getBoundingClientRect();
+  const list = d.querySelector(".more-list");
+  const w = Math.min(290, innerWidth - 16);
+  list.style.width = `${w}px`;
+  list.style.left = `${Math.max(8, Math.min(b.left, innerWidth - w - 8))}px`;
+  const below = innerHeight - b.bottom > list.offsetHeight + 16;
+  list.style.top = below ? `${b.bottom + 6}px` : `${Math.max(8, b.top - list.offsetHeight - 6)}px`;
+}, true);
+// scrolling the page moves the button away from its list
+IT.addEventListener("scroll", () => document.querySelectorAll(".more-menu[open]").forEach((d) => (d.open = false)), { passive: true });
+
 // Light the rail's number for the day being read.
 function spyDays() {
   let cur = null;
@@ -1157,7 +1192,17 @@ IT.addEventListener("click", (e) => {
   else if (act === "alternatives") openAlternatives();
   else if (act === "today") openToday();
   else if (act === "versions") openVersions();
-  else if (act === "rc-mode") {
+  else if (act === "more-ask") {
+    getAskState().mode = "ask";
+    renderItinerary();
+    $("ask-text")?.scrollIntoView({ block: "center", behavior: "smooth" });
+    $("ask-text")?.focus({ preventScroll: true });
+  } else if (act === "more-notes") {
+    notesOpen = true;
+    renderItinerary();
+    $("notes")?.scrollIntoView({ block: "start", behavior: "smooth" });
+    $("notes-text")?.focus({ preventScroll: true });
+  } else if (act === "rc-mode") {
     getAskState().mode = t.dataset.v;
     renderItinerary();
     $(t.dataset.v === "ask" ? "ask-text" : "edit-text")?.focus();
