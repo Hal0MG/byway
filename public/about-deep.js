@@ -121,7 +121,7 @@ const DEEP_SECTIONS = [
 
   ["eval", "Testing and evaluation", `
     <ul>
-      <li><b>Unit tests</b> (<code>npm test</code>, 15 tests): the day-split DP, map-link splitting, shape matching, road-ref matching, the plan checks, the partial JSON parser, route chunking. The pure functions live in one file that both the browser and Node load.</li>
+      <li><b>Unit tests</b> (<code>npm test</code>, 16 tests): the day-split DP, map-link splitting, shape matching, road-ref matching, the plan checks, the partial JSON parser, route chunking, the packed route storage. The pure functions live in one file that both the browser and Node load.</li>
       <li><b>Smoke test</b> (<code>npm run smoke</code>): headless Chrome opens every view and sheet at desktop and phone sizes, and fails on console errors, sideways scrolling or covered map credits. axe-core checks contrast and accessibility (0 issues at WCAG AA).</li>
       <li><b>An offline eval of plan quality</b> (<code>tools/audit-trips.mjs</code>): runs the app's own measurements over all 35 ready-made trips and reports long and short days, featured roads not driven, backtracking the reorder would fix, spots far off the route, and missing heights and photos. It's what found the 19 trips with an undriven road.</li>
       <li><b>A planner eval</b> (<code>npm run eval</code>): 30 fixed requests across every region, run through a model and the whole pipeline, recording each stage. With Gemini Flash-Lite, every plan passed the rule checks after the one repair, but only 42% of trips were fully right once routed (every featured road driven, no day over the limit). The road pass took that to 62% and the day-split DP to 69%: the deterministic steps add 27 points. Intervals over 30 requests are wide (about ±20 points), so it measures big effects, not small ones.</li>
@@ -130,30 +130,34 @@ const DEEP_SECTIONS = [
 ];
 
 function aboutDeepHtml() {
+  // the page in the app's language when it has one (about-deep-i18n.js), else English
+  const L = (typeof DEEP_I18N !== "undefined" && DEEP_I18N[LANG]) || null;
+  const flow = L?.flow || DEEP_FLOW;
+  const sections = DEEP_SECTIONS.map(([id, title, html], i) => [id, L?.sections[i]?.[0] || title, L?.sections[i]?.[1] || html]);
   return `<div class="ab dp">
     ${aboutModeHtml()}
     <header class="dp-head">
-      <p class="kicker">${icon("gauge", 16)} How it works, in depth</p>
-      <h1>Under the hood</h1>
-      <p class="lede">A road trip planner is a small data pipeline: a language model proposes, and deterministic code checks, measures and repairs. Here is each step, the method behind it and the numbers it runs on.</p>
+      <p class="kicker">${icon("gauge", 16)} ${esc(L?.kicker || "How it works, in depth")}</p>
+      <h1>${esc(L?.h1 || "Under the hood")}</h1>
+      <p class="lede">${esc(L?.lede || "A road trip planner is a small data pipeline: a language model proposes, and deterministic code checks, measures and repairs. Here is each step, the method behind it and the numbers it runs on.")}</p>
     </header>
 
-    <ol class="dp-flow" aria-label="The planning pipeline">
-      ${DEEP_FLOW.map(([a, b]) => `<li><b>${esc(a)}</b><span>${esc(b)}</span></li>`).join("")}
+    <ol class="dp-flow" aria-label="${esc(L?.pipeline || "The planning pipeline")}">
+      ${flow.map(([a, b]) => `<li><b>${esc(a)}</b><span>${esc(b)}</span></li>`).join("")}
     </ol>
 
-    <nav class="dp-toc" aria-label="Sections">
-      ${DEEP_SECTIONS.map(([id, title], i) => `<a href="#dp-${id}" data-dp="${id}"><span>${i + 1}</span>${esc(title.split(":")[0])}</a>`).join("")}
+    <nav class="dp-toc" aria-label="${esc(L?.sectionsLabel || "Sections")}">
+      ${sections.map(([id, title], i) => `<a href="#dp-${id}" data-dp="${id}"><span>${i + 1}</span>${esc(title.split(/[:：]/)[0])}</a>`).join("")}
     </nav>
 
-    ${DEEP_SECTIONS.map(([id, title, html], i) => `<section class="dp-sec ab-in" id="dp-${id}">
+    ${sections.map(([id, title, html], i) => `<section class="dp-sec ab-in" id="dp-${id}"${L ? " data-no-i18n" : ""}>
       <h2><span class="dp-n">${i + 1}</span>${esc(title)}</h2>
       ${html}
     </section>`).join("")}
 
     <div class="ab-cta">
-      <button class="btn blue" data-about="plan">${icon("sparkle", 18)} Plan a trip</button>
-      <button class="btn" data-about="simple">Back to the overview</button>
+      <button class="btn blue" data-about="plan">${icon("sparkle", 18)} ${esc(t("Plan a trip"))}</button>
+      <button class="btn" data-about="simple">${esc(t("Back to the overview"))}</button>
     </div>
   </div>`;
 }
