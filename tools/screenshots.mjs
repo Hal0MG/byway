@@ -141,6 +141,17 @@ await shot("about", async () => {
   });
   await sleep(2500);
 });
+// the Trips tab: ready-made trips only (your own stay out of the README), one open in the preview
+await shot("trips", async () => {
+  await js(async (id) => {
+    closeOverlay();
+    setView("trips");
+    await loadLibrary(true);
+    Object.assign(libState, { show: "ready", region: "US", q: "" });
+    libOpen(id);
+  }, PRESET);
+  await sleep(5000); // card and preview photos
+});
 await shot("planning", async () => {
   await js(() => {
     setView("home");
@@ -169,6 +180,18 @@ await shot("phone-today", async () => {
     openToday();
   }, copyId);
   await sleep(2000);
+});
+
+// a phone: a ready-made trip's preview in the Trips tab
+await shot("phone-trips", async () => {
+  await js(async () => {
+    closeOverlay();
+    setView("trips");
+    await loadLibrary(true);
+    Object.assign(libState, { show: "ready", region: "", q: "" });
+    libOpen("1c2cabe3-cb21-4403-8a18-792256347da1"); // Innsbruck to Lake Como
+  });
+  await sleep(4000);
 });
 
 console.log(JSON.stringify({ copyId, planId }));

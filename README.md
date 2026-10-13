@@ -7,6 +7,10 @@ in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own co
 
 ![Byway home screen: a globe with ready-made trips floating around it](docs/screenshots/home.jpg)
 
+![The Trips tab: ready-made trips filtered to the United States, one open in the preview](docs/screenshots/trips.jpg)
+
+**Trips**: your own and the 35 ready-made ones, with search and filters, and a preview of every day before you open one.
+
 | | |
 |---|---|
 | ![A trip: Grand Teton, Yellowstone and the Beartooth Highway](docs/screenshots/trip.jpg) | ![A day of the trip with its photo, drive and seasonal closures](docs/screenshots/day.jpg) |
@@ -18,7 +22,11 @@ in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own co
 | ![Asking a question about the trip](docs/screenshots/ask.jpg) | ![Today: the next stop, tonight's arrival and roads ahead](docs/screenshots/today.jpg) |
 | **Ask your trip**, answered from its own days and places. | **Today**: what's next while you're on the road. |
 
-<p align="center"><img src="docs/screenshots/phone-today.jpg" width="300" alt="Today on a phone"></p>
+<p align="center">
+  <img src="docs/screenshots/phone-trips.jpg" width="280" alt="A ready-made trip's preview on a phone">
+  &nbsp;
+  <img src="docs/screenshots/phone-today.jpg" width="280" alt="Today on a phone">
+</p>
 
 ## Getting started
 
