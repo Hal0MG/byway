@@ -37,17 +37,33 @@ const catalog = [
 ].map((b) => norm(b.name)).filter((n) => n.length > 3);
 const grounded = (r) => !!r.official || catalog.some((c) => norm(r.name).includes(c) || c.includes(norm(r.name)));
 
-const browser = await puppeteer.launch({
-  executablePath: process.env.CHROME_PATH,
-  headless: "shell",
-  protocolTimeout: 900000,
-  userDataDir: fs.mkdtempSync(path.join(os.tmpdir(), "byway-eval-")),
-});
-const page = await browser.newPage();
-page.on("pageerror", (e) => console.log("  page error:", e.message));
+// A fresh tab per request, and a new browser when the old one died (a crashed tab took the rest of a run with it).
+let browser = null;
+async function newPage() {
+  if (!browser?.connected) {
+    await browser?.close().catch(() => {});
+    browser = await puppeteer.launch({
+      executablePath: process.env.CHROME_PATH,
+      headless: "shell",
+      protocolTimeout: 900000,
+      userDataDir: fs.mkdtempSync(path.join(os.tmpdir(), "byway-eval-")),
+    });
+  }
+  const page = await browser.newPage();
+  page.on("pageerror", (e) => console.log("  page error:", e.message));
+  return page;
+}
 
-// One request through the pipeline, in the page. Returns the record (or { error }).
+// One request through the pipeline, in a new tab. Returns the record (or { error }).
 async function runOne(p, model) {
+  const page = await newPage();
+  try {
+    return await runIn(page, p, model);
+  } finally {
+    await page.close().catch(() => {});
+  }
+}
+async function runIn(page, p, model) {
   await page.goto(APP, { waitUntil: "load" });
   await page.waitForFunction(() => typeof newTrip === "function" && typeof map !== "undefined", { timeout: 30000 });
   return page.evaluate(async ({ prompt, settings, model }) => {
@@ -136,11 +152,18 @@ async function runOne(p, model) {
 
 for (const model of models) {
   const file = path.join(out, `${model}.jsonl`);
+  // resume: keep the finished requests, run the rest again (failed ones too)
+  const kept = fs.existsSync(file)
+    ? fs.readFileSync(file, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l)).filter((r) => !r.error)
+    : [];
+  fs.writeFileSync(file, kept.map((r) => `${JSON.stringify(r)}\n`).join(""));
+  const done = new Set(kept.map((r) => `${r.id}#${r.rep}`));
   let limited = 0;
-  console.log(`\n${model}`);
+  console.log(`\n${model}${kept.length ? ` (${kept.length} already done)` : ""}`);
   for (let rep = 0; rep < repeat; rep++) {
     for (const p of prompts) {
       if (limited >= 3) break;
+      if (done.has(`${p.id}#${rep}`)) continue;
       const t = Date.now();
       let rec;
       let tries = 0;
@@ -170,5 +193,5 @@ for (const model of models) {
   }
   if (limited >= 3) console.log(`  stopped ${model}: it hit its limit 3 times in a row`);
 }
-await browser.close();
+await browser?.close();
 console.log(`\nResults in ${out}. Report: node tools/eval-report.mjs ${out}`);

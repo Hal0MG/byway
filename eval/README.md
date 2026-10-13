@@ -20,7 +20,7 @@ CHROME_PATH=<chrome-headless-shell> npm run eval -- --models gemini-flash-lite-l
 npm run eval:report -- eval/results/<run>
 ```
 
-`--only id1,id2` runs some requests, `--repeat n` runs each n times (the model isn't deterministic).
+`--only id1,id2` runs some requests, `--repeat n` runs each n times (the model isn't deterministic). Running again into the same folder resumes: finished requests are kept, failed ones run again.
 
 **The stages.** A trip passes a stage when everything up to it holds: the model's first answer passes the plan checks;
 after its one repair; once routed, every featured road is driven and no day is over the daily limit; after the road
