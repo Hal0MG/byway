@@ -1914,7 +1914,8 @@ const GEMINI_BASE = (process.env.GEMINI_BASE_URL || "https://generativelanguage.
 // once or twice more (8 s, then 20 s) before giving up; a busy answer doesn't count against the free limit.
 async function callGemini(prompt, { signal, onText, schema } = {}) {
   const errors = [];
-  const busy = (m) => /high demand|overloaded|unavailable|try again later|503/i.test(m);
+  // busy or a passing server error on Google's side (500 "Internal error encountered" comes in the same bursts)
+  const busy = (m) => /high demand|overloaded|unavailable|try again later|internal error|50[0-4]/i.test(m);
   for (const [round, wait] of [[0, 0], [1, 8000], [2, 20000]]) {
     if (round && !errors.slice(-GEMINI_MODELS.length).every((e) => busy(e))) break;
     if (wait) {
