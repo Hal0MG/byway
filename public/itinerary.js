@@ -14,7 +14,7 @@ const EXAMPLES = [
 ];
 
 // Where the planner has a road list. Keep in step with tools/build-coverage.mjs and data/*-drives.json.
-const COVERAGE_TEXT = "Covered: the US · Canada from BC to Newfoundland · Australia: NSW, Victoria, ACT, Queensland, Tasmania · New Zealand · the UK and Ireland · the Alps (Switzerland, Austria, Bavaria, the Italian and French Alps) · Norway · Iceland · Spain and Portugal";
+const COVERAGE_TEXT = "Plans anywhere in the world. Hand-picked road lists for the US · Canada from BC to Newfoundland · Australia: NSW, Victoria, ACT, Queensland, Tasmania · New Zealand · the UK and Ireland · the Alps (Switzerland, Austria, Bavaria, the Italian and French Alps) · Norway · Iceland · Spain and Portugal";
 
 // Layered mountains and a road, used on the start, progress and How it works screens. Each copy gets its own gradient
 // ids: with shared ones, a copy in a hidden view (the start screen) took the ids and the visible one lost its sky.
@@ -81,7 +81,7 @@ function renderStart() {
         </form>
         <div class="examples">${EXAMPLES.map((x) => `<button class="chip" data-act="example">${esc(x)}</button>`).join("")}</div>
         <p class="fine">${esc(planTime())} You can also add stops by hand on the Map tab.</p>
-        <p class="fine coverage-note">${icon("map", 14)} ${esc(COVERAGE_TEXT)}. Other places are grey on the map.</p>
+        <p class="fine coverage-note">${icon("map", 14)} ${esc(COVERAGE_TEXT)}.</p>
       </div>
       ${presetsHtml()}
     </section>`;
@@ -390,13 +390,6 @@ function renderTrip() {
           ? `<textarea id="rename-input" class="rename-input" rows="1" maxlength="120" aria-label="Trip name">${esc(renameDraft)}</textarea>`
           : `<h1>${esc(tripTitle())}${READONLY ? "" : ` <button class="rename-btn" data-act="rename" title="Rename the trip" aria-label="Rename the trip">${icon("pencil", 20)}</button>`}</h1>`}
         ${plan?.summary ? `<p class="lede">${esc(plan.summary)}</p>` : ""}
-        ${(() => {
-          const out = uncoveredStops();
-          return out.length
-            ? `<p class="cov-warn">${icon("alert", 16)} ${out.length === 1 ? "1 stop is" : `${out.length} stops are`} outside the areas we cover
-                (grey on the map): ${esc(out.map((s) => shortName(s.name)).join(", "))}. Routes and photos work there, but there's no road list to pick from yet.</p>`
-            : "";
-        })()}
         ${seasonalHero(groups, segsByDay)}
         ${(() => {
           const dark = tripSettings().noNight && routes.scenic ? afterDarkDays() : [];

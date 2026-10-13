@@ -1886,7 +1886,7 @@ async function wikiSearch(q, fits) {
 }
 
 // The countries the planner covers, so a name like "Victoria" or "Banff" isn't found somewhere else.
-const COUNTRY_CODES = "us,ca,au,nz,gb,ch,at,li,it,fr,de,no,is,ie,es,pt";
+// (until 1.0 searches were limited to the covered countries; they now run worldwide)
 // Nominatim allows about 1 request per second, so server lookups go through a queue.
 const geoCache = new Map();
 let geoChain = Promise.resolve();
@@ -1905,7 +1905,7 @@ function nominatimJson(url) {
 }
 async function geocodeServer(q) {
   if (geoCache.has(q)) return geoCache.get(q);
-  const d = await nominatimJson(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=${COUNTRY_CODES}&q=${encodeURIComponent(q)}`);
+  const d = await nominatimJson(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`);
   if (!d) return null;
   const hit = d[0] ? { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) } : null;
   geoCache.set(q, hit);
@@ -2678,9 +2678,9 @@ async function loadByways() {
   return byways;
 }
 
-const PLANNER_INTRO = `You are an expert road trip planner for the United States, Canada, Australia, New Zealand, the United Kingdom, the Alps,
-Norway, Iceland, Ireland, Spain and Portugal.
-You know which roads driving enthusiasts, motorcyclists and
+const PLANNER_INTRO = `You are an expert road trip planner for anywhere in the world, with a hand-checked list of celebrated roads
+for the United States, Canada, Australia, New Zealand, the United Kingdom, the Alps, Norway, Iceland, Ireland, Spain and
+Portugal. You know which roads driving enthusiasts, motorcyclists and
 road trip communities rave about on forums, and you balance great roads with sensible travel: use interstates and fast highways
 for long stretches with nothing special, and spend the driving time on roads that are worth it. Never route onto slow back roads
 just to avoid a freeway.`;
@@ -2954,8 +2954,11 @@ Celebrated scenic roads (US National Scenic Byways and All-American Roads, and f
 one per line as name | designation | states | length | description:
 ${catalog}
 
-Prefer these where they fit the trip, and also use famous roads that aren't in the list.
-Name places so a map search finds them, with their state or region and country outside the US: "Banff, Alberta, Canada",
+Prefer these where they fit the trip, and also use famous roads that aren't in the list. Outside the countries the list
+covers, pick roads you know drivers there rate highly, with their real names and route numbers; never invent a road, and
+if a country has no well-known scenic road on the way, plan a sensible route with good stops instead.
+Name places so a map search finds them, with their state or region and country outside the US (in English or the
+local name a map knows), like these: "Banff, Alberta, Canada",
 "Lorne, Victoria, Australia", "Wānaka, Otago, New Zealand", "Fort William, Scotland, United Kingdom",
 "Bormio, Lombardy, Italy", "Andermatt, Switzerland", "Geiranger, Møre og Romsdal, Norway", "Vík, Iceland", "Dingle, County Kerry,
 Ireland", "Ronda, Andalusia, Spain", "Pinhão, Vila Real, Portugal". Write refs the way the country numbers its roads: "BC 99",
@@ -3144,7 +3147,7 @@ const STATE_ABBR = {
 };
 
 async function roadShape(q) {
-  const u = `https://nominatim.openstreetmap.org/search?format=json&limit=40&countrycodes=${COUNTRY_CODES}&polygon_geojson=1&polygon_threshold=0.001&q=${encodeURIComponent(q)}`;
+  const u = `https://nominatim.openstreetmap.org/search?format=json&limit=40&polygon_geojson=1&polygon_threshold=0.001&q=${encodeURIComponent(q)}`;
   const pts = [];
   for (const x of asArray(await nominatimJson(u))) {
     if (x.class !== "highway") continue;

@@ -94,7 +94,7 @@ const DEEP_SECTIONS = [
 
   ["spatial", "Spatial queries", `
     <ul>
-      <li><b>Coverage.</b> Which country a stop is in: ray-casting point-in-polygon on Natural Earth outlines (merged, then simplified with Turf, in that order or seams appear). Simplified coasts cut off coastal towns, so a miss probes 8 points ~5 km around it. Results are memoized at 3 decimals.</li>
+      <li><b>Which country a stop is in</b> (for units, currency and the road list): ray-casting point-in-polygon, first on the finer outlines of the regions with a curated road list (merged, then simplified with Turf, in that order or seams appear), then on all 239 countries. Simplified coasts cut off harbour towns, so a miss probes rings of 8 points ~5 and ~15 km around it. Results are memoized.</li>
       <li><b>Spots along the day.</b> Each sight is projected onto the day's line: nearest vertex (the line subsampled to at most 3,000), giving distance along and distance off. That orders the timeline and flags spots over 25 km off the route.</li>
       <li><b>Fuel gaps.</b> Stations are projected the same way; the longest gap between sorted positions is the warning.</li>
       <li><b>Points of interest.</b> Fuel, chargers, viewpoints and stays come from Overpass (OSM's query engine). Big "around the line" queries ran out of memory on the public servers, so the line is covered with 0.25° tiles (about 28 by 20 km), each cached 60 days and kept a year as a stale fallback when every server fails.</li>
