@@ -57,7 +57,7 @@ function welcomeHtml() {
               </div>
               ${st.msg ? `<p class="${st.msg.ok ? "wl-ok" : "wl-bad"}">${esc(st.msg.text)}</p>` : ""}
             </div>
-            <p class="fine">${t("Prefer a model on this computer (free, private, needs a good graphics card)? Set it up later in Setup with LM Studio.")}</p>`}
+          `}
         ${ready ? nav(undefined, { skip: false }) : nav(st.busy ? `<span class="spinner"></span> ${t("Checking")}` : t("Save the key"))}`;
     },
     home: () => `<h2>${icon("pin", 26)} ${t("Where do you start from?")}</h2>

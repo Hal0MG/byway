@@ -48,9 +48,7 @@ on a Mac, right-click the app and choose Open the first time; on Windows, "More 
      without it, or when its daily allowance runs out, routes come from OpenStreetMap's public OSRM servers, with
      heights from Open-Meteo),
    - the trip planner AI: a free [Google Gemini](https://aistudio.google.com/apikey) key (Flash-Lite: a plan in a few
-     seconds, no graphics card needed), or a model on your own computer with [LM Studio](https://lmstudio.ai)
-     (unlimited and private, needs about 8 GB of graphics memory or an Apple Silicon Mac; Setup can start it, download
-     the model and load it),
+     seconds, no graphics card needed),
    - a [Tavily](https://app.tavily.com) key for web search while planning, and for "What drivers say" on road cards
      (optional),
    - your email or website, so Wikipedia and OpenStreetMap don't slow down lookups (recommended).

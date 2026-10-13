@@ -62,43 +62,14 @@ function prefInput(e) {
 function setupHtml() {
   const s = setupState.info;
   if (!s) return `${sheetHead("Settings")}${prefsHtml()}<p class="fine">Keys and the AI planner are set up on the computer that runs the app.</p>`;
-  const provider = setupState.provider || s.provider;
-  const L = s.local;
-  const job = L.job && !L.job.done ? L.job : null;
-  const gpuText = s.gpu?.apple
-    ? `${s.gpu.name}, ${s.gpu.gb} GB shared memory. ${s.gpu.gb >= 16 ? "Enough for the local model; planning takes a few times longer than on a desktop graphics card." : "That's tight for the local model (it uses about 7 GB); Gemini may suit this Mac better."}`
-    : s.gpu?.name
-      ? `${s.gpu.name}, ${s.gpu.gb} GB. ${s.gpu.gb >= 8 ? "Plenty for the local model." : "That's tight for the local model (it wants about 6 GB free); Gemini may suit this PC better."}`
-      : "No NVIDIA graphics card found. The local model needs a good GPU (about 8 GB) or an Apple Silicon Mac; without one, use Gemini.";
-  const localSteps = [
-    [L.lms, "LM Studio installed", L.lms ? "" : `<a class="btn ghost small" href="https://lmstudio.ai/download" target="_blank" rel="noopener">Get LM Studio (free) ${icon("external", 12)}</a> <small>Install it and open it once, then press Check again.</small>`],
-    [L.running, "LM Studio's server running", !L.lms || L.running ? "" : `<button class="btn ghost small" data-su="lms-start">Start it</button>`],
-    [L.downloaded, `The planning model (${esc(L.model)}, about 6 GB)`, !L.running || L.downloaded ? "" : `<button class="btn ghost small" data-su="lms-download" ${job ? "disabled" : ""}>Download it</button>`],
-    [L.loaded, "Model loaded on the graphics card",
-      !L.downloaded || L.loaded ? "" : `<button class="btn ghost small" data-su="lms-load" ${job ? "disabled" : ""}>Load it</button>`],
-  ];
   return `${sheetHead("Setup")}
     <p class="su-lede">Everything here is free and optional. Keys stay on this computer, in the app's .env file.</p>
     ${prefsHtml()}
 
     <section class="su-step">
-      <h3>${tick(provider === "gemini" ? s.gemini.set : L.loaded)} 1. The trip planner AI <em>to plan new trips</em></h3>
-      <p>Ready-made trips, the map and routes work without it. To plan new trips, pick a planner:</p>
-      <div class="su-choice" role="radiogroup">
-        <button class="${provider === "gemini" ? "on" : ""}" data-su="provider" data-v="gemini" role="radio" aria-checked="${provider === "gemini"}">
-          <b>Google Gemini</b><small>The quick start: a free key in about two minutes, nothing to install. Plans in seconds, with a daily limit on free requests.</small></button>
-        <button class="${provider === "local" ? "on" : ""}" data-su="provider" data-v="local" role="radio" aria-checked="${provider === "local"}">
-          <b>On this ${s.platform === "darwin" ? "Mac" : "PC"}</b><small>Free, unlimited and private. Needs a good graphics card or an Apple Silicon Mac. Uses LM Studio.</small></button>
-      </div>
-      ${provider === "local"
-        ? `<p class="su-gpu">${icon("gauge", 14)} ${esc(gpuText)}</p>
-           <ul class="su-list">${localSteps.map(([ok, label, action]) => `<li>${tick(ok)}<span>${label}</span>${action}</li>`).join("")}</ul>
-           ${setupState.msgs.lms ? `<p class="su-bad">${esc(setupState.msgs.lms.text)}</p>` : ""}
-           ${job ? `<p class="su-job"><span class="spinner"></span> ${job.action === "download" ? "Downloading the model. This can take a while; you can keep using the app." : "Loading the model..."}
-             <small>${esc(job.out.split(/\r|\n/).filter(Boolean).pop() || "")}</small></p>` : ""}
-           ${L.job?.done && !L.job.ok ? `<p class="su-bad">That didn't work: ${esc(L.job.out.split(/\r|\n/).filter(Boolean).slice(-2).join(" "))}</p>` : ""}
-           ${L.loaded ? "" : `<p class="fine">After a restart of the PC, the model needs loading again: press "Load it" here, or run start-ai.cmd.</p>`}`
-        : keyField("gemini", "Gemini key", s.gemini, "Paste your key", "https://aistudio.google.com/apikey", "Get a free key") + geminiToday(s.gemini)}
+      <h3>${tick(s.gemini.set)} 1. The trip planner AI <em>to plan new trips</em></h3>
+      <p>Ready-made trips, the map and routes work without it. To plan new trips, Gemini is the planner: a free key in about two minutes, nothing to install. It plans in seconds, with a daily limit on free requests.</p>
+      ${keyField("gemini", "Gemini key", s.gemini, "Paste your key", "https://aistudio.google.com/apikey", "Get a free key") + geminiToday(s.gemini)}
     </section>
 
     <section class="su-step">

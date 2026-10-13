@@ -1976,8 +1976,10 @@ app.post("/api/enrich", async (req, res) => {
 // trip forums and driving sites say about the route. Without a key it uses Gemini's free tier (no web search).
 // AI_PROVIDER=claude or gemini in .env picks one explicitly. If Claude fails and a Gemini key exists, Gemini takes over.
 const anthropic = ANTHROPIC_KEY ? new Anthropic() : null; // reads ANTHROPIC_API_KEY from the environment
-// Default since 1.8: a local model in LM Studio (free, runs on the PC's GPU) with Tavily web search.
-let AI_PROVIDER = (process.env.AI_PROVIDER || "local").toLowerCase();
+// The local model (LM Studio) is switched off: the planner is Gemini unless AI_PROVIDER=claude. An old AI_PROVIDER=local
+// in .env counts as Gemini, and nothing here starts or talks to LM Studio any more.
+const pickProvider = (v) => ((v || "").toLowerCase() === "claude" ? "claude" : "gemini");
+let AI_PROVIDER = pickProvider(process.env.AI_PROVIDER);
 const LOCAL_URL = (process.env.LOCAL_AI_URL || "http://localhost:1234/v1").replace(/\/$/, "");
 const LOCAL_MODEL = process.env.LOCAL_MODEL || "qwen/qwen3.5-9b";
 // How long one answer from the local model may take. A laptop GPU (an M3 MacBook) writes several times slower than a
@@ -2616,6 +2618,8 @@ const DETAILS_SCHEMA = obj({
 
 // Whether LM Studio is up and the model is loaded (for the status line and clear errors).
 async function localStatus() {
+  // LM Studio is switched off: never probe its port.
+  return { running: false, downloaded: false, loaded: false, context: null };
   try {
     const r = await fetch(`${LOCAL_URL.replace(/\/v1$/, "")}/api/v0/models`, { signal: AbortSignal.timeout(2000) });
     const d = await r.json();
@@ -2779,7 +2783,7 @@ const bywayRecord = (b) => ({
 const noAI = () => AI_PROVIDER !== "local" && !anthropic && !GEMINI_KEY;
 // What the app says when an AI feature is used before a planner is set up. Everything else works without keys.
 const NO_AI = "Planning with AI needs a planner. Add a free Google Gemini key in Setup (the gear button, about two minutes), " +
-  "or run a model on this computer with LM Studio. Ready-made trips, the map and routes work without it.";
+  "Ready-made trips, the map and routes work without it.";
 
 // Step 1: the route. Days, stops, via points and featured roads, with the byway catalog as reference.
 // With current + dayHours it revises an existing plan using drive times the app measured.
@@ -3336,8 +3340,6 @@ const isLocalRequest = (req) => ["127.0.0.1", "::1", "::ffff:127.0.0.1"].include
 const localOnly = (req, res, next) => (isLocalRequest(req) ? next() : res.status(403).json({ error: "Setup only works on the PC running the app." }));
 const ENV_FILE = path.resolve(".env");
 const LMS = process.env.LMS_PATH || path.join(os.homedir(), ".lmstudio", "bin", process.platform === "win32" ? "lms.exe" : "lms");
-// A fresh install with no planner chosen: Gemini (a free key, nothing to install) unless LM Studio is already here.
-if (!process.env.AI_PROVIDER && !existsSync(LMS)) AI_PROVIDER = "gemini";
 
 // Pick up changed keys without a restart.
 function applyConfig() {
@@ -3346,7 +3348,7 @@ function applyConfig() {
   TAVILY_KEY = (process.env.TAVILY_API_KEY || "").trim();
   CONTACT = (process.env.CONTACT || "").trim();
   UA = userAgent();
-  AI_PROVIDER = (process.env.AI_PROVIDER || "local").toLowerCase();
+  AI_PROVIDER = pickProvider(process.env.AI_PROVIDER);
 }
 // Set lines in .env (creating it if needed), keeping every other line and comment as it is.
 async function writeEnv(values) {
@@ -3450,7 +3452,7 @@ app.post("/api/setup", localOnly, async (req, res) => {
       if (!c || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c) || /^https?:\/\/\S+$/.test(c)) save.CONTACT = c;
       else problems.contact = "Use an email address or a web address starting with http.";
     }
-    if (["local", "gemini"].includes(b.provider)) save.AI_PROVIDER = b.provider;
+    if (b.provider === "gemini") save.AI_PROVIDER = b.provider;
     if (Object.keys(save).length) await writeEnv(save);
     res.json({ saved: Object.keys(save), problems });
   } catch (e) {
@@ -3460,6 +3462,7 @@ app.post("/api/setup", localOnly, async (req, res) => {
 
 // POST { action: "start" | "download" | "load" }: LM Studio's command line tool, for people who'd rather not use it.
 app.post("/api/setup/lms", localOnly, async (req, res) => {
+  return res.status(410).json({ error: "The local model (LM Studio) is switched off in this version." });
   const action = req.body?.action;
   if (!(await lmsInstalled())) return res.status(400).json({ error: "LM Studio isn't installed (or hasn't been opened once yet)." });
   if (lmsJob && !lmsJob.done) return res.json({ job: lmsJob });
