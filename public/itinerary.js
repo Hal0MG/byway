@@ -493,12 +493,12 @@ function requestCard() {
         ${askState.mode === "ask" || READONLY
           ? `<form class="rc-form" id="ask-form">
               <textarea id="ask-text" rows="2" aria-label="Ask about this trip"
-                placeholder="Ask about the trip: “where should we eat in Moab?”, “is day 3 too much with kids?”, “where's the last fuel before the pass?”"></textarea>
+                placeholder="${esc(tripExamples().ask)}"></textarea>
               <button class="btn blue" type="submit" ${askState.busy ? "disabled" : ""}>${icon("sparkle", 18)} Ask</button>
             </form>${qaHtml()}`
           : `<form class="rc-form" id="edit-form">
               <textarea id="edit-text" rows="2" aria-label="Ask for a change"
-                placeholder="Ask for a change: “add a day in the Adirondacks”, “more switchbacks, fewer highways”, “end in Boston”"></textarea>
+                placeholder="${esc(tripExamples().change)}"></textarea>
               <button class="btn blue" type="submit" ${typeof liveState !== "undefined" && liveState.busy ? "disabled" : ""}>${icon("refresh", 18)} Update trip</button>
             </form>`}
       </div>`

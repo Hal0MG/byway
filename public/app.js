@@ -478,11 +478,28 @@ function toggleOvernight(i) {
   renderItinerary();
 }
 
+// Example requests in the change and ask boxes, from this trip's own places ("skip Mammoth", "a night in Cody").
+function tripExamples() {
+  const groups = dayGroups();
+  const nights = groups.slice(0, -1).map((g) => shortName(stops[g.items.at(-1)]?.name || "")).filter(Boolean);
+  const middle = stops.slice(1, -1).filter((s) => !nights.includes(shortName(s.name)));
+  const skip = shortName((middle.find((s) => !isVia(s)) || middle[0])?.name || "") || "Winnipeg";
+  const night = nights[Math.floor(nights.length / 2)] || shortName(stops.at(-1)?.name || "") || "Banff";
+  const longest = groups.map((g) => ({ day: g.day, dur: dayStats(g, "scenic")?.dur || 0 })).sort((a, b) => b.dur - a.dur)[0]?.day || 2;
+  const road = plan?.roads?.[0]?.name;
+  return {
+    change: `Ask for a change: “skip ${skip}”, “add a night in ${night}”, “more switchbacks, fewer highways”`,
+    ask: `Ask about the trip: “where should we eat in ${night}?”, “is day ${longest} too much with kids?”, ${road ? `“where's the last fuel before ${road}?”` : "“where's the last fuel before the pass?”"}`,
+    map: `Change the trip: “skip ${skip}”`,
+  };
+}
+
 // ---------- stops list and pins (map view panel) ----------
 
 function renderStops() {
   updateUnits();
   $("change-form").hidden = !plan || READONLY;
+  if (stops.length > 1) $("change-text").placeholder = tripExamples().map;
   pins.forEach((p) => p.remove());
   pins.length = 0;
   const ol = $("stops");
