@@ -220,6 +220,16 @@ function matchRoad(seg, roads) {
   return null;
 }
 
+// The days a featured road is on: the days the measured route drives 5+ km of it, else the planner's days (then the
+// card says the route doesn't use it yet). The planner's list can be off by a day (Beartooth on day 2 and 3 when only
+// day 3 drives it).
+function roadDays(r) {
+  const planned = (r.days || []).map(Number);
+  if (!routes.scenic) return planned;
+  const driven = dayGroups().filter((g) => daySegments(g).filter((s) => matchRoad(s, [r])).reduce((a, s) => a + s.distance_m, 0) >= 5000).map((g) => g.day);
+  return driven.length ? driven : planned;
+}
+
 // Road segments driven on a day, merged across legs: [{ ref, refs, name, distance_m, duration_s, highway_m, road }]
 // Pieces that share a route number are one road (US 26 is "North Cache Street" through Jackson).
 // Featured roads are matched against the roads planned for that day.
@@ -756,7 +766,7 @@ function renderDay(g, gi, groups, segs) {
   const line = routes.scenic ? dayLine(day) : null;
   const spots = (plan?.spots || []).map((s, i) => ({ s, i })).filter(({ s }) => s.day === day);
   const placed = spots.map(({ s, i }) => ({ s, i, pos: spotAlong(line, s) }));
-  const roadsToday = (plan?.roads || []).filter((r) => (r.days || []).map(Number).includes(day));
+  const roadsToday = (plan?.roads || []).filter((r) => roadDays(r).includes(day));
   const long = st && st.dur > longDayS();
   const arr = routes.scenic ? dayArrival(g, gi) : null;
   const seasonal = seasonalForDay(g, segs);

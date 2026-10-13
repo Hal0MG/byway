@@ -227,8 +227,12 @@ function seasonalForDay(g, segs) {
       for (let k = 0; k < line.coords.length; k += step) if (haversine(line.coords[k], p) < km * 1000) return true;
       return false;
     };
+    // a name match only counts nearby: Yellowstone's own "North Rim Drive" matched the Grand Canyon's North Rim
+    // ("north rim") and Crater Lake ("rim drive")
+    const dayPts = g.items.map((i) => [stops[i].lng, stops[i].lat]);
+    const around = (r) => !(r.at || []).length || r.at.some((p) => dayPts.some((q) => haversine(p, q) < 300000));
     const date = dayDate(g.day);
-    return SEASONAL.filter((r) => (r.at || []).some((p) => near(p, r.radius_km || 3)) || (r.match || []).some((m) => text.includes(m)))
+    return SEASONAL.filter((r) => (r.at || []).some((p) => near(p, r.radius_km || 3)) || (around(r) && (r.match || []).some((m) => text.includes(m))))
       .map((r) => ({ r, status: date ? seasonStatus(r, date) : null }))
       .filter((x) => !date || x.status !== "open");
   });
