@@ -147,7 +147,7 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
 /* language: the flag next to the light/dark switch, and its menu */
 .flag { display: inline-flex; flex: none; }
 .flag svg { width: 22px; height: 15px; display: block; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18); }
-.icon-btn.lang-btn { width: auto; padding: 0 7px; gap: 3px; }
+.icon-btn.lang-btn { display: inline-flex; flex-direction: row; align-items: center; justify-content: center; width: auto; padding: 0 8px; gap: 4px; }
 .lang-btn .ico:last-child { transform: rotate(90deg); color: var(--muted); }
 .lang-menu {
   position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; min-width: 190px; padding: 4px;
