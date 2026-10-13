@@ -21,6 +21,8 @@ in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own co
 | **Planning live**: the days fill in as the AI writes them. | **Other versions**, measured and compared before you switch. |
 | ![Asking a question about the trip](docs/screenshots/ask.jpg) | ![Today: the next stop, tonight's arrival and roads ahead](docs/screenshots/today.jpg) |
 | **Ask your trip**, answered from its own days and places. | **Today**: what's next while you're on the road. |
+| ![Great roads near Denver with weekend loops to plan](docs/screenshots/near.jpg) | ![How it works](docs/screenshots/about.jpg) |
+| **Roads near me**: the byways and famous drives within a few hours, and weekend loops in one tap. | **How it works**, a short tour in the app. |
 
 <p align="center">
   <img src="docs/screenshots/phone-trips.jpg" width="280" alt="A ready-made trip's preview on a phone">
@@ -54,7 +56,8 @@ top bar and only works on the computer running the app. Keep the start window op
   day you want, a loop, no night driving, an electric car. Or open one of the 35 ready-made trips instantly. The plan
   fills in on screen as the AI writes it, and the app checks it (days, overnights, featured roads on the route) and
   sends problems back once.
-- **Every day**: driving time and distance, weather, sunset, a timeline with the roads and stops, an elevation profile,
+- **Every day**: driving time and distance, weather, sunset, a timeline with the roads and stops, a drive chart (climbs,
+  featured roads and the clock along the day, linked to the timeline),
   seasonal closures, ferries, tolls and gravel, featured road cards with curve and climb ratings, stops with photos,
   fuel and charger gaps, and places to stay and eat at the overnight with booking searches for that night.
 - **Change it in plain words**: "skip Winnipeg", "add a night in Banff". Changes apply in place with Undo. Fix long
@@ -64,6 +67,11 @@ top bar and only works on the computer running the app. Keep the start window op
 - **Other versions**: easier, more scenic or another way, measured and compared side by side.
 - **Edit on the map**: drag a stop, pull the route through a town, right-click or long-press to add a place.
 - **Today**: on the road, what's next, the next fuel or charger, roads and stops ahead, and arrival against sunset.
+- **Send to your phone**: a QR code per day opens it in Google Maps or Apple Maps; long days go in parts so every
+  scenic via point makes it.
+- **Trip cost**: fuel or charging per day and lodging per night, in the trip's own units and currency.
+- **Roads near me**: the scenic byways and famous drives within a few hours of home, with weekend loops to plan.
+- **What drivers say**: on each featured road, a short summary of what drivers write about it (with a web search key).
 - **Trips**: your trips and the ready-made ones in one tab, with search, region and length filters, and a preview of
   every day, the route and the roads before you open one.
 - **Export and share**: GPX, print or PDF, a web page, or a read-only link for devices on the same network.

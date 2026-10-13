@@ -152,6 +152,17 @@ await shot("trips", async () => {
   }, PRESET);
   await sleep(5000); // card and preview photos
 });
+// Roads near me from Denver (the home base is set directly; the list is plain arithmetic, no service)
+await shot("near", async () => {
+  await js(async () => {
+    closeOverlay();
+    setView("home");
+    nearState.home = { name: "Denver, Colorado", at: [-104.985, 39.739] };
+    nearState.hours = 5;
+    await openNear();
+  });
+  await sleep(3000); // road photos
+});
 await shot("planning", async () => {
   await js(() => {
     setView("home");
