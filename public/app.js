@@ -490,7 +490,7 @@ function tripExamples() {
   return {
     change: `Ask for a change: “skip ${skip}”, “add a night in ${night}”, “more switchbacks, fewer highways”`,
     ask: `Ask about the trip: “where should we eat in ${night}?”, “is day ${longest} too much with kids?”, ${road ? `“where's the last fuel before ${road}?”` : "“where's the last fuel before the pass?”"}`,
-    map: `Change the trip: “skip ${skip}”`,
+    map: `Change: “skip ${skip}”`,
   };
 }
 
