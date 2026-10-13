@@ -22,6 +22,12 @@ const COVERED = {
   DE: ["Bayern"],
   IT: { region: ["Valle d'Aosta", "Piemonte", "Lombardia", "Trentino-Alto Adige", "Veneto", "Friuli-Venezia Giulia"] },
   FR: { region: ["Auvergne-Rhône-Alpes", "Provence-Alpes-Côte-d'Azur"] },
+  // Norway, Iceland, Ireland, Spain and Portugal (2026-10-13)
+  NO: "all",
+  IS: "all",
+  IE: "all",
+  ES: "all",
+  PT: "all",
 };
 const FROM_50M = new Set(["US", "CA", "AU"]);
 

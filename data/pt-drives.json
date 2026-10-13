@@ -1,0 +1,11 @@
+[
+ {"name": "Douro Valley (N222)", "ref": "N222", "wiki": "Douro Valley", "states": ["Porto District", "Viseu District", "Portugal"], "km": 27, "description": "Along the Douro between Peso da Régua and Pinhão through terraced port vineyards, often called the world's best driving road"},
+ {"name": "Estrada Nacional 2", "ref": "N2", "wiki": "Roads in Portugal", "states": ["Portugal"], "km": 738, "description": "Portugal's 'Route 66' from Chaves in the north to Faro, through the interior's small towns and hills"},
+ {"name": "Serra da Estrela", "ref": "N339", "wiki": "Serra da Estrela", "states": ["Guarda District", "Castelo Branco District", "Portugal"], "km": 50, "description": "Up to Torre, mainland Portugal's highest point at 1,993 m, through glacial valleys from Covilhã to Seia"},
+ {"name": "Sintra Mountains", "ref": "N247", "wiki": "Sintra Mountains", "states": ["Lisbon District", "Portugal"], "km": 40, "description": "Forest roads past Pena Palace and the Moorish castle, out to Cabo da Roca, mainland Europe's westernmost point"},
+ {"name": "Arrábida", "ref": "N379", "wiki": "Arrábida Natural Park", "states": ["Setúbal District", "Portugal"], "km": 35, "description": "A coastal ridge road above turquoise coves between Setúbal and Sesimbra"},
+ {"name": "Costa Vicentina", "ref": "N120", "wiki": "Southwest Alentejo and Vicentine Coast Natural Park", "states": ["Beja District", "Faro District", "Portugal"], "km": 120, "description": "The wild Atlantic coast from Vila Nova de Milfontes to Sagres and Cape St. Vincent"},
+ {"name": "Peneda-Gerês", "ref": "N308", "wiki": "Peneda-Gerês National Park", "states": ["Braga District", "Viana do Castelo District", "Portugal"], "km": 80, "description": "Portugal's only national park: granite mountains, reservoirs, waterfalls and stone villages in the far north"},
+ {"name": "Alto Douro wine region", "ref": "N323", "wiki": "Alto Douro Wine Region", "states": ["Vila Real District", "Viseu District", "Portugal"], "km": 60, "description": "Quintas and viewpoints such as São Leonardo de Galafura above the river's bends"},
+ {"name": "Monsanto and the historic villages", "ref": "N239", "wiki": "Monsanto (Idanha-a-Nova)", "states": ["Castelo Branco District", "Portugal"], "km": 70, "description": "Granite hill villages near the Spanish border, Monsanto's houses wedged between boulders"}
+]

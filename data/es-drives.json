@@ -1,0 +1,15 @@
+[
+ {"name": "Sierra de Tramuntana (Ma-10)", "ref": "Ma-10", "wiki": "Serra de Tramuntana", "states": ["Balearic Islands", "Spain"], "km": 110, "description": "Mallorca's mountain road from Andratx to Pollença past Deià and Valldemossa, with the hairpins down to Sa Calobra"},
+ {"name": "Sa Calobra", "ref": "Ma-2141", "wiki": "Sa Calobra", "states": ["Balearic Islands", "Spain"], "km": 13, "description": "The 'snake': a road that loops under itself and coils down to a cove in the Tramuntana"},
+ {"name": "Picos de Europa", "ref": "N-621", "wiki": "Picos de Europa", "states": ["Asturias", "Cantabria", "Castile and León", "Spain"], "km": 150, "description": "Limestone peaks a short drive from the sea: the Desfiladero de La Hermida, Fuente Dé and the lakes of Covadonga"},
+ {"name": "Desfiladero de La Hermida", "ref": "N-621", "wiki": "Liébana", "states": ["Cantabria", "Spain"], "km": 21, "description": "A deep, narrow gorge into the Liébana valley, the gateway to the eastern Picos"},
+ {"name": "White Towns of Andalusia", "ref": "A-372", "wiki": "White Towns of Andalusia", "states": ["Andalusia", "Spain"], "km": 160, "description": "Ronda, Grazalema, Zahara and Arcos de la Frontera on hilltops over the Sierra de Grazalema"},
+ {"name": "Sierra Nevada", "ref": "A-395", "wiki": "Sierra Nevada (Spain)", "states": ["Andalusia", "Spain"], "km": 40, "description": "From Granada up into Spain's highest mountains, and the Alpujarras' white villages on the southern slopes"},
+ {"name": "Alpujarras", "ref": "A-4132", "wiki": "Alpujarras", "states": ["Andalusia", "Spain"], "km": 90, "description": "Terraced valleys and Berber-style villages (Pampaneira, Bubión, Capileira, Trevélez) on the Sierra Nevada's south side"},
+ {"name": "Costa Brava", "ref": "GI-614", "wiki": "Costa Brava", "states": ["Catalonia", "Spain"], "km": 120, "description": "Rocky coves and fishing towns from Tossa de Mar to Cadaqués and Cap de Creus"},
+ {"name": "Ordesa and the Pyrenees", "ref": "N-260", "wiki": "Ordesa y Monte Perdido National Park", "states": ["Aragon", "Spain"], "km": 100, "description": "Through the Aragonese Pyrenees to Torla and the Ordesa canyon, with high passes nearby"},
+ {"name": "Port de la Bonaigua", "ref": "C-28", "wiki": "Port de la Bonaigua", "states": ["Catalonia", "Spain"], "km": 40, "description": "A 2,072 m Pyrenean pass between the Val d'Aran and the Pallars, with long sweeping bends"},
+ {"name": "Cabo de Gata", "ref": "", "wiki": "Cabo de Gata-Níjar Natural Park", "states": ["Andalusia", "Spain"], "km": 60, "description": "Europe's driest coast: volcanic headlands, empty beaches and the lighthouse road near Almería"},
+ {"name": "Rías Baixas", "ref": "PO-550", "wiki": "Rías Baixas", "states": ["Galicia", "Spain"], "km": 150, "description": "The Galician estuaries south of Santiago: seafood towns, vineyards and the coast road to Baiona"},
+ {"name": "Teide (Tenerife)", "ref": "TF-21", "wiki": "Teide National Park", "states": ["Canary Islands", "Spain"], "km": 60, "description": "Up through pine forest into the caldera around Spain's highest peak, a lunar landscape at 2,000 m"}
+]

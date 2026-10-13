@@ -1,0 +1,10 @@
+[
+ {"name": "Ring Road", "ref": "1", "wiki": "Route 1 (Iceland)", "states": ["Iceland"], "km": 1322, "description": "Around the whole island: south-coast waterfalls and black beaches, glacier lagoons, the East Fjords and the lava fields of the north"},
+ {"name": "Golden Circle", "ref": "36", "wiki": "Golden Circle (Iceland)", "states": ["Southern Region", "Iceland"], "km": 230, "description": "Þingvellir's rift valley, the Geysir field and the Gullfoss falls in a loop from Reykjavík"},
+ {"name": "Snæfellsnes", "ref": "54", "wiki": "Snæfellsnes", "states": ["Western Region", "Iceland"], "km": 180, "description": "Iceland in miniature: Kirkjufell, lava fields, black-sand coves and the Snæfellsjökull glacier volcano"},
+ {"name": "Westfjords", "ref": "60", "wiki": "Westfjords", "states": ["Westfjords", "Iceland"], "km": 450, "description": "Gravel and paved roads around deep fjords to Dynjandi falls and the Látrabjarg bird cliffs; slow, remote and quiet"},
+ {"name": "Diamond Circle", "ref": "85", "wiki": "Diamond Circle", "states": ["Northeastern Region", "Iceland"], "km": 250, "description": "Lake Mývatn, Dettifoss, the Ásbyrgi canyon and Húsavík in the north"},
+ {"name": "South Coast (Route 1)", "ref": "1", "wiki": "Skógafoss", "states": ["Southern Region", "Iceland"], "km": 380, "description": "Seljalandsfoss and Skógafoss, Reynisfjara's basalt beach and Vík, out to the Jökulsárlón glacier lagoon"},
+ {"name": "Kjölur (F35)", "ref": "F35", "wiki": "Kjölur", "states": ["Iceland"], "km": 170, "description": "Highland gravel route between two glaciers to the Hveravellir hot springs; summer only, high-clearance cars"},
+ {"name": "East Fjords", "ref": "96", "wiki": "Eastern Region (Iceland)", "states": ["Eastern Region", "Iceland"], "km": 200, "description": "The coast road around the East Fjords' fishing villages between Höfn and Egilsstaðir"}
+]

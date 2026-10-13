@@ -1566,7 +1566,7 @@ const CA_PROVINCES = {
 // Outside the US, Canada and Australia the road lists go by country ("New Zealand", "Switzerland").
 const COUNTRY_NAME = {
   NZ: "New Zealand", GB: "United Kingdom", CH: "Switzerland", AT: "Austria", LI: "Liechtenstein", IT: "Italy",
-  FR: "France", DE: "Germany",
+  FR: "France", DE: "Germany", NO: "Norway", IS: "Iceland", IE: "Ireland", ES: "Spain", PT: "Portugal",
 };
 function tripStates() {
   const out = new Set();

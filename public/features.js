@@ -140,6 +140,12 @@ const COST_REGION = {
   GB: { cur: "GBP", fuel: 1.45, kwh: 0.7, stay: 0.8 },
   CH: { cur: "CHF", fuel: 1.85, kwh: 0.7, stay: 0.95 },
   EU: { cur: "EUR", fuel: 1.75, kwh: 0.6, stay: 0.92 },
+  // stay: the local price of a US$ room night, with the country's price level (Norway and Iceland are dear)
+  NO: { cur: "NOK", fuel: 21, kwh: 5, stay: 13 },
+  IS: { cur: "ISK", fuel: 320, kwh: 70, stay: 175 },
+  IE: { cur: "EUR", fuel: 1.75, kwh: 0.6, stay: 1.05 },
+  ES: { cur: "EUR", fuel: 1.6, kwh: 0.5, stay: 0.8 },
+  PT: { cur: "EUR", fuel: 1.75, kwh: 0.55, stay: 0.72 },
 };
 // a night for two in a typical room, in US dollars, by price level (scaled by the region's `stay`)
 const STAY_USD = { $: [70, 120], $$: [120, 190], $$$: [190, 320], $$$$: [320, 550] };
@@ -1675,7 +1681,7 @@ IT.addEventListener("click", (e) => {
 // ---------- ready-made trips (presets) and batch building ----------
 
 const presetState = { list: null, loading: false, region: "all", days: "all" };
-const REGION_NAMES = { US: "United States", CA: "Canada", AU: "Australia", NZ: "New Zealand", GB: "United Kingdom", ALPS: "The Alps" };
+const REGION_NAMES = { US: "United States", CA: "Canada", AU: "Australia", NZ: "New Zealand", GB: "United Kingdom", ALPS: "The Alps", NO: "Norway", IS: "Iceland", IE: "Ireland", ES: "Spain", PT: "Portugal" };
 function loadPresets() {
   if (presetState.list || presetState.loading) return;
   presetState.loading = true;
@@ -2527,10 +2533,24 @@ async function loadNearRoads() {
   nearState.roads ||= await fetch("road-points.json").then((r) => r.json()).then((d) => d.roads || []).catch(() => []);
   return nearState.roads;
 }
+// Which landmass a point is on, so a road across the sea (Wales from Dublin, Norway from Scotland) isn't "an hour
+// away" in a straight line. Northern Ireland goes with Ireland; Tasmania, the Balearics and the Canaries are their own.
+function landOf([lng, lat]) {
+  if (lng > 143 && lng < 149 && lat < -39.5) return "TAS";
+  const c = countryOf({ lng, lat });
+  if (c === "GB" && lng < -5.4 && lat > 54 && lat < 55.4) return "IE";
+  if (c === "ES" && lng > 1 && lat < 40.2) return "BAL";
+  if (c === "ES" && lat < 30) return "CAN";
+  if (["US", "CA"].includes(c)) return "NA";
+  if (["CH", "AT", "LI", "IT", "FR", "DE", "ES", "PT", "NO"].includes(c)) return "EU";
+  return c || "?";
+}
 function nearList() {
   const home = nearState.home;
   if (!home || !nearState.roads) return [];
+  const land = landOf(home.at);
   return nearState.roads
+    .filter((r) => (r.land ||= landOf(r.at)) === land || land === "?")
     .map((r) => ({ r, km: haversine(home.at, r.at) / 1000 }))
     .map((x) => ({ ...x, h: nearHours(x.km) }))
     .filter((x) => x.h <= nearState.hours)
@@ -2571,7 +2591,7 @@ function nearHtml() {
     ${home ? `<div class="near-reach" role="group" aria-label="How far">
       <span>Within</span>${[2, 3, 5, 8].map((h) => `<button class="chip ${s.hours === h ? "on" : ""}" data-near-h="${h}">${h} hours</button>`).join("")}
     </div>` : `<p class="fine">Type a town (or use your location) to see the scenic byways and famous drives within a few hours, and weekend loops to plan in one tap.</p>`}
-    ${home && !list.length ? `<p class="fine">No roads from the app's list within ${s.hours} hours of ${esc(shortName(home.name))}. Try a longer reach; the list covers the US, Canada, Australia, New Zealand, the UK and the Alps.</p>` : ""}
+    ${home && !list.length ? `<p class="fine">No roads from the app's list within ${s.hours} hours of ${esc(shortName(home.name))}. Try a longer reach; the list covers the US, Canada, Australia, New Zealand, the UK, Ireland, Norway, Iceland, Spain, Portugal and the Alps.</p>` : ""}
     ${loops.length ? `<h3 class="near-h">${icon("route", 16)} Weekend loops</h3><div class="near-loops">
       ${loops.map((l) => `<div class="near-loop"><span><b>${esc(l.roads.join(" + "))}</b><small>${l.nights === 1 ? "1 night" : "2 nights"} from ${esc(shortName(home.name))}</small></span>
         <button class="btn blue small" data-near-plan="${esc(l.prompt)}">${icon("sparkle", 14)} Plan it</button></div>`).join("")}

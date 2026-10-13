@@ -14,7 +14,7 @@ const EXAMPLES = [
 ];
 
 // Where the planner has a road list. Keep in step with tools/build-coverage.mjs and data/*-drives.json.
-const COVERAGE_TEXT = "Covered: the US · Canada from BC to Newfoundland · Australia: NSW, Victoria, ACT, Queensland, Tasmania · New Zealand · the UK · the Alps (Switzerland, Austria, Bavaria, the Italian and French Alps)";
+const COVERAGE_TEXT = "Covered: the US · Canada from BC to Newfoundland · Australia: NSW, Victoria, ACT, Queensland, Tasmania · New Zealand · the UK and Ireland · the Alps (Switzerland, Austria, Bavaria, the Italian and French Alps) · Norway · Iceland · Spain and Portugal";
 
 // Layered mountains and a road, used on the start, progress and How it works screens. Each copy gets its own gradient
 // ids: with shared ones, a copy in a hidden view (the start screen) took the ids and the visible one lost its sky.
@@ -204,8 +204,12 @@ function refParts(str) {
   const out = [];
   // Canadian maps name highways in words ("Highway 99", "Hwy 3", "Route 132"); those count as state routes.
   for (const m of String(str || "").matchAll(/\b(?:Highway|Hwy|Route)\s+(\d+)\b/gi)) out.push({ t: "ST", n: m[1] });
-  // letter-number routes: Australia and the UK (B100, A82, M6), Austria and Germany (B107, L188), France (D902, N85)
-  for (const m of String(str || "").matchAll(/\b([MABCDLN])(\d{1,4})\b|\b(I|US|[A-Z]{2,3})[ -]?(\d+)\b/gi)) {
+  // Norway's county and national roads: a plate with the letters as written ("Fv63", "Rv7")
+  const nor = [...String(str || "").matchAll(/\b(Fv|Rv)\s?(\d+)\b/g)].map((m) => ({ t: "AU", l: m[1], n: m[2] }));
+  if (nor.length) return [...out, ...nor];
+  // letter-number routes: Australia and the UK (B100, A82, M6), Austria and Germany (B107, L188), France (D902, N85),
+  // Europe (E10), Ireland (R559), Iceland (F35), Spain (A-372)
+  for (const m of String(str || "").matchAll(/\b([MABCDLNERF])-?(\d{1,4})\b|\b(I|US|[A-Z]{2,3})[ -]?(\d+)\b/gi)) {
     if (m[1]) {
       out.push({ t: "AU", l: m[1].toUpperCase(), n: m[2] });
       continue;

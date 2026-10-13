@@ -301,7 +301,8 @@ async function routeGraphHopper(coords, mode) {
 // ORS step names look like "Lincoln Highway, US 50" or "Carson City Freeway, I 580, US 50".
 // US refs ("US 50", "CO 82"), and letter-number routes: Australia and the UK ("B100", "M1", "A82"), Austria and
 // Germany ("B107", "L188"), France ("D902", "N85"). Italy's "SS38" fits the two-letter form.
-const REF_RE = /^(I|US|SR|SH|CR|FR|NFR|FM|RM|BIA|[A-Z]{2}|[MABCDLN](?=\d))[ -]?\d+[A-Z]?( (Business|Bus|Alt|Spur|Truck|Bypass|Loop|Scenic))?$/i;
+// letter-number routes too: E10 (European), Fv63 / Rv7 (Norway), R559 (Ireland), A-372 (Spain), F35 (Iceland)
+const REF_RE = /^(I|US|SR|SH|CR|FR|NFR|FM|RM|BIA|[A-Z]{2}|[MABCDLNERF](?=[ -]?\d))[ -]?\d+[A-Z]?( (Business|Bus|Alt|Spur|Truck|Bypass|Loop|Scenic))?$/i;
 function parseRoadName(raw) {
   // Canadian roads come with a bare number ("Icefields Parkway, 93", or just "93"): call it "Hwy 93".
   const parts = String(raw || "")
@@ -1754,7 +1755,7 @@ async function wikiSearch(q, fits) {
 }
 
 // The countries the planner covers, so a name like "Victoria" or "Banff" isn't found somewhere else.
-const COUNTRY_CODES = "us,ca,au,nz,gb,ch,at,li,it,fr,de";
+const COUNTRY_CODES = "us,ca,au,nz,gb,ch,at,li,it,fr,de,no,is,ie,es,pt";
 // Nominatim allows about 1 request per second, so server lookups go through a queue.
 const geoCache = new Map();
 let geoChain = Promise.resolve();
@@ -2454,8 +2455,8 @@ async function localStates(prompt, signal) {
     user:
       "Which states, provinces or territories could this road trip pass through (US states, Canadian provinces like " +
       "British Columbia and Ontario, or Australian states like New South Wales and Victoria)? For New Zealand, the " +
-      "United Kingdom and the Alps, list the country names (New Zealand, United Kingdom, Switzerland, Austria, Italy, " +
-      "France, Germany) and the regions. Include every one on the likely route plus neighbouring " +
+      "United Kingdom, the Alps, Norway, Iceland, Ireland, Spain and Portugal, list the country names (New Zealand, United " +
+      "Kingdom, Switzerland, Austria, Italy, France, Germany, Norway, Iceland, Ireland, Spain, Portugal) and the regions. Include every one on the likely route plus neighbouring " +
       `states it might reasonably detour into. Use full names.\n\nTrip: ${prompt}`,
     schema: { type: "object", properties: { states: { type: "array", items: { type: "string" } } }, required: ["states"] },
     signal,
@@ -2533,12 +2534,18 @@ async function loadByways() {
       ...(await drives("nz-drives.json", "NZ")),
       ...(await drives("uk-drives.json", "GB")),
       ...(await drives("alps-drives.json", "ALPS")), // Switzerland, Austria and the Alpine parts of Italy, France, Germany
+      ...(await drives("no-drives.json", "NO")),
+      ...(await drives("is-drives.json", "IS")),
+      ...(await drives("ie-drives.json", "IE")),
+      ...(await drives("es-drives.json", "ES")),
+      ...(await drives("pt-drives.json", "PT")),
     ];
   }
   return byways;
 }
 
-const PLANNER_INTRO = `You are an expert road trip planner for the United States, Canada, Australia, New Zealand, the United Kingdom and the Alps.
+const PLANNER_INTRO = `You are an expert road trip planner for the United States, Canada, Australia, New Zealand, the United Kingdom, the Alps,
+Norway, Iceland, Ireland, Spain and Portugal.
 You know which roads driving enthusiasts, motorcyclists and
 road trip communities rave about on forums, and you balance great roads with sensible travel: use interstates and fast highways
 for long stretches with nothing special, and spend the driving time on roads that are worth it. Never route onto slow back roads
@@ -2814,9 +2821,12 @@ ${catalog}
 Prefer these where they fit the trip, and also use famous roads that aren't in the list.
 Name places so a map search finds them, with their state or region and country outside the US: "Banff, Alberta, Canada",
 "Lorne, Victoria, Australia", "Wānaka, Otago, New Zealand", "Fort William, Scotland, United Kingdom",
-"Bormio, Lombardy, Italy", "Andermatt, Switzerland". Write refs the way the country numbers its roads: "BC 99", "QC 132",
-"B100" (Australia), "SH 6" (New Zealand), "A82" (UK), "SS38" (Italy), "B107" (Austria), "D902" (France), "CH 19" (Switzerland).
-High Alpine passes are only open from about June to October.`;
+"Bormio, Lombardy, Italy", "Andermatt, Switzerland", "Geiranger, Møre og Romsdal, Norway", "Vík, Iceland", "Dingle, County Kerry,
+Ireland", "Ronda, Andalusia, Spain", "Pinhão, Vila Real, Portugal". Write refs the way the country numbers its roads: "BC 99",
+"QC 132", "B100" (Australia), "SH 6" (New Zealand), "A82" (UK), "SS38" (Italy), "B107" (Austria), "D902" (France), "CH 19"
+(Switzerland), "E6", "Fv63", "Rv7" (Norway), "1", "F35" (Iceland), "N70", "R559" (Ireland), "A-7", "N-340", "Ma-10" (Spain),
+"N222" (Portugal). High Alpine passes are only open from about June to October, and so are Norway's high mountain roads
+(Trollstigen, Sognefjellet, the Snow Road) and Iceland's highland F-roads, which also need a 4x4 rental.`;
 
     // "via" points steer the route onto the featured roads. Any router (ours, Google Maps, Apple Maps)
     // connecting the points in order then follows those roads, so no special scenic engine is needed.

@@ -1,6 +1,6 @@
 # Byway
 
-Road trips built around the drive itself. A road trip planner built around scenic driving roads, for the US, Canada, Australia, New Zealand, the UK and the Alps.
+Road trips built around the drive itself. A road trip planner built around scenic driving roads, for the US, Canada, Australia, New Zealand, the UK and Ireland, the Alps, Norway, Iceland, Spain and Portugal.
 Describe a trip and an AI plans it over the roads worth driving (designated scenic byways and hand-picked famous drives),
 the app measures every day's drive, writes a day-by-day guide with the stops worth pulling over for, and opens each day
 in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own computer, with free services.

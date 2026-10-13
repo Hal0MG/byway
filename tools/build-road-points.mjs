@@ -14,8 +14,8 @@ for (const b of list(read("byways.json"))) {
   const plain = [b.from, b.to].filter((t) => t && t.length < 40 && !/\d|;|\bof\b|\bline\b/i.test(t));
   roads.push({ name: b.name, wiki: b.wiki, type: b.type, states: b.states, country: "United States", km: b.miles ? Math.round(b.miles * 1.609) : null, about: b.description || "", ends: `${b.from || ""}; ${b.to || ""}`, plain });
 }
-const COUNTRY = { us: "United States", ca: "Canada", au: "Australia", nz: "New Zealand", uk: "United Kingdom", alps: "" };
-for (const f of ["us", "ca", "au", "nz", "uk", "alps"]) {
+const COUNTRY = { us: "United States", ca: "Canada", au: "Australia", nz: "New Zealand", uk: "United Kingdom", alps: "", no: "Norway", is: "Iceland", ie: "Ireland", es: "Spain", pt: "Portugal" };
+for (const f of Object.keys(COUNTRY)) {
   for (const d of list(read(`${f}-drives.json`))) {
     // the Alps files name the country last ("Lombardy", "Trentino-Alto Adige", "Italy")
     const country = COUNTRY[f] || d.states.at(-1);
@@ -36,6 +36,10 @@ const BY_HAND = {
   "Fundy Coastal Drive (Route 114)": [-64.95, 45.6], // Fundy National Park, New Brunswick
   "Central Coastal Drive (Green Gables Shore)": [-63.38, 46.49], // Cavendish, Prince Edward Island
   "Grand Pacific Drive": [150.97, -34.25], // the Sea Cliff Bridge, New South Wales
+  "Diamond Circle": [-16.99, 65.6], // Lake Mývatn, Iceland
+  // names that match a namesake elsewhere first (a ring road in Worcester, South Australia's Copper Coast)
+  "Ring Road": [-21.9, 64.13], // Reykjavík, where the Ring Road begins
+  "Copper Coast": [-7.35, 52.14], // Bunmahon, County Waterford
 };
 const post = (path, body) => fetch(`${APP}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
 const out = [];
@@ -46,9 +50,9 @@ for (let i = 0; i < roads.length; i += 40) {
   const r = await post("/api/enrich", { roads: batch.map((x, k) => ({ key: String(k), wiki: x.wiki, name: x.name })) });
   for (const [k, x] of batch.entries()) {
     const w = r.roads?.[String(k)] || {};
-    let p = w.lat != null ? [w.lng, w.lat] : BY_HAND[x.name] || null;
-    if (w.lat != null) fromWiki++;
-    else if (p) fromPlace++;
+    let p = BY_HAND[x.name] || (w.lat != null ? [w.lng, w.lat] : null);
+    if (BY_HAND[x.name]) fromPlace++;
+    else if (p) fromWiki++;
     else {
       // the road by name, then where a byway starts, then the first place its description names; with the first
       // state and the country (several states in one query find nothing), then the country alone

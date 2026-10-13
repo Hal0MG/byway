@@ -1,60 +1,689 @@
 {
-  "about": "Trip suggestions for the home globe and batch mode. at: [lng, lat] where the card points on the globe (the heart of the trip). wiki: an English Wikipedia article whose photo illustrates the card. Planned for real with the full planner when picked; batch mode (?batch=1) can turn them into ready-made trips.",
-  "ideas": [
-    { "title": "Pacific Coast Highway", "prompt": "San Francisco to Los Angeles on the Pacific Coast Highway in 3 days", "days": 3, "region": "US", "at": [-121.8, 36.27], "wiki": "Big Sur", "blurb": "Big Sur's cliffs, Bixby Bridge and the Hearst Castle coast" },
-    { "title": "The whole West Coast", "prompt": "Seattle to San Diego on the Pacific Coast Highway in 8 days", "days": 8, "region": "US", "at": [-124.05, 44.3], "wiki": "Oregon Coast", "blurb": "Olympic Peninsula, the Oregon coast, the redwoods and Big Sur" },
-    { "title": "San Juan Skyway", "prompt": "Denver to Moab in 3 days over the San Juan Skyway and Million Dollar Highway", "days": 3, "region": "US", "at": [-107.7, 37.95], "wiki": "San Juan Skyway", "blurb": "Colorado's highest passes, Ouray and the Million Dollar Highway" },
-    { "title": "Utah's Mighty 5", "prompt": "Salt Lake City loop through Zion, Bryce Canyon, Capitol Reef and Arches in 6 days", "days": 6, "region": "US", "at": [-111.6, 38.1], "wiki": "Capitol Reef National Park", "blurb": "Five national parks linked by Scenic Byway 12" },
-    { "title": "Grand Canyon Circle", "prompt": "Las Vegas loop to the Grand Canyon, Page and Zion in 4 days", "days": 4, "region": "US", "at": [-112.1, 36.6], "wiki": "Horseshoe Bend (Arizona)", "blurb": "The South Rim, Horseshoe Bend, Lake Powell and Zion" },
-    { "title": "Yellowstone and the Beartooth", "prompt": "Jackson Hole to Yellowstone and the Beartooth Highway, ending in Billings, 3 days", "days": 3, "region": "US", "at": [-110.3, 44.8], "wiki": "Beartooth Highway", "blurb": "The Tetons, Yellowstone's geysers and a 10,947 ft pass" },
-    { "title": "Going-to-the-Sun", "prompt": "Glacier National Park and Going-to-the-Sun Road from Missoula, 3 day loop", "days": 3, "region": "US", "at": [-113.7, 48.7], "wiki": "Going-to-the-Sun Road", "blurb": "Glacier National Park's road over Logan Pass" },
-    { "title": "Smokies and the Dragon", "prompt": "Asheville loop on the Blue Ridge Parkway, the Tail of the Dragon and the Cherohala Skyway in 3 days", "days": 3, "region": "US", "at": [-83.7, 35.45], "wiki": "Cherohala Skyway", "blurb": "318 curves at Deals Gap and the best of the Blue Ridge" },
-    { "title": "Skyline Drive and the Blue Ridge", "prompt": "Washington DC to Asheville on Skyline Drive and the Blue Ridge Parkway in 4 days", "days": 4, "region": "US", "at": [-79.5, 37.7], "wiki": "Blue Ridge Parkway", "blurb": "Shenandoah and 469 miles of ridge-top parkway" },
-    { "title": "New England fall colors", "prompt": "Boston loop through the White Mountains, the Kancamagus Highway and Vermont in 4 days for fall colors", "days": 4, "region": "US", "at": [-71.6, 44.05], "wiki": "Kancamagus Highway", "blurb": "The Kancamagus, Franconia Notch and Vermont's green hills" },
-    { "title": "Coastal Maine to Acadia", "prompt": "New York City to Acadia National Park along the coast of Maine in 4 days", "days": 4, "region": "US", "at": [-68.5, 44.35], "wiki": "Acadia National Park", "blurb": "Lighthouses, lobster shacks and Cadillac Mountain" },
-    { "title": "Texas Hill Country", "prompt": "Austin loop through the Texas Hill Country and the Twisted Sisters in 2 days", "days": 2, "region": "US", "at": [-99.6, 29.9], "wiki": "Texas Hill Country", "blurb": "Ranch roads 335, 336 and 337 and Hill Country towns" },
-    { "title": "Red rocks of Sedona", "prompt": "Phoenix to Sedona, Flagstaff and the Grand Canyon in 3 days", "days": 3, "region": "US", "at": [-111.76, 34.87], "wiki": "Sedona, Arizona", "blurb": "Red Rock Scenic Byway, Oak Creek Canyon and the South Rim" },
-    { "title": "Oregon volcano loop", "prompt": "Portland loop to Crater Lake, the Oregon coast and Mount Hood in 5 days", "days": 5, "region": "US", "at": [-122.1, 42.94], "wiki": "Crater Lake", "blurb": "Crater Lake, the Cascade Lakes and the wild coast" },
-    { "title": "Overseas Highway", "prompt": "Miami to Key West on the Overseas Highway, 2 days", "days": 2, "region": "US", "at": [-81.2, 24.75], "wiki": "Overseas Highway", "blurb": "113 miles of bridges across the Florida Keys" },
-    { "title": "Yosemite and Tioga Pass", "prompt": "San Francisco loop through Yosemite, Tioga Pass and Lake Tahoe in 4 days", "days": 4, "region": "US", "at": [-119.4, 37.9], "wiki": "Tioga Pass", "blurb": "Yosemite Valley, Tuolumne Meadows and Emerald Bay" },
-    { "title": "Death Valley and the Eastern Sierra", "prompt": "Los Angeles loop through Death Valley and the Eastern Sierra in 4 days", "days": 4, "region": "US", "at": [-117.1, 36.5], "wiki": "Death Valley National Park", "blurb": "Badwater, Mount Whitney's foothills and US 395" },
-    { "title": "Door Peninsula", "prompt": "Chicago to the Door Peninsula and the Lake Michigan shore in 3 days", "days": 3, "region": "US", "at": [-87.2, 45.05], "wiki": "Door Peninsula", "blurb": "Lighthouses, cherry orchards and fish boils" },
-    { "title": "Black Hills and Badlands", "prompt": "Rapid City loop through the Badlands, the Needles Highway and Mount Rushmore in 3 days", "days": 3, "region": "US", "at": [-103.5, 43.85], "wiki": "Needles Highway", "blurb": "Granite spires, pigtail bridges and the Badlands Loop" },
-    { "title": "Natchez Trace", "prompt": "Nashville to Natchez on the Natchez Trace Parkway in 4 days", "days": 4, "region": "US", "at": [-89.0, 33.7], "wiki": "Natchez Trace Parkway", "blurb": "444 commercial-free miles through the Deep South" },
-    { "title": "Road to Hāna", "prompt": "Maui's Road to Hana and Haleakala in 2 days", "days": 2, "region": "US", "at": [-156.1, 20.8], "wiki": "Hana Highway", "blurb": "620 curves, 59 bridges and a sunrise above the clouds" },
-    { "title": "Kenai Peninsula", "prompt": "Anchorage to Seward and Homer on the Seward Highway in 3 days", "days": 3, "region": "US", "at": [-149.6, 60.6], "wiki": "Seward Highway", "blurb": "Turnagain Arm, glaciers and Kachemak Bay" },
-
-    { "title": "Canadian Rockies", "prompt": "Vancouver to Calgary through the Rockies in 4 days: Sea-to-Sky, Icefields Parkway and Highwood Pass", "days": 4, "region": "CA", "at": [-116.6, 51.7], "wiki": "Icefields Parkway", "blurb": "Sea-to-Sky, the Icefields Parkway and Highwood Pass" },
-    { "title": "Banff and Jasper", "prompt": "Calgary loop through Banff, Jasper and the Icefields Parkway in 4 days", "days": 4, "region": "CA", "at": [-118.1, 52.9], "wiki": "Jasper National Park", "blurb": "Lake Louise, Peyto Lake and the Columbia Icefield" },
-    { "title": "Vancouver Island", "prompt": "Vancouver Island from Victoria to Tofino and back, 3 days", "days": 3, "region": "CA", "at": [-125.6, 49.2], "wiki": "Pacific Rim National Park Reserve", "blurb": "The Malahat, Cathedral Grove and Pacific surf beaches" },
-    { "title": "The long way to Quebec City", "prompt": "Toronto to Quebec City the long way: Algonquin, the Thousand Islands and Charlevoix", "days": 5, "region": "CA", "at": [-76.0, 44.6], "wiki": "Thousand Islands", "blurb": "Algonquin, the St. Lawrence and Charlevoix" },
-    { "title": "Gaspé Peninsula", "prompt": "Montreal loop around the Gaspé Peninsula in 6 days", "days": 6, "region": "CA", "at": [-65.2, 48.6], "wiki": "Percé Rock", "blurb": "Route 132, Forillon and Percé Rock" },
-    { "title": "Cabot Trail", "prompt": "Halifax loop around the Cabot Trail on Cape Breton Island in 4 days", "days": 4, "region": "CA", "at": [-60.8, 46.7], "wiki": "Cabot Trail", "blurb": "Peggy's Cove and Cape Breton's highlands" },
-    { "title": "Newfoundland's Viking Trail", "prompt": "Deer Lake to St. Anthony on the Viking Trail through Gros Morne in 4 days", "days": 4, "region": "CA", "at": [-57.8, 49.6], "wiki": "Gros Morne National Park", "blurb": "Fjords, icebergs and the Viking site at L'Anse aux Meadows" },
-    { "title": "Lake Superior shore", "prompt": "Sault Ste. Marie to Thunder Bay along Lake Superior on Highway 17 in 3 days", "days": 3, "region": "CA", "at": [-85.2, 47.7], "wiki": "Lake Superior Provincial Park", "blurb": "Agawa Bay, Wawa and the Canadian Shield" },
-
-    { "title": "Sydney to Melbourne, the scenic way", "prompt": "Sydney to Melbourne the scenic way in 5 days: Blue Mountains, Snowy Mountains and the Great Ocean Road", "days": 5, "region": "AU", "at": [148.3, -36.4], "wiki": "Snowy Mountains", "blurb": "The Blue Mountains, the Snowies and the Great Ocean Road" },
-    { "title": "Great Ocean Road", "prompt": "Melbourne loop on the Great Ocean Road and the Grampians in 4 days", "days": 4, "region": "AU", "at": [143.1, -38.66], "wiki": "Twelve Apostles (Victoria)", "blurb": "The Twelve Apostles, Otway rainforest and the Grampians" },
-    { "title": "Victorian High Country", "prompt": "Melbourne loop through the Victorian High Country and the Great Alpine Road in 3 days", "days": 3, "region": "AU", "at": [147.1, -37.0], "wiki": "Great Alpine Road", "blurb": "Mount Hotham, Bright and the Black Spur" },
-    { "title": "Gold Coast hinterland", "prompt": "Brisbane loop through the Gold Coast hinterland and the Sunshine Coast in 3 days", "days": 3, "region": "AU", "at": [153.1, -28.2], "wiki": "Lamington National Park", "blurb": "Rainforest ranges, Tamborine Mountain and the Glass Houses" },
-    { "title": "Tasmania's east coast", "prompt": "Hobart loop around Tasmania's east coast and Cradle Mountain in 6 days", "days": 6, "region": "AU", "at": [148.2, -42.1], "wiki": "Freycinet National Park", "blurb": "Wineglass Bay, the Bay of Fires and Cradle Mountain" },
-    { "title": "Tropical North Queensland", "prompt": "Cairns to Port Douglas and the Atherton Tablelands in 3 days", "days": 3, "region": "AU", "at": [145.6, -16.8], "wiki": "Captain Cook Highway", "blurb": "Where the rainforest meets the reef, and 263 corners up the Gillies" },
-
-    { "title": "Southern Alps and the West Coast", "prompt": "Christchurch to Queenstown via Aoraki Mount Cook and the West Coast in 5 days", "days": 5, "region": "NZ", "at": [170.1, -43.7], "wiki": "Aoraki / Mount Cook", "blurb": "Arthur's Pass, the glaciers and Lake Pukaki" },
-    { "title": "Milford Sound", "prompt": "Queenstown to Milford Sound and back via Te Anau, 2 days", "days": 2, "region": "NZ", "at": [167.95, -44.7], "wiki": "Milford Sound", "blurb": "The Homer Tunnel and the fiords of Fiordland" },
-    { "title": "North Island volcanoes", "prompt": "Auckland to Wellington via the Coromandel, Rotorua and Tongariro in 5 days", "days": 5, "region": "NZ", "at": [175.6, -38.6], "wiki": "Tongariro National Park", "blurb": "Hot Water Beach, geysers and the Desert Road" },
-
-    { "title": "North Coast 500", "prompt": "Edinburgh loop through the Scottish Highlands and the North Coast 500 in 7 days", "days": 7, "region": "GB", "at": [-5.0, 58.1], "wiki": "North Coast 500", "blurb": "Glen Coe, Applecross and Scotland's far north" },
-    { "title": "Lakes and Dales", "prompt": "Lake District and Yorkshire Dales loop from Manchester in 3 days", "days": 3, "region": "GB", "at": [-3.0, 54.45], "wiki": "Lake District", "blurb": "Hardknott, Kirkstone and the Buttertubs" },
-    { "title": "Wild Wales", "prompt": "Cardiff loop through the Brecon Beacons and Snowdonia in 3 days", "days": 3, "region": "GB", "at": [-3.7, 52.7], "wiki": "Snowdonia", "blurb": "The Black Mountain Pass, Llanberis and the Evo Triangle" },
-    { "title": "Cornwall and Devon", "prompt": "Bristol to Land's End along the Atlantic Highway and back over Dartmoor in 3 days", "days": 3, "region": "GB", "at": [-4.6, 50.5], "wiki": "Cornwall", "blurb": "Cheddar Gorge, Exmoor and Cornish coves" },
-    { "title": "Causeway Coast", "prompt": "Belfast to Derry on the Causeway Coastal Route in 2 days", "days": 2, "region": "GB", "at": [-6.3, 55.15], "wiki": "Giant's Causeway", "blurb": "The Glens of Antrim, the Dark Hedges and the Giant's Causeway" },
-
-    { "title": "Swiss Alpine passes", "prompt": "Zurich loop over the Furka, Grimsel and Susten passes in 2 days", "days": 2, "region": "ALPS", "at": [8.4, 46.6], "wiki": "Furka Pass", "blurb": "Three famous passes in one day, past the Rhône Glacier" },
-    { "title": "Stelvio and the Dolomites", "prompt": "Innsbruck to Lake Como over the Stelvio Pass and the Dolomites in 4 days", "days": 4, "region": "ALPS", "at": [10.6, 46.55], "wiki": "Stelvio Pass", "blurb": "48 hairpins, then the Dolomites' passes" },
-    { "title": "Grossglockner", "prompt": "Salzburg loop over the Grossglockner High Alpine Road in 3 days", "days": 3, "region": "ALPS", "at": [12.8, 47.1], "wiki": "Grossglockner High Alpine Road", "blurb": "Austria's highest mountain road and the Pasterze glacier" },
-    { "title": "Route des Grandes Alpes", "prompt": "Geneva to Nice on the Route des Grandes Alpes in 6 days", "days": 6, "region": "ALPS", "at": [6.6, 45.2], "wiki": "Route des Grandes Alpes", "blurb": "The Iseran, Galibier and Bonette, down to the Riviera" },
-    { "title": "Bavarian Alps", "prompt": "Munich loop through the Bavarian Alps: Neuschwanstein, Garmisch and Berchtesgaden in 3 days", "days": 3, "region": "ALPS", "at": [11.0, 47.55], "wiki": "Neuschwanstein Castle", "blurb": "Castles, lakes and the German Alpine Road" },
-    { "title": "Dolomites loop", "prompt": "Bolzano loop over the Sella, Pordoi, Giau and Falzarego passes in 3 days", "days": 3, "region": "ALPS", "at": [11.85, 46.5], "wiki": "Dolomites", "blurb": "The Sella Ronda and the Great Dolomite Road" }
-  ]
+ "about": "Trip suggestions for the home globe and batch mode. at: [lng, lat] where the card points on the globe (the heart of the trip). wiki: an English Wikipedia article whose photo illustrates the card. Planned for real with the full planner when picked; batch mode (?batch=1) can turn them into ready-made trips.",
+ "ideas": [
+  {
+   "title": "Pacific Coast Highway",
+   "prompt": "San Francisco to Los Angeles on the Pacific Coast Highway in 3 days",
+   "days": 3,
+   "region": "US",
+   "at": [
+    -121.8,
+    36.27
+   ],
+   "wiki": "Big Sur",
+   "blurb": "Big Sur's cliffs, Bixby Bridge and the Hearst Castle coast"
+  },
+  {
+   "title": "The whole West Coast",
+   "prompt": "Seattle to San Diego on the Pacific Coast Highway in 8 days",
+   "days": 8,
+   "region": "US",
+   "at": [
+    -124.05,
+    44.3
+   ],
+   "wiki": "Oregon Coast",
+   "blurb": "Olympic Peninsula, the Oregon coast, the redwoods and Big Sur"
+  },
+  {
+   "title": "San Juan Skyway",
+   "prompt": "Denver to Moab in 3 days over the San Juan Skyway and Million Dollar Highway",
+   "days": 3,
+   "region": "US",
+   "at": [
+    -107.7,
+    37.95
+   ],
+   "wiki": "San Juan Skyway",
+   "blurb": "Colorado's highest passes, Ouray and the Million Dollar Highway"
+  },
+  {
+   "title": "Utah's Mighty 5",
+   "prompt": "Salt Lake City loop through Zion, Bryce Canyon, Capitol Reef and Arches in 6 days",
+   "days": 6,
+   "region": "US",
+   "at": [
+    -111.6,
+    38.1
+   ],
+   "wiki": "Capitol Reef National Park",
+   "blurb": "Five national parks linked by Scenic Byway 12"
+  },
+  {
+   "title": "Grand Canyon Circle",
+   "prompt": "Las Vegas loop to the Grand Canyon, Page and Zion in 4 days",
+   "days": 4,
+   "region": "US",
+   "at": [
+    -112.1,
+    36.6
+   ],
+   "wiki": "Horseshoe Bend (Arizona)",
+   "blurb": "The South Rim, Horseshoe Bend, Lake Powell and Zion"
+  },
+  {
+   "title": "Yellowstone and the Beartooth",
+   "prompt": "Jackson Hole to Yellowstone and the Beartooth Highway, ending in Billings, 3 days",
+   "days": 3,
+   "region": "US",
+   "at": [
+    -110.3,
+    44.8
+   ],
+   "wiki": "Beartooth Highway",
+   "blurb": "The Tetons, Yellowstone's geysers and a 10,947 ft pass"
+  },
+  {
+   "title": "Going-to-the-Sun",
+   "prompt": "Glacier National Park and Going-to-the-Sun Road from Missoula, 3 day loop",
+   "days": 3,
+   "region": "US",
+   "at": [
+    -113.7,
+    48.7
+   ],
+   "wiki": "Going-to-the-Sun Road",
+   "blurb": "Glacier National Park's road over Logan Pass"
+  },
+  {
+   "title": "Smokies and the Dragon",
+   "prompt": "Asheville loop on the Blue Ridge Parkway, the Tail of the Dragon and the Cherohala Skyway in 3 days",
+   "days": 3,
+   "region": "US",
+   "at": [
+    -83.7,
+    35.45
+   ],
+   "wiki": "Cherohala Skyway",
+   "blurb": "318 curves at Deals Gap and the best of the Blue Ridge"
+  },
+  {
+   "title": "Skyline Drive and the Blue Ridge",
+   "prompt": "Washington DC to Asheville on Skyline Drive and the Blue Ridge Parkway in 4 days",
+   "days": 4,
+   "region": "US",
+   "at": [
+    -79.5,
+    37.7
+   ],
+   "wiki": "Blue Ridge Parkway",
+   "blurb": "Shenandoah and 469 miles of ridge-top parkway"
+  },
+  {
+   "title": "New England fall colors",
+   "prompt": "Boston loop through the White Mountains, the Kancamagus Highway and Vermont in 4 days for fall colors",
+   "days": 4,
+   "region": "US",
+   "at": [
+    -71.6,
+    44.05
+   ],
+   "wiki": "Kancamagus Highway",
+   "blurb": "The Kancamagus, Franconia Notch and Vermont's green hills"
+  },
+  {
+   "title": "Coastal Maine to Acadia",
+   "prompt": "New York City to Acadia National Park along the coast of Maine in 4 days",
+   "days": 4,
+   "region": "US",
+   "at": [
+    -68.5,
+    44.35
+   ],
+   "wiki": "Acadia National Park",
+   "blurb": "Lighthouses, lobster shacks and Cadillac Mountain"
+  },
+  {
+   "title": "Texas Hill Country",
+   "prompt": "Austin loop through the Texas Hill Country and the Twisted Sisters in 2 days",
+   "days": 2,
+   "region": "US",
+   "at": [
+    -99.6,
+    29.9
+   ],
+   "wiki": "Texas Hill Country",
+   "blurb": "Ranch roads 335, 336 and 337 and Hill Country towns"
+  },
+  {
+   "title": "Red rocks of Sedona",
+   "prompt": "Phoenix to Sedona, Flagstaff and the Grand Canyon in 3 days",
+   "days": 3,
+   "region": "US",
+   "at": [
+    -111.76,
+    34.87
+   ],
+   "wiki": "Sedona, Arizona",
+   "blurb": "Red Rock Scenic Byway, Oak Creek Canyon and the South Rim"
+  },
+  {
+   "title": "Oregon volcano loop",
+   "prompt": "Portland loop to Crater Lake, the Oregon coast and Mount Hood in 5 days",
+   "days": 5,
+   "region": "US",
+   "at": [
+    -122.1,
+    42.94
+   ],
+   "wiki": "Crater Lake",
+   "blurb": "Crater Lake, the Cascade Lakes and the wild coast"
+  },
+  {
+   "title": "Overseas Highway",
+   "prompt": "Miami to Key West on the Overseas Highway, 2 days",
+   "days": 2,
+   "region": "US",
+   "at": [
+    -81.2,
+    24.75
+   ],
+   "wiki": "Overseas Highway",
+   "blurb": "113 miles of bridges across the Florida Keys"
+  },
+  {
+   "title": "Yosemite and Tioga Pass",
+   "prompt": "San Francisco loop through Yosemite, Tioga Pass and Lake Tahoe in 4 days",
+   "days": 4,
+   "region": "US",
+   "at": [
+    -119.4,
+    37.9
+   ],
+   "wiki": "Tioga Pass",
+   "blurb": "Yosemite Valley, Tuolumne Meadows and Emerald Bay"
+  },
+  {
+   "title": "Death Valley and the Eastern Sierra",
+   "prompt": "Los Angeles loop through Death Valley and the Eastern Sierra in 4 days",
+   "days": 4,
+   "region": "US",
+   "at": [
+    -117.1,
+    36.5
+   ],
+   "wiki": "Death Valley National Park",
+   "blurb": "Badwater, Mount Whitney's foothills and US 395"
+  },
+  {
+   "title": "Door Peninsula",
+   "prompt": "Chicago to the Door Peninsula and the Lake Michigan shore in 3 days",
+   "days": 3,
+   "region": "US",
+   "at": [
+    -87.2,
+    45.05
+   ],
+   "wiki": "Door Peninsula",
+   "blurb": "Lighthouses, cherry orchards and fish boils"
+  },
+  {
+   "title": "Black Hills and Badlands",
+   "prompt": "Rapid City loop through the Badlands, the Needles Highway and Mount Rushmore in 3 days",
+   "days": 3,
+   "region": "US",
+   "at": [
+    -103.5,
+    43.85
+   ],
+   "wiki": "Needles Highway",
+   "blurb": "Granite spires, pigtail bridges and the Badlands Loop"
+  },
+  {
+   "title": "Natchez Trace",
+   "prompt": "Nashville to Natchez on the Natchez Trace Parkway in 4 days",
+   "days": 4,
+   "region": "US",
+   "at": [
+    -89.0,
+    33.7
+   ],
+   "wiki": "Natchez Trace Parkway",
+   "blurb": "444 commercial-free miles through the Deep South"
+  },
+  {
+   "title": "Road to Hāna",
+   "prompt": "Maui's Road to Hana and Haleakala in 2 days",
+   "days": 2,
+   "region": "US",
+   "at": [
+    -156.1,
+    20.8
+   ],
+   "wiki": "Hana Highway",
+   "blurb": "620 curves, 59 bridges and a sunrise above the clouds"
+  },
+  {
+   "title": "Kenai Peninsula",
+   "prompt": "Anchorage to Seward and Homer on the Seward Highway in 3 days",
+   "days": 3,
+   "region": "US",
+   "at": [
+    -149.6,
+    60.6
+   ],
+   "wiki": "Seward Highway",
+   "blurb": "Turnagain Arm, glaciers and Kachemak Bay"
+  },
+  {
+   "title": "Canadian Rockies",
+   "prompt": "Vancouver to Calgary through the Rockies in 4 days: Sea-to-Sky, Icefields Parkway and Highwood Pass",
+   "days": 4,
+   "region": "CA",
+   "at": [
+    -116.6,
+    51.7
+   ],
+   "wiki": "Icefields Parkway",
+   "blurb": "Sea-to-Sky, the Icefields Parkway and Highwood Pass"
+  },
+  {
+   "title": "Banff and Jasper",
+   "prompt": "Calgary loop through Banff, Jasper and the Icefields Parkway in 4 days",
+   "days": 4,
+   "region": "CA",
+   "at": [
+    -118.1,
+    52.9
+   ],
+   "wiki": "Jasper National Park",
+   "blurb": "Lake Louise, Peyto Lake and the Columbia Icefield"
+  },
+  {
+   "title": "Vancouver Island",
+   "prompt": "Vancouver Island from Victoria to Tofino and back, 3 days",
+   "days": 3,
+   "region": "CA",
+   "at": [
+    -125.6,
+    49.2
+   ],
+   "wiki": "Pacific Rim National Park Reserve",
+   "blurb": "The Malahat, Cathedral Grove and Pacific surf beaches"
+  },
+  {
+   "title": "The long way to Quebec City",
+   "prompt": "Toronto to Quebec City the long way: Algonquin, the Thousand Islands and Charlevoix",
+   "days": 5,
+   "region": "CA",
+   "at": [
+    -76.0,
+    44.6
+   ],
+   "wiki": "Thousand Islands",
+   "blurb": "Algonquin, the St. Lawrence and Charlevoix"
+  },
+  {
+   "title": "Gaspé Peninsula",
+   "prompt": "Montreal loop around the Gaspé Peninsula in 6 days",
+   "days": 6,
+   "region": "CA",
+   "at": [
+    -65.2,
+    48.6
+   ],
+   "wiki": "Percé Rock",
+   "blurb": "Route 132, Forillon and Percé Rock"
+  },
+  {
+   "title": "Cabot Trail",
+   "prompt": "Halifax loop around the Cabot Trail on Cape Breton Island in 4 days",
+   "days": 4,
+   "region": "CA",
+   "at": [
+    -60.8,
+    46.7
+   ],
+   "wiki": "Cabot Trail",
+   "blurb": "Peggy's Cove and Cape Breton's highlands"
+  },
+  {
+   "title": "Newfoundland's Viking Trail",
+   "prompt": "Deer Lake to St. Anthony on the Viking Trail through Gros Morne in 4 days",
+   "days": 4,
+   "region": "CA",
+   "at": [
+    -57.8,
+    49.6
+   ],
+   "wiki": "Gros Morne National Park",
+   "blurb": "Fjords, icebergs and the Viking site at L'Anse aux Meadows"
+  },
+  {
+   "title": "Lake Superior shore",
+   "prompt": "Sault Ste. Marie to Thunder Bay along Lake Superior on Highway 17 in 3 days",
+   "days": 3,
+   "region": "CA",
+   "at": [
+    -85.2,
+    47.7
+   ],
+   "wiki": "Lake Superior Provincial Park",
+   "blurb": "Agawa Bay, Wawa and the Canadian Shield"
+  },
+  {
+   "title": "Sydney to Melbourne, the scenic way",
+   "prompt": "Sydney to Melbourne the scenic way in 5 days: Blue Mountains, Snowy Mountains and the Great Ocean Road",
+   "days": 5,
+   "region": "AU",
+   "at": [
+    148.3,
+    -36.4
+   ],
+   "wiki": "Snowy Mountains",
+   "blurb": "The Blue Mountains, the Snowies and the Great Ocean Road"
+  },
+  {
+   "title": "Great Ocean Road",
+   "prompt": "Melbourne loop on the Great Ocean Road and the Grampians in 4 days",
+   "days": 4,
+   "region": "AU",
+   "at": [
+    143.1,
+    -38.66
+   ],
+   "wiki": "Twelve Apostles (Victoria)",
+   "blurb": "The Twelve Apostles, Otway rainforest and the Grampians"
+  },
+  {
+   "title": "Victorian High Country",
+   "prompt": "Melbourne loop through the Victorian High Country and the Great Alpine Road in 3 days",
+   "days": 3,
+   "region": "AU",
+   "at": [
+    147.1,
+    -37.0
+   ],
+   "wiki": "Great Alpine Road",
+   "blurb": "Mount Hotham, Bright and the Black Spur"
+  },
+  {
+   "title": "Gold Coast hinterland",
+   "prompt": "Brisbane loop through the Gold Coast hinterland and the Sunshine Coast in 3 days",
+   "days": 3,
+   "region": "AU",
+   "at": [
+    153.1,
+    -28.2
+   ],
+   "wiki": "Lamington National Park",
+   "blurb": "Rainforest ranges, Tamborine Mountain and the Glass Houses"
+  },
+  {
+   "title": "Tasmania's east coast",
+   "prompt": "Hobart loop around Tasmania's east coast and Cradle Mountain in 6 days",
+   "days": 6,
+   "region": "AU",
+   "at": [
+    148.2,
+    -42.1
+   ],
+   "wiki": "Freycinet National Park",
+   "blurb": "Wineglass Bay, the Bay of Fires and Cradle Mountain"
+  },
+  {
+   "title": "Tropical North Queensland",
+   "prompt": "Cairns to Port Douglas and the Atherton Tablelands in 3 days",
+   "days": 3,
+   "region": "AU",
+   "at": [
+    145.6,
+    -16.8
+   ],
+   "wiki": "Captain Cook Highway",
+   "blurb": "Where the rainforest meets the reef, and 263 corners up the Gillies"
+  },
+  {
+   "title": "Southern Alps and the West Coast",
+   "prompt": "Christchurch to Queenstown via Aoraki Mount Cook and the West Coast in 5 days",
+   "days": 5,
+   "region": "NZ",
+   "at": [
+    170.1,
+    -43.7
+   ],
+   "wiki": "Aoraki / Mount Cook",
+   "blurb": "Arthur's Pass, the glaciers and Lake Pukaki"
+  },
+  {
+   "title": "Milford Sound",
+   "prompt": "Queenstown to Milford Sound and back via Te Anau, 2 days",
+   "days": 2,
+   "region": "NZ",
+   "at": [
+    167.95,
+    -44.7
+   ],
+   "wiki": "Milford Sound",
+   "blurb": "The Homer Tunnel and the fiords of Fiordland"
+  },
+  {
+   "title": "North Island volcanoes",
+   "prompt": "Auckland to Wellington via the Coromandel, Rotorua and Tongariro in 5 days",
+   "days": 5,
+   "region": "NZ",
+   "at": [
+    175.6,
+    -38.6
+   ],
+   "wiki": "Tongariro National Park",
+   "blurb": "Hot Water Beach, geysers and the Desert Road"
+  },
+  {
+   "title": "North Coast 500",
+   "prompt": "Edinburgh loop through the Scottish Highlands and the North Coast 500 in 7 days",
+   "days": 7,
+   "region": "GB",
+   "at": [
+    -5.0,
+    58.1
+   ],
+   "wiki": "North Coast 500",
+   "blurb": "Glen Coe, Applecross and Scotland's far north"
+  },
+  {
+   "title": "Lakes and Dales",
+   "prompt": "Lake District and Yorkshire Dales loop from Manchester in 3 days",
+   "days": 3,
+   "region": "GB",
+   "at": [
+    -3.0,
+    54.45
+   ],
+   "wiki": "Lake District",
+   "blurb": "Hardknott, Kirkstone and the Buttertubs"
+  },
+  {
+   "title": "Wild Wales",
+   "prompt": "Cardiff loop through the Brecon Beacons and Snowdonia in 3 days",
+   "days": 3,
+   "region": "GB",
+   "at": [
+    -3.7,
+    52.7
+   ],
+   "wiki": "Snowdonia",
+   "blurb": "The Black Mountain Pass, Llanberis and the Evo Triangle"
+  },
+  {
+   "title": "Cornwall and Devon",
+   "prompt": "Bristol to Land's End along the Atlantic Highway and back over Dartmoor in 3 days",
+   "days": 3,
+   "region": "GB",
+   "at": [
+    -4.6,
+    50.5
+   ],
+   "wiki": "Cornwall",
+   "blurb": "Cheddar Gorge, Exmoor and Cornish coves"
+  },
+  {
+   "title": "Causeway Coast",
+   "prompt": "Belfast to Derry on the Causeway Coastal Route in 2 days",
+   "days": 2,
+   "region": "GB",
+   "at": [
+    -6.3,
+    55.15
+   ],
+   "wiki": "Giant's Causeway",
+   "blurb": "The Glens of Antrim, the Dark Hedges and the Giant's Causeway"
+  },
+  {
+   "title": "Swiss Alpine passes",
+   "prompt": "Zurich loop over the Furka, Grimsel and Susten passes in 2 days",
+   "days": 2,
+   "region": "ALPS",
+   "at": [
+    8.4,
+    46.6
+   ],
+   "wiki": "Furka Pass",
+   "blurb": "Three famous passes in one day, past the Rhône Glacier"
+  },
+  {
+   "title": "Stelvio and the Dolomites",
+   "prompt": "Innsbruck to Lake Como over the Stelvio Pass and the Dolomites in 4 days",
+   "days": 4,
+   "region": "ALPS",
+   "at": [
+    10.6,
+    46.55
+   ],
+   "wiki": "Stelvio Pass",
+   "blurb": "48 hairpins, then the Dolomites' passes"
+  },
+  {
+   "title": "Grossglockner",
+   "prompt": "Salzburg loop over the Grossglockner High Alpine Road in 3 days",
+   "days": 3,
+   "region": "ALPS",
+   "at": [
+    12.8,
+    47.1
+   ],
+   "wiki": "Grossglockner High Alpine Road",
+   "blurb": "Austria's highest mountain road and the Pasterze glacier"
+  },
+  {
+   "title": "Route des Grandes Alpes",
+   "prompt": "Geneva to Nice on the Route des Grandes Alpes in 6 days",
+   "days": 6,
+   "region": "ALPS",
+   "at": [
+    6.6,
+    45.2
+   ],
+   "wiki": "Route des Grandes Alpes",
+   "blurb": "The Iseran, Galibier and Bonette, down to the Riviera"
+  },
+  {
+   "title": "Bavarian Alps",
+   "prompt": "Munich loop through the Bavarian Alps: Neuschwanstein, Garmisch and Berchtesgaden in 3 days",
+   "days": 3,
+   "region": "ALPS",
+   "at": [
+    11.0,
+    47.55
+   ],
+   "wiki": "Neuschwanstein Castle",
+   "blurb": "Castles, lakes and the German Alpine Road"
+  },
+  {
+   "title": "Dolomites loop",
+   "prompt": "Bolzano loop over the Sella, Pordoi, Giau and Falzarego passes in 3 days",
+   "days": 3,
+   "region": "ALPS",
+   "at": [
+    11.85,
+    46.5
+   ],
+   "wiki": "Dolomites",
+   "blurb": "The Sella Ronda and the Great Dolomite Road"
+  },
+  {
+   "title": "Norway's fjord roads",
+   "prompt": "Bergen to Ålesund through the fjords in 5 days: the Snow Road, Sognefjellet, Geiranger and Trollstigen, ending on the Atlantic Ocean Road",
+   "days": 5,
+   "region": "NO",
+   "at": [
+    7.2,
+    61.9
+   ],
+   "wiki": "Geirangerfjord",
+   "blurb": "Trollstigen's hairpins, Geiranger and the Snow Road above the Aurlandsfjord"
+  },
+  {
+   "title": "Lofoten islands",
+   "prompt": "Bodø to Lofoten and back in 4 days, driving the E10 out to Å and the island villages",
+   "days": 4,
+   "region": "NO",
+   "at": [
+    13.8,
+    68.15
+   ],
+   "wiki": "Lofoten",
+   "blurb": "Fishing villages on stilts and peaks straight out of the sea"
+  },
+  {
+   "title": "Iceland's Ring Road",
+   "prompt": "Reykjavík around Iceland's Ring Road in 8 days, with the Golden Circle and the south coast",
+   "days": 8,
+   "region": "IS",
+   "at": [
+    -19.0,
+    64.9
+   ],
+   "wiki": "Route 1 (Iceland)",
+   "blurb": "Waterfalls, glacier lagoons, black beaches and the lava fields of the north"
+  },
+  {
+   "title": "Wild Atlantic Way south",
+   "prompt": "Shannon to Cork along the Wild Atlantic Way in 6 days: the Burren, Dingle, the Ring of Kerry and Beara",
+   "days": 6,
+   "region": "IE",
+   "at": [
+    -9.8,
+    52.0
+   ],
+   "wiki": "Ring of Kerry",
+   "blurb": "Slea Head, the Conor Pass, the Ring of Kerry and the Healy Pass"
+  },
+  {
+   "title": "Andalusia's white towns",
+   "prompt": "Málaga loop through Ronda, the white towns and the Alpujarras in 5 days",
+   "days": 5,
+   "region": "ES",
+   "at": [
+    -5.2,
+    36.75
+   ],
+   "wiki": "White Towns of Andalusia",
+   "blurb": "Ronda's gorge, Grazalema's mountains and the Sierra Nevada's villages"
+  },
+  {
+   "title": "Picos de Europa",
+   "prompt": "Bilbao to Oviedo through the Picos de Europa in 4 days",
+   "days": 4,
+   "region": "ES",
+   "at": [
+    -4.85,
+    43.2
+   ],
+   "wiki": "Picos de Europa",
+   "blurb": "Limestone peaks a short drive from the sea, gorges and mountain lakes"
+  },
+  {
+   "title": "Douro Valley and the N2",
+   "prompt": "Porto to the Douro Valley and down the Estrada Nacional 2 to Lisbon in 5 days",
+   "days": 5,
+   "region": "PT",
+   "at": [
+    -7.6,
+    41.15
+   ],
+   "wiki": "Douro Valley",
+   "blurb": "Terraced port vineyards on the N222, then Portugal's old road south"
+  }
+ ]
 }

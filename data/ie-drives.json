@@ -1,0 +1,14 @@
+[
+ {"name": "Ring of Kerry", "ref": "N70", "wiki": "Ring of Kerry", "states": ["County Kerry", "Ireland"], "km": 179, "description": "The classic loop of the Iveragh Peninsula from Killarney: Ladies View, Moll's Gap and the coast past Waterville and Sneem"},
+ {"name": "Slea Head Drive", "ref": "R559", "wiki": "Slea Head", "states": ["County Kerry", "Ireland"], "km": 47, "description": "Around the tip of the Dingle Peninsula: Atlantic cliffs, beehive huts and the Blasket Islands offshore"},
+ {"name": "Conor Pass", "ref": "R560", "wiki": "Conor Pass", "states": ["County Kerry", "Ireland"], "km": 12, "description": "Ireland's highest mountain pass, a narrow road over the Dingle Peninsula with lakes below; not for big vehicles"},
+ {"name": "Gap of Dunloe", "ref": "", "wiki": "Gap of Dunloe", "states": ["County Kerry", "Ireland"], "km": 11, "description": "A narrow mountain pass between MacGillycuddy's Reeks and the Purple Mountain, past five lakes"},
+ {"name": "Ring of Beara", "ref": "R571", "wiki": "Beara Peninsula", "states": ["County Cork", "County Kerry", "Ireland"], "km": 148, "description": "The quieter, wilder neighbour of the Ring of Kerry, with the Healy Pass over the middle"},
+ {"name": "Healy Pass", "ref": "R574", "wiki": "Healy Pass", "states": ["County Cork", "County Kerry", "Ireland"], "km": 12, "description": "Hairpins over the Caha Mountains on the Beara Peninsula with views of Glanmore Lake"},
+ {"name": "Wild Atlantic Way", "ref": "", "wiki": "Wild Atlantic Way", "states": ["Ireland"], "km": 2500, "description": "The signed coastal route from Donegal to Cork: the Cliffs of Moher, Connemara, Achill and the peninsulas of Kerry"},
+ {"name": "Connemara and the Sky Road", "ref": "N59", "wiki": "Connemara", "states": ["County Galway", "Ireland"], "km": 120, "description": "Bog, lakes and the Twelve Bens from Galway to Clifden, then the Sky Road's loop above the bay"},
+ {"name": "The Burren", "ref": "R477", "wiki": "The Burren", "states": ["County Clare", "Ireland"], "km": 60, "description": "Limestone pavement country by the Atlantic, with the coast road past Black Head and the Corkscrew Hill"},
+ {"name": "Inishowen 100", "ref": "", "wiki": "Inishowen", "states": ["County Donegal", "Ireland"], "km": 160, "description": "Around the Inishowen Peninsula to Malin Head, Ireland's northernmost point, and the Gap of Mamore"},
+ {"name": "Wicklow Mountains (Military Road)", "ref": "R115", "wiki": "Sally Gap", "states": ["County Wicklow", "Ireland"], "km": 50, "description": "Over the Sally Gap and down to Glendalough, an hour from Dublin, through bog and mountain"},
+ {"name": "Copper Coast", "ref": "R675", "wiki": "Copper Coast Geopark", "states": ["County Waterford", "Ireland"], "km": 25, "description": "A UNESCO geopark coast of coves and old copper mines between Tramore and Dungarvan"}
+]

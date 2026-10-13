@@ -45,7 +45,7 @@ function aboutHtml() {
 
     <section class="ab-where ab-in">
       <h2 class="ab-h">Where it plans</h2>
-      <p>The United States, Canada, Australia, New Zealand, the United Kingdom and the Alps. Anywhere else, routing still works, but the planner has no list of scenic roads there yet.</p>
+      <p>The United States, Canada, Australia, New Zealand, the United Kingdom and Ireland, the Alps, Norway, Iceland, Spain and Portugal. Anywhere else, routing still works, but the planner has no list of scenic roads there yet.</p>
     </section>
 
     <section class="ab-credits ab-in">

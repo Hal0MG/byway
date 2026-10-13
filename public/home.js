@@ -78,7 +78,8 @@ function homeItems() {
 
 const REGION_VIEWS = [
   ["United States", [-98, 39], 2.4], ["Canada", [-95, 54], 2.2], ["Australia", [140, -30], 2.4],
-  ["New Zealand", [172, -41.5], 3.9], ["UK", [-3.5, 54.5], 4.2], ["The Alps", [9.5, 46.5], 4.6],
+  ["New Zealand", [172, -41.5], 3.9], ["UK and Ireland", [-5.5, 54], 4.1], ["The Alps", [9.5, 46.5], 4.6],
+  ["Norway", [10, 64], 3.6], ["Iceland", [-19, 65], 4.6], ["Spain and Portugal", [-4.5, 40], 4.2],
 ];
 function renderHome() {
   if (document.body.dataset.view !== "home") return;
