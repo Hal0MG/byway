@@ -887,6 +887,7 @@ function renderDay(g, gi, groups, segs) {
         : `<a class="app-link" href="${esc(links.google)}" target="_blank" rel="noopener">${icon("pin", 16)} Google Maps</a>
            <a class="app-link" href="${esc(links.apple)}" target="_blank" rel="noopener">${icon("pin", 16)} Apple Maps</a>`}
       <button class="app-link" data-act="day-map" data-day="${day}">${icon("map", 16)} Show on map</button>
+      ${links ? `<button class="app-link send-phone" data-act="day-phone" data-day="${day}" title="QR codes of this day's map links">${icon("phone", 16)} Send to phone</button>` : ""}
     </div>
     ${meta?.summary ? `<p class="day-summary">${esc(meta.summary)}</p>` : ""}
     ${seasonBox}
@@ -1057,6 +1058,7 @@ IT.addEventListener("click", (e) => {
   else if (act === "photos") refreshPhotos();
   else if (act === "new") goHome();
   else if (act === "day-map") showDayOnMap(Number(t.dataset.day));
+  else if (act === "day-phone") openPhoneSheet(Number(t.dataset.day));
   else if (act === "spot") showSpotOnMap(Number(t.dataset.i));
   else if (act === "jump") {
     e.preventDefault();

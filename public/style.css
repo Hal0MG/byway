@@ -1493,3 +1493,21 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
 .td-parts > .ico { flex: none; margin-top: 3px; color: var(--blue); }
 .td-part { display: block; color: var(--text); }
 .td-part a { color: var(--blue); font-weight: 600; }
+
+/* Send to the phone: QR codes of the map links */
+.phone-sheet { width: min(560px, 100%); }
+.qr-wrap { display: flex; flex-direction: column; gap: 12px; }
+.qr-list { display: flex; flex-wrap: wrap; gap: 16px; }
+.qr { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.qr-code { width: 220px; height: 220px; padding: 8px; border-radius: 8px; background: #fff; }
+.qr-code svg { display: block; width: 100%; height: 100%; }
+.qr figcaption { max-width: 220px; font-size: 13px; color: var(--muted); }
+.qr figcaption b { color: var(--text); }
+.qr-wrap[data-app="google"] .qr-a, .qr-wrap[data-app="apple"] .qr-g { display: none; }
+.qr-wrap .fine { margin: 0; }
+.today .qr-wrap { margin-top: 14px; }
+.sheet-actions .td-qr { margin-right: auto; }
+@media (max-width: 760px) {
+  /* already on the phone */
+  .send-phone, .td-qr { display: none !important; }
+}

@@ -2108,6 +2108,10 @@ function redrawToday() {
   el.querySelector(".sheet").innerHTML = todayHtml();
 }
 function todayClick(e) {
+  if (e.target.closest("[data-today-qr]")) {
+    todayState.qr = !todayState.qr;
+    loadQrLib().then(redrawToday);
+  }
   if (e.target.closest("[data-today-loc]")) {
     todayState.at = null;
     startTodayLocation();
@@ -2172,7 +2176,7 @@ function todayHtml() {
   const ll = (p) => `${p[1].toFixed(5)},${p[0].toFixed(5)}`;
   const here = todayState.at != null ? [stops[todayState.at].lng, stops[todayState.at].lat] : todayState.pos && along > 0 ? todayState.pos : [stops[start].lng, stops[start].lat];
   // every place ahead, in parts when there are more than one link carries (each part starts where the last ended)
-  const route = [{ p: here, name: "here" }, ...ahead.map((x) => ({ p: [x.s.lng, x.s.lat], name: shortName(x.s.name) }))];
+  const route = [{ p: here, name: "Where you are" }, ...ahead.map((x) => ({ p: [x.s.lng, x.s.lat], name: shortName(x.s.name) }))];
   const parts = linkParts(route).map((part) => ({ ...mapLinksFor(part.map((x) => ll(x.p))), from: part[0].name, to: part.at(-1).name }));
   const { google, apple } = parts[0];
   const card = (ico, label, big, small = "") => `<div class="td-card">${icon(ico, 20)}<div><small>${label}</small><b>${big}</b>${small ? `<span>${small}</span>` : ""}</div></div>`;
@@ -2197,13 +2201,68 @@ function todayHtml() {
     ${parts.length > 1 ? `<p class="td-parts">${icon("route", 14)} <span>Today's route has more places than one map link carries, so it goes in
       ${parts.length} parts. Open the next part when you reach ${esc(parts[0].to)}:
       ${parts.slice(1).map((p, k) => `<span class="td-part">Part ${k + 2} from ${esc(p.from)}: <a href="${esc(p.google)}" target="_blank" rel="noopener">Google</a> · <a href="${esc(p.apple)}" target="_blank" rel="noopener">Apple</a></span>`).join("")}</span></p>` : ""}
+    ${todayState.qr ? qrBlock(parts) : ""}
     <div class="sheet-actions">
+      <button class="btn ghost td-qr" data-today-qr>${icon("phone", 18)} ${todayState.qr ? "Hide the QR code" : "Send to phone"}</button>
       <a class="btn ghost" href="${esc(apple)}" target="_blank" rel="noopener">${icon("pin", 18)} Apple Maps${parts.length > 1 ? ", part 1" : ""}</a>
       <a class="btn blue" href="${esc(google)}" target="_blank" rel="noopener">${icon("pin", 18)} Drive it in Google Maps${parts.length > 1 ? ", part 1" : ""}</a>
     </div>`;
 }
 // keep the times fresh while it's open
 setInterval(() => todayState.el?.isConnected && redrawToday(), 60000);
+
+// ---------- send to the phone ----------
+// QR codes of a day's Google and Apple Maps links: the phone's camera opens the day in its maps app, nothing to type.
+// qrcode-generator loads the first time (Setup uses it too).
+let qrLib = null;
+function loadQrLib() {
+  if (typeof qrcode === "function") return Promise.resolve();
+  return (qrLib ||= new Promise((ok) => {
+    const sc = document.createElement("script");
+    sc.src = "https://unpkg.com/qrcode-generator@1.4.4/qrcode.js";
+    sc.onload = sc.onerror = () => ok();
+    document.head.appendChild(sc);
+  }));
+}
+function qrSvg(text) {
+  if (typeof qrcode !== "function") return "";
+  const q = qrcode(0, "L");
+  q.addData(text);
+  q.make();
+  return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+}
+// parts: [{ google, apple, from, to }], one per link (a long day has several)
+function qrBlock(parts) {
+  if (typeof qrcode !== "function") return `<p class="fine">The QR code maker didn't load (no internet?). The links work from the day's Google and Apple Maps buttons.</p>`;
+  return `<div class="qr-wrap" data-app="google">
+    <div class="rc-tabs" role="tablist">
+      <button class="on" role="tab" data-qr-app="google">Google Maps</button><button role="tab" data-qr-app="apple">Apple Maps</button>
+    </div>
+    <div class="qr-list">
+      ${parts.map((p, k) => `<figure class="qr">
+        <div class="qr-code qr-g">${qrSvg(p.google)}</div><div class="qr-code qr-a">${qrSvg(p.apple)}</div>
+        <figcaption>${parts.length > 1 ? `<b>Part ${k + 1}</b> ` : ""}${esc(p.from)} to ${esc(p.to)}</figcaption></figure>`).join("")}
+    </div>
+    <p class="fine">Point the phone's camera at the code and tap the link that appears. Google links open the Google Maps
+      app when it's installed; Apple Maps links need iOS 18.4 or later.${parts.length > 1 ? " Open part 2 when you reach the end of part 1." : ""}</p>
+  </div>`;
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-qr-app]");
+  if (!b) return;
+  const wrap = b.closest(".qr-wrap");
+  wrap.dataset.app = b.dataset.qrApp;
+  wrap.querySelectorAll("[data-qr-app]").forEach((x) => x.classList.toggle("on", x === b));
+});
+async function openPhoneSheet(day) {
+  const groups = dayGroups();
+  const gi = groups.findIndex((g) => g.day === day);
+  const links = gi >= 0 ? dayLinks(groups, gi) : null;
+  if (!links) return;
+  await loadQrLib();
+  const parts = links.parts.length > 1 ? links.parts : [{ google: links.google, apple: links.apple, from: links.parts[0].from, to: links.parts[0].to }];
+  openSheet(`${sheetHead(groups.length > 1 ? `Send day ${day} to your phone` : "Send the trip to your phone")}${qrBlock(parts)}`, "phone-sheet");
+}
 
 // ---------- editing the route on the map ----------
 // Drag a pin to move that point, drag the route line to pull it through a new via point, and right-click (long-press on
