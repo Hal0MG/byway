@@ -1667,7 +1667,7 @@ const liveChange = (text) => liveRevise({ feedback: text });
 // Every AI change to an existing trip goes through here (revisePlan in app.js too): the traveler's words (feedback),
 // road picks (roadEdits), measured drive times (dayHours, nightDays). `title` and `note` describe it in the bar.
 async function liveRevise(opts = {}) {
-  const { feedback = "", roadEdits = null, dayHours = null, nightDays = null, title = "", note = "" } = opts;
+  const { feedback = "", roadEdits = null, dayHours = null, nightDays = null, title = "", note = "", skel = null } = opts;
   if (READONLY || !plan || liveState.busy || (progress && !progress.error)) return;
   const run = ++liveState.run;
   const before = routes.scenic?.distance_m || 0;
@@ -1680,7 +1680,8 @@ async function liveRevise(opts = {}) {
   renderLiveBar();
   renderItinerary();
   try {
-    const resp = await api("/api/plan", {
+    // a plan made already (a version picked in "Other versions") skips the AI
+    const resp = skel ? { plan: skel, sources: [] } : await api("/api/plan", {
       prompt: trip.prompt || trip.name, current: skeletonOf(), feedback, roadEdits, dayHours, nightDays,
       states: tripStates(), settings: tripSettings(),
     });
@@ -1698,6 +1699,8 @@ async function liveRevise(opts = {}) {
       liveStep("Making sure the route drives your roads");
       if ((await enforceRoads(roadEdits.add)).length) await findRoutes({ fit: false });
     }
+    // long days that moving the overnights can fix are fixed right away, without asking the AI again
+    if (longDays().length) balanceDays();
     renderSpotMarkers();
     scheduleSave();
     const km = routes.scenic?.distance_m || 0;
@@ -1784,6 +1787,129 @@ $("change-form")?.addEventListener("submit", (e) => {
   $("change-text").value = "";
   liveChange(text);
 });
+
+// ---------- other versions of the trip, side by side ----------
+// Three alternatives from the AI (asked in parallel), each placed and measured without touching the trip, then compared
+// with the current one. "Use this version" applies it like any live change, with Undo.
+
+const VARIANTS = [
+  { key: "easy", label: "Easier days", ask: "Make a version with less driving each day: keep the highlights the request names, drop the weaker detours, and spread the driving evenly." },
+  { key: "scenic", label: "More scenic", ask: "Make a version that drives more of the region's best scenic roads and passes, even if it adds some driving, while keeping every day under the daily limit." },
+  { key: "other", label: "Another way", ask: "Make a version that takes a noticeably different route between the same start and end, through other scenic roads and towns, keeping every place the request names." },
+];
+const altState = { items: [], el: null };
+
+// Points placed on the map (cached place search, chosen along the route) and the scenic route, for a plan that
+// isn't the trip: { points, route, days: [{ day, hours, overnight }] }.
+async function measureSkeleton(skel) {
+  const pts = [];
+  for (const s of skel.points || []) {
+    try {
+      const cands = await geocodeAll(s.name);
+      pts.push({ name: s.name, kind: s.kind === "via" ? "via" : "stop", day: Number(s.day) || 1, road: s.road || "", ...cands[0], cands });
+    } catch {
+      // a place the map doesn't know is left out, as when planning
+    }
+  }
+  pickAlongRoute(pts);
+  dropDetours(pts);
+  if (pts.length < 2) throw new Error("Couldn't place this version on the map.");
+  const route = await api("/api/route", { coordinates: pts.map((p) => [p.lng, p.lat]), mode: "scenic" });
+  // the longest day once the app moves the overnights (it does when this version is used), if that's shorter
+  const L = [0, ...route.legs.map((l) => l.duration_s)];
+  const nDays = new Set(pts.map((p) => p.day)).size;
+  const balanced = !askedDays(trip.prompt) || nDays === askedDays(trip.prompt) ? bestSplit(L, pts.map((p) => p.kind === "via"), nDays) : null;
+  const days = new Map();
+  route.legs.forEach((l, k) => {
+    const p = pts[k + 1];
+    const d = days.get(p.day) || { day: p.day, secs: 0, overnight: "" };
+    d.secs += l.duration_s;
+    d.overnight = p.name;
+    days.set(p.day, d);
+  });
+  return { points: pts, route, days: [...days.values()], balanced };
+}
+// The numbers compared for one version.
+function versionSummary(skel, m) {
+  const secs = m.days.map((d) => d.secs);
+  return {
+    days: (skel.days || []).length || m.days.length,
+    secs: m.route.duration_s,
+    km: m.route.distance_m,
+    longest: Math.min(Math.max(0, ...secs), m.balanced?.worst ?? Infinity),
+    freeway: m.route.distance_m ? Math.round((100 * (m.route.highway_m || 0)) / m.route.distance_m) : 0,
+    roads: (skel.roads || []).map((r) => r.name),
+    overnights: m.balanced && m.balanced.worst < Math.max(0, ...secs)
+      ? m.balanced.ends.slice(0, -1).map((i) => shortName(m.points[i].name))
+      : m.days.slice(0, -1).map((d) => shortName(d.overnight)),
+  };
+}
+function currentSummary() {
+  const groups = dayGroups();
+  const secs = groups.map((g) => dayStats(g, "scenic")?.dur || 0);
+  const r = routes.scenic;
+  return {
+    days: groups.length, secs: r?.duration_s || 0, km: r?.distance_m || 0, longest: Math.max(0, ...secs),
+    freeway: r?.distance_m ? Math.round((100 * (r.highway_m || 0)) / r.distance_m) : 0,
+    roads: (plan?.roads || []).map((x) => x.name),
+    overnights: groups.slice(0, -1).map((g) => shortName(stops[g.items.at(-1)].name)),
+  };
+}
+function altHtml() {
+  const cols = [{ label: "Your trip", sum: currentSummary(), current: true }, ...altState.items];
+  const cell = (c, f) => (c.error ? (f === "days" ? `<span class="su-bad">${esc(c.error)}</span>` : "")
+    : !c.sum ? (f === "days" ? `<span class="spinner"></span> ${esc(c.step || "")}` : "") : f);
+  const limit = longDayS();
+  const rows = [
+    ["Days", (c) => c.sum.days],
+    ["Driving", (c) => fmtDur(c.sum.secs)],
+    ["Longest day", (c) => `<span class="${c.sum.longest > limit ? "warn-text" : ""}">${fmtDur(c.sum.longest)}</span>`],
+    ["Distance", (c) => fmtMi(c.sum.km)],
+    ["Freeway", (c) => `${c.sum.freeway}%`],
+    ["Featured roads", (c) => c.sum.roads.map((x) => esc(x)).join("<br>") || "–"],
+    ["Overnights", (c) => c.sum.overnights.map((x) => esc(x)).join("<br>") || "–"],
+  ];
+  return `${sheetHead("Other versions of this trip")}
+    <p class="su-lede">Three takes on the same request, measured on the map. Pick one to switch to it; Undo brings yours back.</p>
+    <div class="alt-wrap"><table class="alt-table">
+      <thead><tr><th></th>${cols.map((c) => `<th>${esc(c.label)}${c.title ? `<small>${esc(c.title)}</small>` : ""}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map(([name, f], ri) => `<tr><th>${name}</th>${cols.map((c) => `<td>${c.sum ? f(c) : ri === 0 ? cell(c, "days") : ""}</td>`).join("")}</tr>`).join("")}
+        <tr><th></th>${cols.map((c, i) => `<td>${c.current ? `<span class="subtle">Current</span>` : c.sum ? `<button class="btn blue small" data-alt="${i - 1}">Use this version</button>` : ""}</td>`).join("")}</tr>
+      </tbody></table></div>`;
+}
+function redrawAlt() {
+  const sheet = altState.el?.querySelector(".sheet");
+  if (sheet && altState.el.isConnected) sheet.innerHTML = altHtml();
+}
+async function openAlternatives() {
+  if (!plan || READONLY || !routes.scenic) return;
+  altState.items = VARIANTS.map((v) => ({ ...v, step: "Asking the AI" }));
+  altState.el = openSheet(altHtml(), "wide");
+  altState.el.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-alt]");
+    if (!b) return;
+    const it = altState.items[Number(b.dataset.alt)];
+    closeOverlay();
+    liveRevise({ skel: it.skel, title: `Switching to "${it.label}"`, note: it.title || "", feedback: "" }).then(() => {
+      trip.edits = [...(trip.edits || []), { text: `Switched to another version: ${it.label}`, at: new Date().toISOString() }];
+      scheduleSave();
+    });
+  });
+  const base = { prompt: trip.prompt || trip.name, current: skeletonOf(), states: tripStates(), settings: tripSettings() };
+  await Promise.all(altState.items.map(async (it) => {
+    try {
+      const d = await api("/api/plan", { ...base, feedback: it.ask });
+      it.skel = d.plan;
+      it.title = d.plan.title;
+      it.step = "Measuring";
+      redrawAlt();
+      it.sum = versionSummary(d.plan, await measureSkeleton(d.plan));
+    } catch (e) {
+      it.error = e.message;
+    }
+    redrawAlt();
+  }));
+}
 
 // ---------- editing the route on the map ----------
 // Drag a pin to move that point, drag the route line to pull it through a new via point, and right-click (long-press on

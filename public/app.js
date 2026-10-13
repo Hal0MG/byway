@@ -315,6 +315,37 @@ function askedDays(prompt) {
 // days so the longest day is as short as possible (a linear partition), sleeping at real stops where it costs under
 // 15 minutes of the longest day. Keeps the number of days the request asked for; otherwise may add up to two days.
 // Leaves trips with a rest or exploring day (a day under an hour) to the AI. Returns true if it fixed every long day.
+// The best split of a route's legs into D days: L[i] is the drive into point i, via[i] whether point i is a via.
+// Returns { ends: [last point of each day], worst: longest day in seconds } or null.
+function bestSplit(L, via, D) {
+  const n = L.length;
+  if (D < 1 || D > n - 1) return null;
+  const pre = [0];
+  for (let i = 1; i < n; i++) pre[i] = pre[i - 1] + L[i];
+  const span = (a, b) => pre[b] - pre[a];
+  // f[d][i]: best cost with d days ending at point i; cost = longest day + 15 min per overnight at a via point
+  const f = Array.from({ length: D + 1 }, () => new Array(n).fill(Infinity));
+  const from = Array.from({ length: D + 1 }, () => new Array(n).fill(-1));
+  f[0][0] = 0;
+  for (let d = 1; d <= D; d++) {
+    for (let i = d; i < n; i++) {
+      if (d === D && i !== n - 1) continue;
+      const pen = d < D && via[i] ? 900 : 0;
+      for (let k = d - 1; k < i; k++) {
+        if (f[d - 1][k] === Infinity) continue;
+        const c = Math.max(f[d - 1][k], span(k, i) + pen);
+        if (c < f[d][i]) [f[d][i], from[d][i]] = [c, k];
+      }
+    }
+  }
+  if (f[D][n - 1] === Infinity) return null;
+  const ends = [];
+  for (let d = D, i = n - 1; d > 0; i = from[d][i], d--) ends.unshift(i);
+  let worst = 0;
+  ends.forEach((e, d) => (worst = Math.max(worst, span(d ? ends[d - 1] : 0, e))));
+  return { ends, worst };
+}
+
 function balanceDays() {
   const r = routes.scenic;
   if (!r || stops.length < 3) return false;
@@ -322,37 +353,16 @@ function balanceDays() {
   if (groups.some((g) => (dayStats(g, "scenic")?.dur || 0) < 3600)) return false;
   const legs = legsByEnd(r);
   const L = stops.map((_, i) => legs.get(i)?.duration_s || 0); // L[i]: the drive into point i
+  const via = stops.map((s) => isVia(s));
   const n = stops.length;
-  const pre = [0];
-  for (let i = 1; i < n; i++) pre[i] = pre[i - 1] + L[i];
-  const span = (a, b) => pre[b] - pre[a]; // driving from point a to point b
   const limit = longDayS();
   const asked = askedDays(trip.prompt);
   const counts = asked ? [groups.length] : [groups.length, groups.length + 1, groups.length + 2];
   for (const D of counts) {
     if (D > n - 1) break;
-    // f[d][i]: best cost with d days ending at point i; cost = longest day + 15 min per overnight at a via point
-    const f = Array.from({ length: D + 1 }, () => new Array(n).fill(Infinity));
-    const from = Array.from({ length: D + 1 }, () => new Array(n).fill(-1));
-    f[0][0] = 0;
-    for (let d = 1; d <= D; d++) {
-      for (let i = d; i < n; i++) {
-        if (d === D && i !== n - 1) continue;
-        const via = d < D && isVia(stops[i]) ? 900 : 0;
-        for (let k = d - 1; k < i; k++) {
-          if (f[d - 1][k] === Infinity) continue;
-          const c = Math.max(f[d - 1][k], span(k, i) + via);
-          if (c < f[d][i]) [f[d][i], from[d][i]] = [c, k];
-        }
-      }
-    }
-    if (f[D][n - 1] === Infinity) continue;
-    // the overnights, and the real longest day (without the via penalty)
-    const ends = [];
-    for (let d = D, i = n - 1; d > 0; i = from[d][i], d--) ends.unshift(i);
-    let worst = 0;
-    ends.forEach((e, d) => (worst = Math.max(worst, span(d ? ends[d - 1] : 0, e))));
-    if (worst > limit) continue;
+    const split = bestSplit(L, via, D);
+    if (!split || split.worst > limit) continue;
+    const { ends } = split;
     let day = 1;
     stops.forEach((s, i) => {
       s.day = day;

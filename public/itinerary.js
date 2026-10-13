@@ -373,6 +373,7 @@ function renderTrip() {
           ${reorderSaves ? `<button class="btn warn" data-act="order-fix">${icon("route", 18)} Fix backtracking (${fmtMi(reorderSaves)} shorter)</button>` : ""}
           ${plan && !(plan.spots || []).length && !READONLY ? `<button class="btn ghost" data-act="details">${icon("sparkle", 18)} Write the day guides</button>` : ""}
           ${plan && (plan.spots || []).length && missingPhotos() > 2 && !READONLY ? `<button class="btn ghost" data-act="photos">${icon("photo", 18)} Find missing photos (${missingPhotos()})</button>` : ""}
+          ${routes.scenic && plan && !READONLY ? `<button class="btn ghost" data-act="alternatives">${icon("route", 18)} Other versions</button>` : ""}
           ${routes.scenic ? `<button class="btn ghost" data-act="export">${icon("share", 18)} Export and share</button>` : ""}
           ${READONLY ? "" : `<button class="btn ghost" data-act="new">${icon("plus", 18)} New trip</button>`}
         </div>
@@ -1036,6 +1037,7 @@ IT.addEventListener("click", (e) => {
   else if (act === "season-avoid") avoidSeasonal();
   else if (act === "along") loadAlong();
   else if (act === "export") openExport();
+  else if (act === "alternatives") openAlternatives();
   else if (act === "versions") openVersions();
   else if (act === "rc-mode") {
     getAskState().mode = t.dataset.v;
