@@ -2402,8 +2402,14 @@ Request: ${prompt}`;
         user +=
           `\nA router measured the actual driving time per day: ${hours}.` +
           `\nRevise the plan so no day is over ${maxH} hours and the driving is spread evenly. ` +
-          "If the request gives a number of days, keep exactly that many days, even if that means longer days. " +
-          "Otherwise add days where needed. Add overnight towns along the way or move day boundaries.";
+          // A fixed day count used to mean "accept long days", and Flash-Lite packed in roads until days ran 9+ hours.
+          // He wants scenic but sensible: trim the extras before stretching a day.
+          (requestedDays(prompt)
+            ? `The traveler asked for exactly ${requestedDays(prompt)} days, so keep that many days. To shorten the long days, ` +
+              "first move day boundaries and overnight towns, then drop or trim the extras on those days: a featured road " +
+              "that's a detour, a side trip, a stop the request didn't name. Keep every place the request names. A day may " +
+              "only stay long if the named places can't fit otherwise."
+            : "Add days where needed. Add overnight towns along the way or move day boundaries.");
       }
       if (asArray(nightDays).length) {
         user += `\nThese days arrive after sunset and the traveler doesn't drive in the dark: day ${asArray(nightDays).join(", ")}. ` +

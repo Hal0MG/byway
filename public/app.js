@@ -1061,8 +1061,10 @@ async function planTrip(prompt, settings) {
     progressSet("drive", "doing", "Routing with OpenRouteService");
     if (!(await findRoutes({ fit: false }))) throw new Error($("status").textContent || "Routing failed.");
 
-    const long = longDays();
-    if (long.length) {
+    // Up to two rounds of "these days are too long", while each round helps (fewer long days, or the longest shorter).
+    const worst = () => Math.max(0, ...dayGroups().map((g) => dayStats(g, "scenic")?.dur || 0));
+    for (let round = 0, long = longDays(); long.length && round < 2; round++) {
+      const before = { n: long.length, worst: worst() };
       progressSet("drive", "doing", `Day ${long.join(", ")} ran over ${tripSettings().maxHours} hours, asking the AI to rebalance`);
       // The guides being written are for the old days and get redone after this, and two answers at once
       // halve the local model's speed, so stop them.
@@ -1074,6 +1076,8 @@ async function planTrip(prompt, settings) {
       progressSet("details", "doing", "Rewriting for the rebalanced days");
       if ((await placePoints(skel)).reordered) detailsP = requestDetails(prompt, skeletonOf());
       await findRoutes({ fit: false });
+      long = longDays();
+      if (long.length >= before.n && worst() >= before.worst - 600) break; // no better: stop asking
     }
     const total = routes.scenic;
     progressSet("drive", "done", total ? `${fmtMi(total.distance_m)}, ${fmtDur(total.duration_s)} of driving` : "");
