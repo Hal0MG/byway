@@ -85,8 +85,7 @@ top bar and only works on the computer running the app. Keep the start window op
 
 `npm run desktop` opens Byway in its own window (Electron) instead of the browser, with the server inside it. Trips, keys
 and caches are kept in the app's data folder (Mac: `~/Library/Application Support/Byway`, Windows: `%APPDATA%\Byway`).
-`npm run desktop:build` makes the installers in `dist/`, and `tools/desktop-workflow.yml` (a GitHub Actions workflow, to move to
-`.github/workflows/`) builds them for Mac and Windows when started by hand or by a version tag. The apps aren't signed: right-click, Open the first time
+`npm run desktop:build` makes the installers in `dist/`, and the "Desktop apps" workflow in GitHub Actions builds them for Mac and Windows when started by hand or by a version tag. The apps aren't signed: right-click, Open the first time
 on a Mac; "More info", "Run anyway" on Windows.
 
 ## On your phone

@@ -1,5 +1,3 @@
-# To turn this on: move it to .github/workflows/desktop.yml and push. Pushing workflow files needs GitHub's "workflow"
-# permission, which this Mac's sign-in didn't have (`gh auth refresh -s workflow` adds it, or add the file on github.com).
 # Desktop apps: builds Byway for Mac (.dmg and .zip) and Windows (installer and .zip) as downloadable artifacts of the run.
 # Nothing is published. Start it from the Actions tab (Desktop apps > Run workflow) or by pushing a tag like v1.15.
 # The apps are unsigned: the first time, right-click > Open on a Mac, and "More info > Run anyway" on Windows.
