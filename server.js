@@ -658,10 +658,13 @@ async function routeCacheSet(key, entry) {
 }
 
 app.post("/api/route", async (req, res) => {
-  const { coordinates, mode } = req.body;
-  if (!Array.isArray(coordinates) || coordinates.length < 2) {
-    return res.status(400).json({ error: "Add at least two stops to find routes." });
-  }
+  const { mode } = req.body;
+  const coordinates = asArray(req.body.coordinates);
+  if (coordinates.length < 2) return res.status(400).json({ error: "Add at least two stops to find routes." });
+  // longitude and latitude in range; anything else is a bad point, not a routing problem
+  const bad = coordinates.findIndex((c) => !Array.isArray(c) || !(Math.abs(c[0]) <= 180) || !(Math.abs(c[1]) <= 90));
+  if (bad >= 0) return res.status(400).json({ error: `Stop ${bad + 1} has no valid location.` });
+  if (coordinates.length > 400) return res.status(400).json({ error: "That's more than 400 points; split the trip." });
 
   const gh = await getGhInfo();
   let note = null;
@@ -688,7 +691,7 @@ app.post("/api/route", async (req, res) => {
         // ORS out of allowance, rate limited, down or unreachable: the backup router. A real "can't route there"
         // stays an error, so the app can drop or move that point.
         if (e instanceof RouteError && ROUTE_IMPOSSIBLE.test(e.message)) throw e;
-        console.log(`ORS failed (${e.message}), using the backup router`);
+        if (!/resting/.test(e.message)) console.log(`ORS failed (${e.message}), using the backup router`);
         return routeOsrm(c);
       }
     });
@@ -2584,7 +2587,9 @@ app.post("/api/plan", async (req, res) => {
     if (noAI()) return res.status(500).json({ error: "Add ANTHROPIC_API_KEY (or GEMINI_API_KEY) to .env" });
     // Revisions send `current` (the plan so far) with any of: dayHours (measured drive times), feedback (the traveler's
     // comment, like "swap day 2 for the Adirondacks") and roadEdits ({ add: [{ name, ref, states, why }], remove: [names] }).
-    const { prompt, current, dayHours, feedback, roadEdits, settings, nightDays } = req.body;
+    const { current, dayHours, feedback, roadEdits, settings, nightDays } = req.body;
+    // a pasted essay or a runaway client shouldn't fill the model's context
+    const prompt = String(req.body.prompt || "").slice(0, 2000);
     if (!prompt) return res.status(400).json({ error: "Describe the trip first." });
     const signal = clientGone(res);
     const maxH = maxHoursOf(settings);
@@ -2914,7 +2919,8 @@ app.post("/api/details", async (req, res) => {
   let emit = () => {}; // set once the answer starts streaming; the catch needs it too
   try {
     if (noAI()) return res.status(500).json({ error: "Add ANTHROPIC_API_KEY (or GEMINI_API_KEY) to .env" });
-    const { prompt, plan, settings, states } = req.body;
+    const { plan, settings, states } = req.body;
+    const prompt = String(req.body.prompt || "").slice(0, 2000);
     if (!plan?.points?.length) return res.status(400).json({ error: "Plan the route first." });
     const signal = clientGone(res);
     emit = eventStream(req, res);
