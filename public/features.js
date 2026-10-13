@@ -1911,6 +1911,150 @@ async function openAlternatives() {
   }));
 }
 
+// ---------- Today: the day you're driving, for the phone ----------
+// Where you are (the phone's location, or a point you pick), what's next and how far, the next fuel or charger, roads
+// and stops still ahead, arrival against sunset, and the rest of the day handed to Google or Apple Maps. Location needs
+// a secure page (https or this computer); over plain http on the home Wi-Fi the phone can't share it, so you pick.
+
+const todayState = { day: null, pos: null, posAt: 0, at: null, error: "", watch: null, el: null };
+const todayIso = () => new Date().toLocaleDateString("en-CA");
+function todayDefaultDay() {
+  const g = dayGroups().find((x) => dayDate(x.day) === todayIso());
+  return g?.day || Number(store.get("todayDay")) || dayGroups()[0]?.day || 1;
+}
+function openToday() {
+  if (!routes.scenic) return;
+  if (!dayGroups().some((g) => g.day === todayState.day)) todayState.day = todayDefaultDay();
+  todayState.el = openSheet(todayHtml(), "wide today");
+  todayState.el.addEventListener("click", todayClick);
+  todayState.el.addEventListener("change", todayChange);
+  startTodayLocation();
+}
+function startTodayLocation() {
+  if (todayState.watch != null) return;
+  if (!("geolocation" in navigator) || !isSecureContext) {
+    todayState.error = "Your location isn't available on this connection (it needs https, see the README's Tailscale part).";
+    return;
+  }
+  todayState.watch = navigator.geolocation.watchPosition(
+    (p) => {
+      Object.assign(todayState, { pos: [p.coords.longitude, p.coords.latitude], posAt: Date.now(), error: "" });
+      redrawToday();
+    },
+    (err) => {
+      todayState.error = err.code === 1 ? "Location is turned off for this page." : "Couldn't get your location.";
+      redrawToday();
+    },
+    { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 }
+  );
+}
+function redrawToday() {
+  const el = todayState.el;
+  if (!el?.isConnected) {
+    // the sheet was closed: stop following the location
+    if (todayState.watch != null) navigator.geolocation.clearWatch(todayState.watch);
+    todayState.watch = null;
+    return;
+  }
+  el.querySelector(".sheet").innerHTML = todayHtml();
+}
+function todayClick(e) {
+  if (e.target.closest("[data-today-loc]")) {
+    todayState.at = null;
+    startTodayLocation();
+    redrawToday();
+  }
+}
+function todayChange(e) {
+  if (e.target.id === "today-day") {
+    todayState.day = Number(e.target.value);
+    todayState.at = null;
+    store.set("todayDay", String(todayState.day));
+  }
+  if (e.target.id === "today-at") todayState.at = e.target.value === "" ? null : Number(e.target.value);
+  redrawToday();
+}
+function todayHtml() {
+  const groups = dayGroups();
+  const gi = groups.findIndex((g) => g.day === todayState.day);
+  const g = groups[gi];
+  const line = g && dayLine(g.day);
+  const st = g && dayStats(g, "scenic");
+  if (!g || !line || !st) return `${sheetHead("Today")}<p>Measure the route first.</p>`;
+  const total = line.cum.at(-1) || 1;
+  const start = gi > 0 ? groups[gi - 1].items.at(-1) : g.items[0];
+  const dayPoints = [...new Set([start, ...g.items])];
+  const at = (p) => projectOnto(line, p);
+  // where you are along today's route
+  let along = 0;
+  let where = "";
+  if (todayState.at != null) {
+    along = at([stops[todayState.at].lng, stops[todayState.at].lat]).along;
+    where = `At ${shortName(stops[todayState.at].name)}`;
+  } else if (todayState.pos) {
+    const pr = at(todayState.pos);
+    if (pr.off < 30000) {
+      along = pr.along;
+      where = `Your location${pr.off > 2000 ? `, ${fmtMi(pr.off)} off the route` : ""}`;
+    } else where = `You're ${fmtMi(pr.off)} from today's route, so this counts from the start of the day.`;
+  } else where = "From the start of the day";
+  const secsFor = (m) => (st.dur * Math.max(0, m)) / total;
+  const ahead = dayPoints.map((i) => ({ i, s: stops[i], a: at([stops[i].lng, stops[i].lat]).along })).filter((x) => x.a > along + 500);
+  const next = ahead.find((x) => !isVia(x.s)) || ahead[0];
+  const spots = (plan?.spots || []).filter((x) => x.day === g.day && x.info?.lat != null)
+    .map((x) => ({ x, a: at([x.info.lng, x.info.lat]).along })).filter((y) => y.a > along + 300).sort((p, q) => p.a - q.a);
+  const al = alongFor(g.day);
+  const ev = tripSettings().ev;
+  const pins = (al?.pins || []).filter(([k]) => (ev ? k === "evfast" || k === "ev" : k === "fuel"))
+    .map(([k, lng, lat, name]) => ({ k, name, a: at([lng, lat]).along })).filter((p) => p.a > along + 300).sort((p, q) => p.a - q.a);
+  const fuel = pins[0];
+  // arrival: now plus the driving left and the stops still ahead
+  const leftS = secsFor(total - along);
+  const stopMin = spots.reduce((n, y) => n + (Number(y.x.minutes) || 0), 0);
+  const end = stops[g.items.at(-1)];
+  const tz = dayTz(gi).end || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // the clock where you'll arrive, so arrival and sunset are in the same time zone
+  const nowMin = localMinutes(new Date(), tz);
+  const sun = sunTimes(end.lat, end.lng, dayDate(g.day) || todayIso());
+  const sunset = sun?.set ? localMinutes(sun.set, tz) : null;
+  const arrive = nowMin + leftS / 60 + stopMin;
+  const roads = (plan?.roads || []).filter((r) => (r.days || []).map(Number).includes(g.day)).map((r) => r.name);
+  // the rest of the day for the phone's maps app: from here (or the picked point) through what's ahead
+  const ll = (p) => `${p[1].toFixed(5)},${p[0].toFixed(5)}`;
+  const here = todayState.at != null ? [stops[todayState.at].lng, stops[todayState.at].lat] : todayState.pos && along > 0 ? todayState.pos : [stops[start].lng, stops[start].lat];
+  const rest = thinPoints(ahead.map((x) => x.i), MAX_LINK_STOPS).map((i) => [stops[i].lng, stops[i].lat]);
+  const route = [here, ...rest];
+  const ap = new URLSearchParams({ source: ll(route[0]), destination: ll(route.at(-1)), mode: "driving" });
+  route.slice(1, -1).forEach((p) => ap.append("waypoint", ll(p)));
+  const google = `https://www.google.com/maps/dir/${route.map(ll).join("/")}/data=!4m2!4m1!3e0`;
+  const apple = `https://maps.apple.com/directions?${ap}`;
+  const card = (ico, label, big, small = "") => `<div class="td-card">${icon(ico, 20)}<div><small>${label}</small><b>${big}</b>${small ? `<span>${small}</span>` : ""}</div></div>`;
+  return `${sheetHead("Today")}
+    <div class="td-top">
+      <label>Day <select id="today-day">${groups.map((x) => `<option value="${x.day}" ${x.day === g.day ? "selected" : ""}>${x.day}${dayDate(x.day) ? ` · ${dayDate(x.day)}` : ""}</option>`).join("")}</select></label>
+      <label>I'm at <select id="today-at"><option value="">${todayState.pos ? "My location" : "Start of the day"}</option>
+        ${dayPoints.map((i) => `<option value="${i}" ${todayState.at === i ? "selected" : ""}>${esc(shortName(stops[i].name))}</option>`).join("")}</select></label>
+    </div>
+    <p class="td-where">${icon("pin", 14)} ${esc(where)}${todayState.error && todayState.at == null ? ` <span class="subtle">${esc(todayState.error)}</span>` : ""}
+      ${!todayState.pos && !todayState.error ? `<button class="link-btn" data-today-loc>Use my location</button>` : ""}</p>
+    <div class="td-grid">
+      ${next ? card("route", "Next", esc(shortName(next.s.name)), `${fmtMi(next.a - along)} · ${fmtDur(secsFor(next.a - along))}`) : card("check", "Next", "You've arrived")}
+      ${card("moon", "Tonight", esc(shortName(end.name)), `${fmtMi(total - along)} to go · arrive about ${clock(arrive)}${sunset != null ? ` · sunset ${clock(sunset)}` : ""}`)}
+      ${fuel ? card(ev ? "plug" : "fuel", ev ? "Next charger" : "Next fuel", esc(fuel.name || (ev ? "Charger" : "Gas station")), `in ${fmtMi(fuel.a - along)}`)
+        : al ? card(ev ? "plug" : "fuel", ev ? "Next charger" : "Next fuel", ev ? "None left on today's route" : "None left on today's route", "Fill up before you go")
+        : card("fuel", "Fuel", "Not looked up yet", "“Along the route” finds fuel and chargers")}
+      ${sunset != null && arrive > sunset + 10 ? card("sunset", "Heads up", "You'd arrive after dark", "Skip a stop or leave earlier") : ""}
+    </div>
+    ${roads.length ? `<h4 class="td-h">${icon("road", 16)} Roads today</h4><p class="td-list">${roads.map(esc).join(" · ")}</p>` : ""}
+    ${spots.length ? `<h4 class="td-h">${icon("viewpoint", 16)} Still ahead</h4><ol class="td-spots">${spots.slice(0, 6).map((y) => `<li><b>${esc(y.x.name)}</b><span>${fmtMi(y.a - along)}${y.x.minutes ? ` · ${y.x.minutes} min stop` : ""}</span></li>`).join("")}</ol>` : ""}
+    <div class="sheet-actions">
+      <a class="btn ghost" href="${esc(apple)}" target="_blank" rel="noopener">${icon("pin", 18)} Apple Maps</a>
+      <a class="btn blue" href="${esc(google)}" target="_blank" rel="noopener">${icon("pin", 18)} Drive it in Google Maps</a>
+    </div>`;
+}
+// keep the times fresh while it's open
+setInterval(() => todayState.el?.isConnected && redrawToday(), 60000);
+
 // ---------- editing the route on the map ----------
 // Drag a pin to move that point, drag the route line to pull it through a new via point, and right-click (long-press on
 // a phone) the map to add a stop or route through a place. Each edit re-routes; nothing asks the AI.

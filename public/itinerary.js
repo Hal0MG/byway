@@ -366,6 +366,7 @@ function renderTrip() {
         })()}
         <div class="hero-actions">
           <button class="btn blue" data-act="map">${icon("map", 18)} Open the map</button>
+          ${routes.scenic ? `<button class="btn ghost" data-act="today">${icon("clock", 18)} Today</button>` : ""}
           ${plan && !READONLY ? `<button class="btn ghost" data-act="goto-roads">${icon("road", 18)} Pick roads</button>` : ""}
           ${!routes.scenic && stops.length > 1 && !READONLY ? `<button class="btn ghost" data-act="route">${icon("route", 18)} Find routes</button>` : ""}
           ${routes.scenic && !hasElevation() && !READONLY ? `<button class="btn ghost" data-act="route">${icon("mountain", 18)} Measure elevation</button>` : ""}
@@ -1038,6 +1039,7 @@ IT.addEventListener("click", (e) => {
   else if (act === "along") loadAlong();
   else if (act === "export") openExport();
   else if (act === "alternatives") openAlternatives();
+  else if (act === "today") openToday();
   else if (act === "versions") openVersions();
   else if (act === "rc-mode") {
     getAskState().mode = t.dataset.v;

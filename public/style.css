@@ -1251,3 +1251,20 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
 .alt-table tbody th { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .alt-table td:nth-child(2) { background: var(--card); }
 .warn-text { color: var(--orange); font-weight: 700; }
+
+/* Today */
+.td-top { display: flex; flex-wrap: wrap; gap: 10px; }
+.td-top label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.td-top select { padding: 8px 10px; border-radius: 10px; background: var(--card); color: var(--text); border: 1px solid var(--line); font: inherit; font-size: 14px; }
+.td-where { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0; font-size: 13px; color: var(--muted); }
+.td-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.td-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 16px; background: var(--card); }
+.td-card > .ico { color: var(--teal); flex: none; margin-top: 2px; }
+.td-card small { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.td-card b { display: block; margin-top: 2px; font-size: 20px; letter-spacing: -0.01em; }
+.td-card span { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
+.td-h { display: flex; align-items: center; gap: 6px; margin: 18px 0 6px; font-size: 13px; color: var(--muted); }
+.td-list { margin: 0; font-size: 15px; }
+.td-spots { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.td-spots li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.td-spots span { color: var(--muted); white-space: nowrap; }
