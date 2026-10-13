@@ -12,7 +12,9 @@
     "desktop": "electron .",
     "desktop:build": "electron-builder --publish never",
     "smoke": "node tools/smoke.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "eval": "node tools/eval-planner.mjs",
+    "eval:report": "node tools/eval-report.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",

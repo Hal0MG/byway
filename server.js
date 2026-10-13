@@ -1912,12 +1912,13 @@ const GEMINI_BASE = (process.env.GEMINI_BASE_URL || "https://generativelanguage.
 // in exactly that shape (Flash-Lite without it sometimes wrote broken JSON, which cost a fallback to the next model).
 // When every model says it's busy ("high demand", which Google's free tier says in bursts), it waits and goes round
 // once or twice more (8 s, then 20 s) before giving up; a busy answer doesn't count against the free limit.
-async function callGemini(prompt, { signal, onText, schema } = {}) {
+// `models` (optional) replaces the model list: the planner eval (tools/eval-planner.mjs) measures one model at a time.
+async function callGemini(prompt, { signal, onText, schema, models = GEMINI_MODELS } = {}) {
   const errors = [];
   // busy or a passing server error on Google's side (500 "Internal error encountered" comes in the same bursts)
   const busy = (m) => /high demand|overloaded|unavailable|try again later|internal error|50[0-4]/i.test(m);
   for (const [round, wait] of [[0, 0], [1, 8000], [2, 20000]]) {
-    if (round && !errors.slice(-GEMINI_MODELS.length).every((e) => busy(e))) break;
+    if (round && !errors.slice(-models.length).every((e) => busy(e))) break;
     if (wait) {
       console.log(`Gemini: every model busy, trying again in ${wait / 1000} s`);
       await new Promise((ok, no) => {
@@ -1925,7 +1926,7 @@ async function callGemini(prompt, { signal, onText, schema } = {}) {
         signal?.addEventListener("abort", () => (clearTimeout(t), no(new Error("Cancelled."))), { once: true });
       });
     }
-  for (const model of GEMINI_MODELS) {
+  for (const model of models) {
     if (signal?.aborted) throw new Error("Cancelled.");
     try {
       const r = await fetch(`${GEMINI_BASE}/v1beta/models/${model}:streamGenerateContent?alt=sse`, {
@@ -1971,7 +1972,7 @@ async function callGemini(prompt, { signal, onText, schema } = {}) {
     }
   }
   }
-  const last = errors.slice(-GEMINI_MODELS.length);
+  const last = errors.slice(-models.length);
   if (last.every((e) => busy(e))) throw new Error("Google's free Gemini models are all busy right now (that comes and goes). Try again in a few minutes.");
   throw new Error(`The AI couldn't answer, please try again in a minute. (${last.join("; ")})`);
 }
@@ -2025,10 +2026,11 @@ function extractJson(text) {
 
 // Ask the configured AI for a JSON answer. Returns { data, model, sources }.
 // signal: stop when the app stops waiting (local model only). region: a key for reusing research notes.
-async function callAI({ system, user, searches = 0, schema, signal, region, onEvent, writing }) {
+// `model`: a Gemini model to use alone, no fallbacks (the planner eval).
+async function callAI({ system, user, searches = 0, schema, signal, region, onEvent, writing, model: only }) {
   // Local model: no fallback, so a stopped LM Studio shows its own clear error instead of a Gemini quota message.
-  if (AI_PROVIDER === "local") return callLocal({ system, user, searches, schema, signal, region, onEvent, writing });
-  if (AI_PROVIDER === "claude" && anthropic) {
+  if (AI_PROVIDER === "local" && !only) return callLocal({ system, user, searches, schema, signal, region, onEvent, writing });
+  if (AI_PROVIDER === "claude" && anthropic && !only) {
     try {
       const ending = searches > 0
         ? `Before answering, use web search (at most ${searches} searches) to check what road trip and driving communities ` +
@@ -2074,7 +2076,7 @@ async function callAI({ system, user, searches = 0, schema, signal, region, onEv
       onEvent?.({ type: "partial", data });
     }
   });
-  const { text, model } = await callGemini(`${system}\n\n${user}\n\nReturn JSON only.`, { signal, onText: partialOut, schema });
+  const { text, model } = await callGemini(`${system}\n\n${user}\n\nReturn JSON only.`, { signal, onText: partialOut, schema, ...(only && { models: [only] }) });
   return { data: JSON.parse(text), model, sources: [] };
 }
 
@@ -2788,6 +2790,8 @@ app.post("/api/plan", async (req, res) => {
     if (!prompt) return res.status(400).json({ error: "Describe the trip first." });
     const signal = clientGone(res);
     const maxH = maxHoursOf(settings);
+    // the planner eval picks one Gemini model (only from this computer: it bypasses the fallbacks)
+    const evalModel = isLocalRequest(req) && /^gemini-[\w.-]+$/.test(req.body.evalModel || "") ? req.body.evalModel : undefined;
     emit = eventStream(req, res);
 
     // The local model gets only the byways in the states the trip crosses (shorter prompt, better focus).
@@ -2904,13 +2908,14 @@ Request: ${prompt}`;
     const planSearches = AI_PROVIDER === "local" ? LOCAL_SEARCHES_PLAN : SEARCHES_PLAN;
     const searches = !revising ? planSearches : feedback || adds.length ? Math.min(2, planSearches) : 0;
     const region = !revising ? regionKey(stateList) : "";
-    const { data, model, sources } = await callAI({ system, user, searches, schema: PLAN_SCHEMA, signal, region, onEvent: emit });
+    const { data, model, sources } = await callAI({ system, user, searches, schema: PLAN_SCHEMA, signal, region, onEvent: emit, model: evalModel });
     let plan = asPlan(data);
 
     // Check the plan against its own rules; send the problems back once, without searching again.
     const checkOpts = { prompt, loop: !!settings?.loop, feedback };
     let issues = checkPlan(plan, checkOpts);
     const found = issues.length;
+    const firstIssues = issues;
     if (found) {
       console.log(`Plan check: ${found} problem(s): ${issues.join(" / ")}`);
       emit({ type: "status", text: `Fixing ${found} problem${found > 1 ? "s" : ""} in the plan` });
@@ -2921,7 +2926,7 @@ Request: ${prompt}`;
           user: `${user}\n\nYour plan was:\n${JSON.stringify(plan)}\n\nIt has these problems:\n` +
             issues.map((x) => `- ${x}`).join("\n") +
             "\nReturn the full corrected plan in the same format. Keep everything that was fine, with the same names.",
-          searches: 0, schema: PLAN_SCHEMA, signal, onEvent: emit,
+          searches: 0, schema: PLAN_SCHEMA, signal, onEvent: emit, model: evalModel,
         });
         const next = asPlan(fixed.data);
         const left = checkPlan(next, checkOpts);
@@ -2932,7 +2937,7 @@ Request: ${prompt}`;
         console.log(`Plan fix failed, keeping the first plan: ${e.message}`);
       }
     }
-    const checks = { found, left: issues.length };
+    const checks = { found, left: issues.length, issues: firstIssues, leftIssues: found ? issues : [] };
 
     // Attach the official byway record to roads the AI picked from the catalog.
     const byName = new Map((await loadByways()).map((b) => [b.name.toLowerCase(), b]));
