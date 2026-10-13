@@ -57,6 +57,15 @@ try {
             .join("; ");
         });
         if (wide && size === "phone") problems.push(`${size}/${theme} ${name}: wider than the screen: ${wide}`);
+        // the map credits (OpenStreetMap and the tile providers) must stay visible wherever the map shows
+        const hidden = await js(() => {
+          if (!["home", "map"].includes(document.body.dataset.view) || document.querySelector(".overlay")) return "";
+          const a = document.querySelector(".maplibregl-ctrl-attrib")?.getBoundingClientRect();
+          if (!a) return "no credits";
+          const top = document.elementFromPoint(a.left + 8, a.top + a.height / 2);
+          return top?.closest(".maplibregl-ctrl-attrib") ? "" : `covered by ${top?.id || top?.className || top?.tagName}`;
+        });
+        if (hidden) problems.push(`${size}/${theme} ${name}: map credits ${hidden}`);
       } catch (e) {
         problems.push(`${size}/${theme} ${name}: ${e.message}`);
       }
