@@ -108,7 +108,12 @@ function setView(v) {
   document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
   store.set("view", v);
   $("toast").hidden = true;
-  if (typeof onViewChange === "function" && (v !== prev || v === "home")) onViewChange(v, prev);
+  // the map can throw while the globe is still starting (switching views right after load); the view still changes
+  try {
+    if (typeof onViewChange === "function" && (v !== prev || v === "home")) onViewChange(v, prev);
+  } catch (e) {
+    console.warn("Map view change:", e.message);
+  }
   if (v === "map") requestAnimationFrame(() => {
     map.resize();
     declutter();
@@ -2002,11 +2007,10 @@ function closeTrips() {
   $("trips-sheet").hidden = true;
   $("trips-btn").focus();
 }
+// the list button (and "Your trips" on Home) opens the Trips tab
 $("trips-btn").onclick = async () => {
   await flushSave();
-  $("trips-sheet").hidden = false;
-  renderTrips();
-  $("trips-done").focus();
+  setView("trips");
 };
 $("trips-done").onclick = closeTrips;
 $("trips-sheet").addEventListener("click", (e) => e.target === $("trips-sheet") && closeTrips());

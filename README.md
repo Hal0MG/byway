@@ -56,6 +56,8 @@ top bar and only works on the computer running the app. Keep the start window op
 - **Other versions**: easier, more scenic or another way, measured and compared side by side.
 - **Edit on the map**: drag a stop, pull the route through a town, right-click or long-press to add a place.
 - **Today**: on the road, what's next, the next fuel or charger, roads and stops ahead, and arrival against sunset.
+- **Trips**: your trips and the ready-made ones in one tab, with search, region and length filters, and a preview of
+  every day, the route and the roads before you open one.
 - **Export and share**: GPX, print or PDF, a web page, or a read-only link for devices on the same network.
 - **How it works**: a short tour, in the top bar.
 

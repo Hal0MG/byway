@@ -752,15 +752,46 @@ function updateTrips(fn) {
 }
 
 // A short summary of a trip for lists (the trips sheet and the ready-made trips gallery).
+// What the Trips tab shows for a trip without opening it: the numbers, each day (title, overnight, driving), the
+// featured roads, a few photos and a light sketch of the route per day (about 120 points in all, for an SVG).
 function tripSummary(t) {
   const sc = t.routes?.scenic;
-  const days = new Set((t.stops || []).map((s) => s.day)).size;
+  const stops = t.stops || [];
+  const days = new Set(stops.map((s) => s.day)).size;
+  const byDay = new Map();
+  const coords = sc?.geometry?.coordinates || [];
+  (sc?.legs || []).forEach((l, k) => {
+    const end = stops[sc.idx?.[k + 1]];
+    if (!end) return;
+    const d = byDay.get(end.day) || { secs: 0, meters: 0, from: l.from, to: l.to };
+    d.secs += l.duration_s || 0;
+    d.meters += l.distance_m || 0;
+    d.to = l.to;
+    byDay.set(end.day, d);
+  });
+  const step = Math.max(1, Math.ceil(coords.length / 120));
+  const r3 = (v) => Math.round(v * 1000) / 1000;
+  const dayList = (t.plan?.days || []).map((d) => {
+    const m = byDay.get(Number(d.day)) || {};
+    const line = m.from != null ? coords.slice(m.from, m.to + 1).filter((_, i, a) => i % step === 0 || i === a.length - 1).map((c) => [r3(c[0]), r3(c[1])]) : [];
+    return { day: Number(d.day), title: d.title || "", overnight: d.overnight || "", secs: Math.round(m.secs || 0), meters: Math.round(m.meters || 0), line };
+  });
+  const images = [...(t.plan?.roads || []), ...(t.plan?.spots || [])].map((x) => x.info?.image).filter(Boolean);
+  const end = stops.filter((s) => s.kind !== "via").at(-1);
   return {
-    id: t.id, name: t.name, stopCount: t.stops?.length || 0, updatedAt: t.updatedAt, preset: !!t.preset,
+    id: t.id, name: t.name, stopCount: stops.length, updatedAt: t.updatedAt, preset: !!t.preset,
     prompt: t.prompt || "", days, distance_m: sc?.distance_m || null, duration_s: sc?.duration_s || null,
     summary: t.plan?.summary || "", styles: t.settings?.styles || [], loop: !!t.settings?.loop,
-    image: (t.plan?.roads || []).find((r) => r.info?.image)?.info.image || (t.plan?.spots || []).find((s) => s.info?.image)?.info.image || "",
-    start: t.stops?.[0] ? { lng: t.stops[0].lng, lat: t.stops[0].lat, name: t.stops[0].name } : null,
+    image: images[0] || "",
+    images: [...new Set(images)].slice(0, 5),
+    start: stops[0] ? { lng: stops[0].lng, lat: stops[0].lat, name: stops[0].name } : null,
+    end: end ? { lng: end.lng, lat: end.lat, name: end.name } : null,
+    longest_s: Math.max(0, ...dayList.map((d) => d.secs)),
+    ascent_m: sc?.ascent_m ?? null,
+    highway_m: sc?.highway_m ?? null,
+    spots: (t.plan?.spots || []).length,
+    roads: (t.plan?.roads || []).map((r) => ({ name: r.name, ref: r.ref || "", official: r.official?.type || "" })),
+    dayList,
   };
 }
 
