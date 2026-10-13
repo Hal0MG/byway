@@ -31,8 +31,8 @@ h1 { margin: 8px 0 4px; font-size: clamp(32px, 6vw, 46px); line-height: 1.05; le
 h2 { margin: 34px 0 8px; font-size: 21px; letter-spacing: -0.01em; }
 ul { padding-left: 22px; }
 li { margin: 4px 0; }
-code { font-size: 14px; padding: 1px 6px; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); }
-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; background: var(--surface); border-radius: 14px; overflow: hidden; }
+code { font-size: 14px; padding: 1px 6px; border-radius: 4px; background: var(--surface); border: 1px solid var(--line); }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; background: var(--surface); border-radius: 8px; overflow: hidden; }
 th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
 th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 tr:last-child td { border-bottom: 0; }

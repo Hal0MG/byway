@@ -14,6 +14,9 @@ const ABOUT_TILES = [
   ["sparkle", "Ask your trip", "“Where should we eat in Moab?” Answers come from your own days, stops and places."],
   ["route", "Other versions", "See easier, more scenic or different takes side by side before you commit."],
   ["map", "Edit on the map", "Drag a stop, pull the route through a town, or long-press to add a place."],
+  ["road", "Roads near home", "The great drives within a few hours of you, and weekend loops to plan in one tap."],
+  ["phone", "Hand it to your phone", "Scan a day's code and it opens in Google Maps or Apple Maps, every scenic stretch included."],
+  ["wallet", "What it costs", "Fuel or charging for each day and a range for each night, in your own units and currency."],
   ["globe", "Free to run", "Free data and free tiers, or an AI model on your own computer. No accounts, no ads."],
 ];
 
