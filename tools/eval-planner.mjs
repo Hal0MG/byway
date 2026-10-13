@@ -9,7 +9,7 @@
 //
 // Usage, with the app running and Gemini set up:
 //   CHROME_PATH=<chrome-headless-shell> node tools/eval-planner.mjs --models gemini-flash-lite-latest[,other] \
-//     [--only us-pch,no-fjords] [--repeat 2] [--out eval/results/<name>]
+//     [--only us-pch,no-fjords] [--repeat 2] [--out eval/results/<name>] [--prompts other.json]
 // Then: node tools/eval-report.mjs eval/results/<name>
 import puppeteer from "puppeteer-core";
 import fs from "node:fs";
@@ -26,7 +26,7 @@ if (!process.env.CHROME_PATH) {
   console.error("Set CHROME_PATH to a chrome-headless-shell.");
   process.exit(2);
 }
-const prompts = JSON.parse(fs.readFileSync("eval/prompts.json", "utf8")).filter((p) => !only || only.includes(p.id));
+const prompts = JSON.parse(fs.readFileSync(arg("prompts", "eval/prompts.json"), "utf8")).filter((p) => !only || only.includes(p.id));
 fs.mkdirSync(out, { recursive: true });
 
 // The road catalog the planner is given, to count featured roads that are real catalog roads (grounding).

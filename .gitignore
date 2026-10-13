@@ -1,6 +1,6 @@
 # keys and personal data
 .env
-data/trips.json
+data/trips*.json
 data/trips.json.*.tmp
 data/search-usage.json
 data/gemini-usage.json
