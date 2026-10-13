@@ -1230,3 +1230,14 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
 #live-bar .lb-x { width: 28px; height: 28px; border-radius: 50%; background: var(--card); color: var(--text); flex: none; }
 #live-bar > .ico { color: var(--green); flex: none; }
 .search.change { margin-top: -4px; }
+
+/* Ask about the trip */
+.rc-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rc-tabs { display: flex; gap: 4px; padding: 3px; border-radius: 12px; background: var(--card); align-self: flex-start; }
+.rc-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.rc-tabs button.on { background: var(--surface-2); color: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2); }
+.qa { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; max-height: 420px; overflow-y: auto; }
+.qa li { padding: 12px 14px; border-radius: 14px; background: var(--card); }
+.qa b { display: block; font-size: 14px; }
+.qa p { margin: 6px 0 0; font-size: 14px; line-height: 1.55; }
+.qa .link-btn { margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--blue); text-align: left; }

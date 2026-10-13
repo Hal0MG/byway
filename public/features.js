@@ -1571,6 +1571,75 @@ IT.addEventListener("submit", (e) => {
   if (list.length) runBatch(list, readOptions(e.target));
 });
 
+// ---------- ask the trip: questions answered from the trip itself ----------
+
+// A compact text summary of the trip for the AI: each day's drive, points, overnight, stops, weather, fuel and places
+// to stay and eat (whatever the app has measured or looked up so far).
+function tripContext() {
+  const s = tripSettings();
+  const lines = [`Trip: ${trip.name}. The request: "${trip.prompt || ""}".`];
+  const opts = [
+    s.startDate ? `starts ${s.startDate} at ${s.startTime}` : "no dates set",
+    `at most ${s.maxHours} h driving a day`,
+    s.noNight ? "no driving after dark" : "",
+    s.ev ? `electric car, range ${s.evRange} km` : "",
+    (s.styles || []).length ? `style: ${s.styles.join(", ")}` : "",
+  ].filter(Boolean);
+  lines.push(`Options: ${opts.join("; ")}.`);
+  dayGroups().forEach((g, gi) => {
+    const st = dayStats(g, "scenic");
+    const meta = plan?.days?.find((d) => Number(d.day) === g.day);
+    const w = dayWeather(gi);
+    const al = alongFor(g.day);
+    const spots = (plan?.spots || []).filter((x) => x.day === g.day).map((x) => `${x.name}${x.minutes ? ` (${x.minutes} min)` : ""}`);
+    lines.push([
+      `Day ${g.day}${dayDate(g.day) ? ` (${dayDate(g.day)})` : ""}: ${meta?.title || ""}.`,
+      st ? `Driving ${fmtDur(st.dur)}, ${fmtMi(st.dist)}.` : "",
+      `Points: ${g.items.map((i) => shortName(stops[i].name)).join(", ")}. Overnight: ${stops[g.items.at(-1)].name}.`,
+      spots.length ? `Stops along the way: ${spots.join(", ")}.` : "",
+      w?.tmax != null ? `Weather (${w.kind === "forecast" ? "forecast" : "typical"}): ${fmtTemp(w.tmax)} / ${fmtTemp(w.tmin)}, ${Math.round(w.rain || 0)}% rain.` : "",
+      al?.fuelGap?.len ? `Longest stretch without fuel: ${fmtMi(al.fuelGap.len)} (${al.fuelGap.a} to ${al.fuelGap.b}).` : "",
+      al?.stay?.length ? `Places to stay near the overnight: ${al.stay.slice(0, 5).map((x) => x.name).join(", ")}.` : "",
+      al?.food?.length ? `Food in town: ${al.food.slice(0, 5).map((x) => `${x.name} (${x.cuisine})`).join(", ")}.` : "",
+      meta?.summary ? `Guide: ${meta.summary}` : "",
+    ].filter(Boolean).join(" "));
+  });
+  if (plan?.roads?.length) {
+    lines.push(`Featured roads: ${plan.roads.map((r) => `${r.name}${r.ref ? ` (${r.ref})` : ""}${r.days?.length ? `, day ${r.days.join("/")}` : ""}`).join("; ")}.`);
+  }
+  return lines.join("\n").slice(0, 12000);
+}
+
+const askState = { mode: "change", busy: false, error: "" };
+const getAskState = () => askState;
+async function askTrip(question) {
+  if (!plan || askState.busy) return;
+  Object.assign(askState, { busy: true, error: "", pending: question });
+  renderItinerary();
+  try {
+    const d = await api("/api/ask", { question, context: tripContext() });
+    trip.qa = [...(trip.qa || []), { q: question, a: d.answer, change: d.change || "", at: new Date().toISOString() }].slice(-12);
+    if (!READONLY) scheduleSave();
+  } catch (e) {
+    askState.error = e.message;
+  }
+  Object.assign(askState, { busy: false, pending: "" });
+  renderItinerary();
+}
+// The questions so far, newest first, with "Make this change" when the answer suggests one.
+function qaHtml() {
+  const qa = [...(trip.qa || [])].reverse();
+  if (!qa.length && !askState.busy && !askState.error) return "";
+  return `<ol class="qa">
+    ${askState.busy ? `<li><b>${esc(askState.pending)}</b><p class="subtle"><span class="spinner"></span> Thinking about your trip...</p></li>` : ""}
+    ${askState.error ? `<li><p class="su-bad">${esc(askState.error)}</p></li>` : ""}
+    ${qa.map((x, i) => `<li><b>${esc(x.q)}</b><p>${esc(x.a).replace(/\n+/g, "<br>")}</p>
+      ${x.change && !READONLY ? `<button class="link-btn" data-act="qa-change" data-i="${qa.length - 1 - i}">${icon("refresh", 14)} Make this change: ${esc(x.change)}</button>` : ""}</li>`).join("")}
+  </ol>`;
+}
+
+window.qaHtmlFn = qaHtml;
+
 // ---------- live changes: "skip Winnipeg" applied in place ----------
 // The trip stays on screen while the AI changes it: a bar at the bottom shows the steps, then what changed with an
 // Undo (the version saved just before). The day guides and photos catch up in the background.

@@ -350,8 +350,12 @@ function roadsFromSteps(steps, catBetween) {
 
 // Scenic: through every point including the scenic "via" points, with normal road preferences.
 // Freeways are fine for getting between scenic roads; the via points keep the route on the good roads.
+// After ORS says its daily allowance is used up, don't ask again for half an hour (a minute after "too many requests"):
+// every route goes straight to the backup router meanwhile.
+let orsRestUntil = 0;
 async function routeOrs(coords, mode) {
   if (!ORS_KEY) throw new RouteError("No routing engine available. Add ORS_API_KEY to .env.");
+  if (Date.now() < orsRestUntil) throw new RouteError("OpenRouteService is resting after its limit");
   const body = {
     coordinates: coords,
     instructions: true,
@@ -371,7 +375,9 @@ async function routeOrs(coords, mode) {
   if (!r.ok) {
     let msg = typeof data?.error === "string" ? data.error : data?.error?.message || "Routing failed";
     // the free plan's daily allowance; it ran out on 2026-10-12 after a day of testing and a 35-trip batch
+    if (r.status === 429) orsRestUntil = Date.now() + 60000;
     if (r.status === 403 && /quota/i.test(msg)) {
+      orsRestUntil = Date.now() + 30 * 60000;
       msg = "Today's free routing from OpenRouteService is used up, so routes can't be measured until it resets " +
         "(within 24 hours). Planned trips still open.";
     }
@@ -1394,6 +1400,37 @@ app.get("/api/place-name", async (req, res) => {
   }
   const road = a.road || d?.name || "";
   res.json({ name: [road, a.county, ...tail].filter(Boolean).join(", ") || `${lat.toFixed(4)}, ${lng.toFixed(4)}` });
+});
+
+// ---------- ask the trip ----------
+// POST { question, context } -> { answer, change, model }. The app sends a compact summary of the trip (days, hours,
+// stops, roads, weather, fuel, places to stay); the AI answers from it like a local guide. A question that really asks
+// for a change ("can we skip Winnipeg?") also returns the change as an instruction the app can apply live.
+app.post("/api/ask", async (req, res) => {
+  try {
+    if (noAI()) return res.status(500).json({ error: "No AI is set up." });
+    const question = String(req.body?.question || "").trim().slice(0, 600);
+    const context = String(req.body?.context || "").slice(0, 12000);
+    if (!question) return res.status(400).json({ error: "Ask a question first." });
+    const signal = clientGone(res);
+    const { data, model } = await callAI({
+      system: "You are a friendly road trip guide who knows the roads, towns and parks well.",
+      user:
+        `The traveler planned this road trip:\n${context}\n\nThe traveler asks: "${question}"\n\n` +
+        "Answer from the trip above and what you know. Be short (at most about 120 words), concrete and practical, " +
+        "like a local driver. Use the trip's own days, times and places. When something can change (opening hours, " +
+        "prices, closures, permits), say to check it. If the question asks to change the trip (add, skip, swap, move, " +
+        'shorten), also write the change as one short instruction in "change", like "Skip Winnipeg and stay in Kenora ' +
+        'instead"; otherwise "change" is "". Return JSON with "answer" and "change".',
+      searches: 0,
+      schema: obj({ answer: str, change: str }),
+      signal,
+      writing: "Answering",
+    });
+    res.json({ answer: String(data.answer || "").trim(), change: String(data.change || "").trim(), model });
+  } catch (e) {
+    res.status(500).json({ error: e.message || String(e) });
+  }
 });
 
 // The PC's addresses on the local network, for share links a phone on the same Wi-Fi can open.

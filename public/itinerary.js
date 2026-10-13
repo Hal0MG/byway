@@ -445,6 +445,9 @@ function renderTrip() {
 
 function requestCard() {
   const edits = trip.edits || [];
+  // (features.js, loaded after this file, defines the ask state)
+  const askState = typeof window.askState === "object" ? window.askState : typeof getAskState === "function" ? getAskState() : { mode: "change", busy: false };
+  const qaHtml = typeof window.qaHtmlFn === "function" ? window.qaHtmlFn : () => "";
   const when = (iso) => {
     const d = new Date(iso);
     return isNaN(d) ? "" : d.toLocaleDateString([], { month: "short", day: "numeric" });
@@ -460,12 +463,24 @@ function requestCard() {
         ? `<button class="link-btn rc-versions" data-act="versions">${icon("refresh", 14)} Compare or restore earlier versions (${trip.versions.length})</button>`
         : ""}
     </div>
-    ${plan && !READONLY
-      ? `<form class="rc-form" id="edit-form">
-          <textarea id="edit-text" rows="2" aria-label="Ask for a change"
-            placeholder="Ask for a change: “add a day in the Adirondacks”, “more switchbacks, fewer highways”, “end in Boston”"></textarea>
-          <button class="btn blue" type="submit" ${typeof liveState !== "undefined" && liveState.busy ? "disabled" : ""}>${icon("refresh", 18)} Update trip</button>
-        </form>`
+    ${plan
+      ? `<div class="rc-side">
+        <div class="rc-tabs" role="tablist">
+          ${READONLY ? "" : `<button role="tab" data-act="rc-mode" data-v="change" aria-selected="${askState.mode === "change"}" class="${askState.mode === "change" ? "on" : ""}">${icon("refresh", 14)} Change the trip</button>`}
+          <button role="tab" data-act="rc-mode" data-v="ask" aria-selected="${askState.mode === "ask" || READONLY}" class="${askState.mode === "ask" || READONLY ? "on" : ""}">${icon("sparkle", 14)} Ask about it</button>
+        </div>
+        ${askState.mode === "ask" || READONLY
+          ? `<form class="rc-form" id="ask-form">
+              <textarea id="ask-text" rows="2" aria-label="Ask about this trip"
+                placeholder="Ask about the trip: “where should we eat in Moab?”, “is day 3 too much with kids?”, “where's the last fuel before the pass?”"></textarea>
+              <button class="btn blue" type="submit" ${askState.busy ? "disabled" : ""}>${icon("sparkle", 18)} Ask</button>
+            </form>${qaHtml()}`
+          : `<form class="rc-form" id="edit-form">
+              <textarea id="edit-text" rows="2" aria-label="Ask for a change"
+                placeholder="Ask for a change: “add a day in the Adirondacks”, “more switchbacks, fewer highways”, “end in Boston”"></textarea>
+              <button class="btn blue" type="submit" ${typeof liveState !== "undefined" && liveState.busy ? "disabled" : ""}>${icon("refresh", 18)} Update trip</button>
+            </form>`}
+      </div>`
       : ""}
   </section>`;
 }
@@ -946,9 +961,17 @@ IT.addEventListener("submit", (e) => {
   $("edit-text").value = "";
   liveChange(text);
 });
-// Enter sends the change (Shift+Enter for a new line)
+IT.addEventListener("submit", (e) => {
+  if (e.target.id !== "ask-form") return;
+  e.preventDefault();
+  const text = $("ask-text").value.trim();
+  if (!text) return;
+  $("ask-text").value = "";
+  askTrip(text);
+});
+// Enter sends the change or question (Shift+Enter for a new line)
 IT.addEventListener("keydown", (e) => {
-  if (e.target.id === "edit-text" && e.key === "Enter" && !e.shiftKey) {
+  if ((e.target.id === "edit-text" || e.target.id === "ask-text") && e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     e.target.form.requestSubmit();
   }
@@ -1014,6 +1037,14 @@ IT.addEventListener("click", (e) => {
   else if (act === "along") loadAlong();
   else if (act === "export") openExport();
   else if (act === "versions") openVersions();
+  else if (act === "rc-mode") {
+    getAskState().mode = t.dataset.v;
+    renderItinerary();
+    $(t.dataset.v === "ask" ? "ask-text" : "edit-text")?.focus();
+  } else if (act === "qa-change") {
+    const x = trip.qa?.[Number(t.dataset.i)];
+    if (x?.change) liveChange(x.change);
+  }
   else if (act === "order-fix") applyOrderFix();
   else if (act === "fly") {
     const r = (plan?.roads || []).find((x) => x.name === t.dataset.name);
