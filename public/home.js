@@ -103,7 +103,7 @@ function renderHome() {
     <div class="home-dock">
       <h1>Where to?</h1>
       ${typeof setupState !== "undefined" && setupState.info && !setupState.info.ready
-        ? `<button class="home-setup" data-home="setup">${icon("gear", 16)} Finish setting up the app before planning a trip ${icon("chevron", 14)}</button>` : ""}
+        ? `<button class="home-setup" data-home="setup">${icon("sparkle", 16)} Open a ready-made trip, or add a free AI planner (about two minutes) to plan your own ${icon("chevron", 14)}</button>` : ""}
       <form class="home-ask" id="home-ask">
         <input id="home-prompt" type="text" autocomplete="off" placeholder="Describe a trip, or spin the globe and pick one" aria-label="Describe a trip">
         <button class="btn blue" type="submit">${icon("sparkle", 18)} Plan it</button>

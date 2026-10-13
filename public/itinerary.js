@@ -152,31 +152,33 @@ function liveBlock(live) {
 
 function renderProgress() {
   const p = progress;
+  // when planning stopped, the step that was running shows the stop, and what to do comes first, under the title
+  const state = (s) => (p.error && s.state === "doing" ? "error" : s.state);
+  const errorBox = p.error
+    ? `<div class="error-box">${icon("alert", 18)}<p>${esc(p.error)}</p>
+         ${/LM Studio|local model|API key|\.env|routing engine|ORS|Gemini|planner/i.test(p.error)
+           ? `<button class="btn ghost" data-act="setup">${icon("gear", 18)} Open setup</button>` : ""}
+         <button class="btn blue" data-act="retry">${icon("refresh", 18)} Try again</button>
+         <button class="btn ghost" data-act="cancel">Back</button></div>`
+    : "";
   IT.innerHTML = `
     <section class="start progress">
       ${ART}
       <div class="start-inner">
         <p class="kicker">${icon("sparkle", 16)} ${p.error ? "Planning stopped" : "Planning your trip"}</p>
         <h1>${esc(trip.prompt || trip.name)}</h1>
+        ${errorBox}
         <ol class="steps">
           ${p.steps
             .map(
-              (s) => `<li class="step ${s.state}">
-                <span class="step-ico">${s.state === "done" ? icon("check", 16) : s.state === "error" ? icon("alert", 16) : ""}</span>
+              (s) => `<li class="step ${state(s)}">
+                <span class="step-ico">${s.state === "done" ? icon("check", 16) : state(s) === "error" ? icon("alert", 16) : ""}</span>
                 <div><b>${esc(s.label)}</b><small>${esc(s.detail || "")}</small></div>
               </li>${p.lives?.[s.id] && !p.error ? `<li class="live-li">${s.id === "details" ? liveDetails(p.lives[s.id]) : liveBlock(p.lives[s.id])}</li>` : ""}`
             )
             .join("")}
         </ol>
-        ${
-          p.error
-            ? `<div class="error-box">${icon("alert", 18)}<p>${esc(p.error)}</p>
-                 ${/LM Studio|local model|API key|\.env|routing engine|ORS|Gemini/i.test(p.error)
-                   ? `<button class="btn ghost" data-act="setup">${icon("gear", 18)} Open setup</button>` : ""}
-                 <button class="btn blue" data-act="retry">${icon("refresh", 18)} Try again</button>
-                 <button class="btn ghost" data-act="cancel">Back</button></div>`
-            : `<p class="fine">The AI and the map services are free tiers, so this can take a couple of minutes.</p>`
-        }
+        ${p.error ? "" : `<p class="fine">The AI and the map services are free tiers, so this can take a couple of minutes.</p>`}
         ${batchState.running
           ? `<p class="fine">${icon("list", 14)} Batch: trip ${batchState.log.filter((l) => l.state !== "todo").length} of ${batchState.log.length}.
               <button class="link-btn" data-act="batch-stop">${batchState.stop ? "Stopping after this trip" : "Stop after this trip"}</button></p>`

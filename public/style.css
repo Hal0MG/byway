@@ -827,7 +827,7 @@ body[data-view="home"] #trip-name, body[data-view="home"] #save-state { display:
 .home-actions .sep { width: 1px; height: 20px; background: rgba(255, 255, 255, 0.15); margin: 0 4px; }
 .home-detail {
   position: absolute; right: 24px; top: 96px; width: min(380px, calc(100vw - 32px)); max-height: calc(100vh - 300px);
-  overflow-y: auto; border-radius: 22px; pointer-events: auto; color: #fff;
+  overflow-y: auto; border-radius: 22px; pointer-events: auto; color: #fff; z-index: 3; /* above the floating cards */
   background: rgba(16, 18, 26, 0.88); border: 1px solid rgba(48, 209, 198, 0.35);
   backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: 0 16px 60px rgba(0, 0, 0, 0.6);
   animation: pop 0.25s ease-out;

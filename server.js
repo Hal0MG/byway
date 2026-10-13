@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import Anthropic from "@anthropic-ai/sdk";
-import { promises as fs } from "node:fs";
+import { promises as fs, existsSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { execFile, spawn } from "node:child_process";
@@ -713,7 +713,7 @@ app.get("/api/status", async (req, res) => {
   res.json({
     graphhopper: !!gh?.scenic, bbox: gh?.bbox || null, ors: !!ORS_KEY, useGraphhopper: USE_GH,
     ai: AI_PROVIDER === "local"
-      ? { provider: "local", model: LOCAL_MODEL, webSearch: LOCAL_SEARCHES_PLAN + LOCAL_SEARCHES_DETAILS > 0, ...(await localStatus()) }
+      ? { provider: "local", model: LOCAL_MODEL, webSearch: searchAvailable() && LOCAL_SEARCHES_PLAN + LOCAL_SEARCHES_DETAILS > 0, ...(await localStatus()) }
       : AI_PROVIDER === "claude" && anthropic
         ? { provider: "claude", model: CLAUDE_MODEL, webSearch: SEARCHES_PLAN + SEARCHES_DETAILS > 0 }
         : { provider: "gemini", model: GEMINI_MODEL, webSearch: false },
@@ -1411,7 +1411,7 @@ app.get("/api/place-name", async (req, res) => {
 // for a change ("can we skip Winnipeg?") also returns the change as an instruction the app can apply live.
 app.post("/api/ask", async (req, res) => {
   try {
-    if (noAI()) return res.status(500).json({ error: "No AI is set up." });
+    if (noAI()) return res.status(500).json({ error: NO_AI });
     const question = String(req.body?.question || "").trim().slice(0, 600);
     const context = String(req.body?.context || "").slice(0, 12000);
     if (!question) return res.status(400).json({ error: "Ask a question first." });
@@ -2452,6 +2452,9 @@ const bywayRecord = (b) => ({
   ...(b.osm && { osm: b.osm }),
 });
 const noAI = () => AI_PROVIDER !== "local" && !anthropic && !GEMINI_KEY;
+// What the app says when an AI feature is used before a planner is set up. Everything else works without keys.
+const NO_AI = "Planning with AI needs a planner. Add a free Google Gemini key in Setup (the gear button, about two minutes), " +
+  "or run a model on this computer with LM Studio. Ready-made trips, the map and routes work without it.";
 
 // Step 1: the route. Days, stops, via points and featured roads, with the byway catalog as reference.
 // With current + dayHours it revises an existing plan using drive times the app measured.
@@ -2584,7 +2587,7 @@ function asPlan(data) {
 app.post("/api/plan", async (req, res) => {
   let emit = () => {}; // set once the answer starts streaming; the catch needs it too
   try {
-    if (noAI()) return res.status(500).json({ error: "Add ANTHROPIC_API_KEY (or GEMINI_API_KEY) to .env" });
+    if (noAI()) return res.status(500).json({ error: NO_AI });
     // Revisions send `current` (the plan so far) with any of: dayHours (measured drive times), feedback (the traveler's
     // comment, like "swap day 2 for the Adirondacks") and roadEdits ({ add: [{ name, ref, states, why }], remove: [names] }).
     const { current, dayHours, feedback, roadEdits, settings, nightDays } = req.body;
@@ -2769,7 +2772,7 @@ app.get("/api/byways", async (req, res) => {
 // Hawk's Nest or Smugglers' Notch), found with web search where available.
 app.post("/api/road-ideas", async (req, res) => {
   try {
-    if (noAI()) return res.status(500).json({ error: "No AI is set up." });
+    if (noAI()) return res.status(500).json({ error: NO_AI });
     const { prompt, states, have } = req.body || {};
     const user = `A traveler is planning this road trip: "${String(prompt || "").slice(0, 500)}"
 States it passes through: ${asArray(states).join(", ")}.
@@ -2918,7 +2921,7 @@ app.post("/api/road-points", async (req, res) => {
 app.post("/api/details", async (req, res) => {
   let emit = () => {}; // set once the answer starts streaming; the catch needs it too
   try {
-    if (noAI()) return res.status(500).json({ error: "Add ANTHROPIC_API_KEY (or GEMINI_API_KEY) to .env" });
+    if (noAI()) return res.status(500).json({ error: NO_AI });
     const { plan, settings, states } = req.body;
     const prompt = String(req.body.prompt || "").slice(0, 2000);
     if (!plan?.points?.length) return res.status(400).json({ error: "Plan the route first." });
@@ -2987,6 +2990,8 @@ const isLocalRequest = (req) => ["127.0.0.1", "::1", "::ffff:127.0.0.1"].include
 const localOnly = (req, res, next) => (isLocalRequest(req) ? next() : res.status(403).json({ error: "Setup only works on the PC running the app." }));
 const ENV_FILE = path.resolve(".env");
 const LMS = process.env.LMS_PATH || path.join(os.homedir(), ".lmstudio", "bin", process.platform === "win32" ? "lms.exe" : "lms");
+// A fresh install with no planner chosen: Gemini (a free key, nothing to install) unless LM Studio is already here.
+if (!process.env.AI_PROVIDER && !existsSync(LMS)) AI_PROVIDER = "gemini";
 
 // Pick up changed keys without a restart.
 function applyConfig() {
@@ -3090,7 +3095,8 @@ app.get("/api/setup", localOnly, async (req, res) => {
     node: process.version,
     platform: process.platform,
     // ready to plan: routing, and an AI that will answer
-    ready: !!ORS_KEY && (AI_PROVIDER === "gemini" ? !!GEMINI_KEY : local.loaded),
+    // ready to plan with AI; routes work without an ORS key (the backup router), so it isn't required
+    ready: AI_PROVIDER === "gemini" ? !!GEMINI_KEY : AI_PROVIDER === "claude" ? !!anthropic || !!GEMINI_KEY : local.loaded,
   });
 });
 

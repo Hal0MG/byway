@@ -49,21 +49,16 @@ function setupHtml() {
       !L.downloaded || L.loaded ? "" : `<button class="btn ghost small" data-su="lms-load" ${job ? "disabled" : ""}>Load it</button>`],
   ];
   return `${sheetHead("Setup")}
-    <p class="su-lede">Everything here is free. Keys stay on this PC, in the app's .env file.</p>
+    <p class="su-lede">Everything here is free and optional. Keys stay on this computer, in the app's .env file.</p>
 
     <section class="su-step">
-      <h3>${tick(s.ors.set)} 1. Routes and drive times <em>needed</em></h3>
-      <p>OpenRouteService measures every drive. Sign up for free (no card), open the dashboard, and copy your API key.</p>
-      ${keyField("ors", "OpenRouteService key", s.ors, "Paste your key", "https://openrouteservice.org/dev/#/signup", "Get a free key")}
-    </section>
-
-    <section class="su-step">
-      <h3>${tick(s.ready && s.ors.set ? true : provider === "gemini" ? s.gemini.set : L.loaded)} 2. The trip planner AI <em>needed</em></h3>
+      <h3>${tick(provider === "gemini" ? s.gemini.set : L.loaded)} 1. The trip planner AI <em>to plan new trips</em></h3>
+      <p>Ready-made trips, the map and routes work without it. To plan new trips, pick a planner:</p>
       <div class="su-choice" role="radiogroup">
-        <button class="${provider === "local" ? "on" : ""}" data-su="provider" data-v="local" role="radio" aria-checked="${provider === "local"}">
-          <b>On this ${s.platform === "darwin" ? "Mac" : "PC"}</b><small>Free and unlimited, private. Needs a good graphics card or an Apple Silicon Mac. Uses LM Studio.</small></button>
         <button class="${provider === "gemini" ? "on" : ""}" data-su="provider" data-v="gemini" role="radio" aria-checked="${provider === "gemini"}">
-          <b>Google Gemini</b><small>Free key, no graphics card needed. Plans in seconds (Flash-Lite), with a daily limit on free requests.</small></button>
+          <b>Google Gemini</b><small>The quick start: a free key in about two minutes, nothing to install. Plans in seconds, with a daily limit on free requests.</small></button>
+        <button class="${provider === "local" ? "on" : ""}" data-su="provider" data-v="local" role="radio" aria-checked="${provider === "local"}">
+          <b>On this ${s.platform === "darwin" ? "Mac" : "PC"}</b><small>Free, unlimited and private. Needs a good graphics card or an Apple Silicon Mac. Uses LM Studio.</small></button>
       </div>
       ${provider === "local"
         ? `<p class="su-gpu">${icon("gauge", 14)} ${esc(gpuText)}</p>
@@ -82,6 +77,12 @@ function setupHtml() {
            ${L.job?.done && !L.job.ok ? `<p class="su-bad">That didn't work: ${esc(L.job.out.split(/\r|\n/).filter(Boolean).slice(-2).join(" "))}</p>` : ""}
            ${L.loaded ? "" : `<p class="fine">After a restart of the PC, the model needs loading again: press "Load it" here, or run start-ai.cmd.</p>`}`
         : keyField("gemini", "Gemini key", s.gemini, "Paste your key", "https://aistudio.google.com/apikey", "Get a free key") + geminiToday(s.gemini)}
+    </section>
+
+    <section class="su-step">
+      <h3>${tick(s.ors.set)} 2. Routes and drive times <em>recommended</em></h3>
+      <p>Without a key, routes come from OpenStreetMap's free backup router, without elevation. With a free OpenRouteService key (no card) every drive gets elevation, road surfaces and more exact times: sign up, open the dashboard, and copy your API key.</p>
+      ${keyField("ors", "OpenRouteService key", s.ors, "Paste your key", "https://openrouteservice.org/dev/#/signup", "Get a free key")}
     </section>
 
     <section class="su-step">
@@ -109,7 +110,7 @@ function setupHtml() {
     <p class="fine su-legal"><a href="privacy.html" target="_blank" rel="noopener">Privacy policy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms of use</a></p>
 
     <div class="sheet-actions su-actions">
-      <span class="su-status">${s.ready ? `${icon("check", 16)} Ready to plan trips` : "Not ready yet"}</span>
+      <span class="su-status">${s.ready ? `${icon("check", 16)} Ready to plan trips` : "Add a planner to plan new trips"}</span>
       <button class="btn ghost" data-su="check">${icon("refresh", 16)} Check again</button>
       <button class="btn blue" data-su="save" ${setupState.busy ? "disabled" : ""}>${setupState.busy ? `<span class="spinner"></span> ${esc(setupState.busy)}` : "Save"}</button>
     </div>`;
@@ -254,7 +255,7 @@ function updateSetupBadge() {
   if (document.body.dataset.view === "home" && homeState.ready) renderHome();
 }
 $("setup-btn")?.addEventListener("click", openSetup);
-// First run: no routing key yet, so open setup straight away.
+// Setup no longer opens by itself: the app works without keys, and the home screen offers to add a planner.
 addEventListener("DOMContentLoaded", async () => {
   if (READONLY) return;
   const s = await loadSetup();
@@ -263,5 +264,4 @@ addEventListener("DOMContentLoaded", async () => {
     return;
   }
   updateSetupBadge();
-  if (!s.ors.set || (s.provider === "gemini" && !s.gemini.set)) openSetup();
 });
