@@ -32,3 +32,6 @@ dist/
 CLAUDE.md
 .DS_Store
 .claude/
+
+# personal working notes (local only)
+docs/BACKLOG.md

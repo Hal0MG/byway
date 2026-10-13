@@ -21,4 +21,9 @@ The first release, with the desktop app for Mac and Windows.
   converted once at start; the old file is kept as `data/trips.pre-1.0.json`.
 - Featured roads the planner names are now really driven (points added on the road itself), Gemini retries when
   Google's free models are busy, and five more countries: Norway, Iceland, Ireland, Spain and Portugal.
-- Fixed: the home panel covered the map credits on the light map.
+- **38 ready-made trips**, three new ones: Toronto to Vancouver, Dallas to Teton County, and Los Angeles to Death
+  Valley.
+- **Home screen**: shooting stars, a shorter search panel, trip cards further out at the sides, and a sound for each
+  kind of control.
+- Removed: switching LM Studio between computers (LM Link). A local model on the computer running Byway still works.
+- Fixed: the home panel covered the map credits on the light map; the phone top bar didn't fit the language flag.
