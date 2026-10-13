@@ -554,6 +554,60 @@ function osrmResult(route) {
   };
 }
 
+// ---------- long routes in pieces ----------
+// ORS takes at most 50 points and about 6,000 km per request (a two-week cross-country trip is more). Longer routes are
+// measured in pieces that share their end points and joined; point numbers in errors ("coordinate 5", "between points
+// 4 and 5") are moved back to the whole route's numbering, so the app's fixes still find the right point.
+const PIECE_POINTS = 45;
+const PIECE_KM = 4000;
+function routePieces(coords) {
+  const pieces = [];
+  let start = 0;
+  let km = 0;
+  for (let i = 1; i < coords.length; i++) {
+    km += haversine(coords[i - 1], coords[i]) / 1000;
+    // the road distance can be well over the straight line, hence the margin under 6,000 km
+    if (i - start + 1 >= PIECE_POINTS || (km > PIECE_KM && i - start >= 2)) {
+      pieces.push([start, i]);
+      start = i;
+      km = 0;
+    }
+  }
+  if (start < coords.length - 1 || !pieces.length) pieces.push([start, coords.length - 1]);
+  return pieces;
+}
+async function routeInPieces(coords, router) {
+  const pieces = routePieces(coords);
+  if (pieces.length === 1) return router(coords);
+  const parts = [];
+  for (const [a, b] of pieces) {
+    try {
+      parts.push(await router(coords.slice(a, b + 1)));
+    } catch (e) {
+      const shift = (n) => String(Number(n) + a);
+      e.message = e.message
+        .replace(/coordinate (\d+)/g, (_, n) => `coordinate ${shift(n)}`)
+        .replace(/between points (\d+)(.*?) and (\d+)/, (_, x, mid, y) => `between points ${shift(x)}${mid} and ${shift(y)}`);
+      throw e;
+    }
+  }
+  // join: the line without each piece's repeated first point, leg and road indexes moved along it, totals added up
+  const out = { ...parts[0], geometry: { type: "LineString", coordinates: [...parts[0].geometry.coordinates] }, legs: [...parts[0].legs] };
+  const add = (k, v) => (out[k] = out[k] == null || v == null ? null : out[k] + v);
+  for (const p of parts.slice(1)) {
+    const off = out.geometry.coordinates.length - 1;
+    out.geometry.coordinates.push(...p.geometry.coordinates.slice(1));
+    out.legs.push(...p.legs.map((l) => ({
+      ...l, from: l.from + off, to: l.to + off,
+      roads: (l.roads || []).map((r) => ({ ...r, from: r.from + off, to: r.to + off })),
+    })));
+    for (const k of ["distance_m", "duration_s", "ascent_m", "descent_m", "highway_m", "toll_m", "ferry_m", "unpaved_m"]) add(k, p[k]);
+    if (p.engine !== out.engine) out.engine = "mixed";
+    if (p.note && !out.note) out.note = p.note;
+  }
+  return out;
+}
+
 // ---------- route cache ----------
 // OpenRouteService's free plan has a daily allowance, and it ran out on 2026-10-12. The same request (same points, same
 // route type) comes back often: Undo, reopening and re-measuring a trip, retries, rebuilding ready-made trips, the
@@ -572,7 +626,7 @@ async function routeCacheGet(key) {
   try {
     const e = JSON.parse(await fs.readFile(path.join(ROUTE_DIR, `${key}.json`), "utf8"));
     // failures and backup-router routes only a day: ORS's own route (with elevation) is better once it answers again
-    return Date.now() - e.at < (e.error || e.result?.engine === "osrm" ? ROUTE_FAIL_MS : ROUTE_KEEP_MS) ? e : null;
+    return Date.now() - e.at < (e.error || e.result?.engine !== "openrouteservice" ? ROUTE_FAIL_MS : ROUTE_KEEP_MS) ? e : null;
   } catch {
     return null;
   }
@@ -616,25 +670,22 @@ app.post("/api/route", async (req, res) => {
     note = "Some stops are outside your GraphHopper map, so basic routing was used.";
   }
 
-  if (!ORS_KEY) {
-    return res.status(422).json({
-      error: "No routing engine available. Start GraphHopper or add ORS_API_KEY to .env.",
-    });
-  }
+  // (without an ORS key every route comes from the backup router: it works, without elevation)
   const key = routeKey(coordinates, mode);
   const hit = await routeCacheGet(key);
   if (hit) return hit.error ? res.status(422).json({ error: hit.error }) : res.json(note ? { ...hit.result, note } : hit.result);
   try {
-    let result;
-    try {
-      result = await withSnapping(coordinates, (c) => routeOrs(c, mode));
-    } catch (e) {
-      // ORS out of allowance, rate limited, down or unreachable: the backup router. A real "can't route there" stays
-      // an error, so the app can drop or move that point.
-      if (e instanceof RouteError && ROUTE_IMPOSSIBLE.test(e.message)) throw e;
-      console.log(`ORS failed (${e.message}), using the backup router`);
-      result = await routeOsrm(coordinates);
-    }
+    const result = await routeInPieces(coordinates, async (c) => {
+      try {
+        return await withSnapping(c, (cc) => routeOrs(cc, mode));
+      } catch (e) {
+        // ORS out of allowance, rate limited, down or unreachable: the backup router. A real "can't route there"
+        // stays an error, so the app can drop or move that point.
+        if (e instanceof RouteError && ROUTE_IMPOSSIBLE.test(e.message)) throw e;
+        console.log(`ORS failed (${e.message}), using the backup router`);
+        return routeOsrm(c);
+      }
+    });
     routeCacheSet(key, { result });
     if (note) result.note = note;
     res.json(result);
@@ -1300,6 +1351,25 @@ app.post("/api/along", async (req, res) => {
       error: e.down ? `${e.message}. Try again later.` : `OpenStreetMap search is busy (${e.message}). Try again in a minute.`,
     });
   }
+});
+
+// GET /api/geocode?q=&limit=&towns=1 -> { hits: [{ lng, lat, cls }] }: place search for the app. Going through the server
+// means one polite Nominatim client (one request a second, a User-Agent with the contact) for every device using the
+// app, and a disk cache: trips through the same towns don't look them up again.
+const geocodeCache = diskCache("geocode-cache.json", 30, 5000);
+app.get("/api/geocode", async (req, res) => {
+  const q = String(req.query.q || "").trim().slice(0, 200);
+  const limit = Math.min(10, Math.max(1, Number(req.query.limit) || 1));
+  const towns = req.query.towns === "1";
+  if (!q) return res.status(400).json({ error: "q" });
+  const key = `${limit}|${towns ? "t" : ""}|${q.toLowerCase()}`;
+  const hit = await geocodeCache.get(key);
+  if (hit) return res.json({ hits: hit });
+  const d = await nominatimJson(`https://nominatim.openstreetmap.org/search?format=json&limit=${limit}${towns ? "&featureType=settlement" : ""}&q=${encodeURIComponent(q)}`);
+  if (!Array.isArray(d)) return res.status(502).json({ error: "Place search is busy, try again in a moment." });
+  const hits = d.map((x) => ({ lng: +x.lon, lat: +x.lat, cls: x.class }));
+  geocodeCache.set(key, hits);
+  res.json({ hits });
 });
 
 // GET /api/place-name?lat=&lng= -> { name }: a name for a spot picked on the map. The town or village there, else

@@ -171,16 +171,13 @@ let progress = null;
 
 // ---------- geocoding (Nominatim public server allows about 1 request per second) ----------
 
-let lastGeocode = 0;
 // Up to `limit` matches, best first: [{ lng, lat, cls }] (cls: OpenStreetMap's class, "place" for towns).
-// `towns`: only cities, towns and villages.
+// `towns`: only cities, towns and villages. Through the server (/api/geocode: cached, one polite client for all devices).
 async function nominatimAll(q, limit = 1, towns = false) {
-  const wait = 1100 - (Date.now() - lastGeocode);
-  if (wait > 0) await sleep(wait);
-  lastGeocode = Date.now();
-  const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=${limit}${towns ? "&featureType=settlement" : ""}&q=${encodeURIComponent(q)}`);
-  const data = await r.json();
-  return data.map((d) => ({ lng: parseFloat(d.lon), lat: parseFloat(d.lat), cls: d.class }));
+  const r = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&limit=${limit}${towns ? "&towns=1" : ""}`);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || "Place search failed.");
+  return data.hits || [];
 }
 const nominatim = async (q) => (await nominatimAll(q))[0] || null;
 // The AI sometimes gets the region wrong ("Mount Cook Village, Otago" is in Canterbury) or names a spot the map
@@ -303,6 +300,83 @@ function dayStats(g, mode = selected) {
 }
 
 const longDays = () => dayGroups().filter((g) => (dayStats(g, "scenic")?.dur || 0) > longDayS()).map((g) => g.day);
+
+// The number of days the request asks for, or 0 (same rules as requestedDays on the server).
+function askedDays(prompt) {
+  const n = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, a: 1 };
+  const t = String(prompt || "").toLowerCase();
+  let m = t.match(/\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)[ -]days?\b/);
+  if (m) return n[m[1]] ?? Number(m[1]);
+  m = t.match(/\b(a|one|two)[ -]weeks?\b/);
+  return m ? (n[m[1]] ?? 1) * 7 : 0;
+}
+
+// Long days without asking the AI: the route stays as it is and only the overnights move. Split the measured legs into
+// days so the longest day is as short as possible (a linear partition), sleeping at real stops where it costs under
+// 15 minutes of the longest day. Keeps the number of days the request asked for; otherwise may add up to two days.
+// Leaves trips with a rest or exploring day (a day under an hour) to the AI. Returns true if it fixed every long day.
+function balanceDays() {
+  const r = routes.scenic;
+  if (!r || stops.length < 3) return false;
+  const groups = dayGroups();
+  if (groups.some((g) => (dayStats(g, "scenic")?.dur || 0) < 3600)) return false;
+  const legs = legsByEnd(r);
+  const L = stops.map((_, i) => legs.get(i)?.duration_s || 0); // L[i]: the drive into point i
+  const n = stops.length;
+  const pre = [0];
+  for (let i = 1; i < n; i++) pre[i] = pre[i - 1] + L[i];
+  const span = (a, b) => pre[b] - pre[a]; // driving from point a to point b
+  const limit = longDayS();
+  const asked = askedDays(trip.prompt);
+  const counts = asked ? [groups.length] : [groups.length, groups.length + 1, groups.length + 2];
+  for (const D of counts) {
+    if (D > n - 1) break;
+    // f[d][i]: best cost with d days ending at point i; cost = longest day + 15 min per overnight at a via point
+    const f = Array.from({ length: D + 1 }, () => new Array(n).fill(Infinity));
+    const from = Array.from({ length: D + 1 }, () => new Array(n).fill(-1));
+    f[0][0] = 0;
+    for (let d = 1; d <= D; d++) {
+      for (let i = d; i < n; i++) {
+        if (d === D && i !== n - 1) continue;
+        const via = d < D && isVia(stops[i]) ? 900 : 0;
+        for (let k = d - 1; k < i; k++) {
+          if (f[d - 1][k] === Infinity) continue;
+          const c = Math.max(f[d - 1][k], span(k, i) + via);
+          if (c < f[d][i]) [f[d][i], from[d][i]] = [c, k];
+        }
+      }
+    }
+    if (f[D][n - 1] === Infinity) continue;
+    // the overnights, and the real longest day (without the via penalty)
+    const ends = [];
+    for (let d = D, i = n - 1; d > 0; i = from[d][i], d--) ends.unshift(i);
+    let worst = 0;
+    ends.forEach((e, d) => (worst = Math.max(worst, span(d ? ends[d - 1] : 0, e))));
+    if (worst > limit) continue;
+    let day = 1;
+    stops.forEach((s, i) => {
+      s.day = day;
+      if (i === ends[day - 1] && day < D) {
+        if (isVia(s)) Object.assign(s, { kind: "stop", note: s.note || "Overnight here" });
+        day++;
+      }
+    });
+    // spots go with the day of the nearest point; roads are re-measured per day
+    for (const sp of plan?.spots || []) {
+      if (sp.info?.lat == null) continue;
+      let best = null;
+      for (const st of stops) {
+        const dd = haversine([st.lng, st.lat], [sp.info.lng, sp.info.lat]);
+        if (!best || dd < best.dd) best = { dd, day: st.day };
+      }
+      sp.day = best.day;
+    }
+    syncDayNames(true);
+    syncRoadDays();
+    return true;
+  }
+  return false;
+}
 
 // Keep at most n middle points: every stop first, then vias spread evenly along the day.
 function thinPoints(mid, n) {
@@ -569,7 +643,11 @@ function changed() {
 }
 
 async function addStop(name, { note = "", photoQuery = "", kind = "stop", day, road = "" } = {}) {
-  const g = await geocode(name);
+  // of the places with that name, the one that fits after the last stop (a town over a river of the same name)
+  const cands = await geocodeAll(name);
+  const pts = stops.length ? [{ ...stops[stops.length - 1], cands: [stops[stops.length - 1]] }, { cands }] : [{ cands }];
+  pickAlongRoute(pts);
+  const g = pts[pts.length - 1];
   day ??= stops.length ? stops[stops.length - 1].day : 1;
   stops.push({ name, lng: g.lng, lat: g.lat, note, photoQuery, kind, day, road });
 }
@@ -1063,6 +1141,11 @@ async function planTrip(prompt, settings) {
 
     // Up to two rounds of "these days are too long", while each round helps (fewer long days, or the longest shorter).
     const worst = () => Math.max(0, ...dayGroups().map((g) => dayStats(g, "scenic")?.dur || 0));
+    // moving the overnights along the same route often fixes it with no AI request at all
+    if (longDays().length && balanceDays()) {
+      progressSet("drive", "doing", "Moved the overnights so no day runs long");
+      detailsP = requestDetails(prompt, skeletonOf());
+    }
     for (let round = 0, long = longDays(); long.length && round < 2; round++) {
       const before = { n: long.length, worst: worst() };
       progressSet("drive", "doing", `Day ${long.join(", ")} ran over ${tripSettings().maxHours} hours, asking the AI to rebalance`);
@@ -1201,6 +1284,7 @@ const roadEditText = (e) =>
     : "";
 
 function fixLongDays() {
+  if (balanceLive()) return;
   const dayHours = dayGroups().map((g) => (dayStats(g, "scenic")?.dur || 0) / 3600);
   // with "no night driving", days that arrive after dark count as too long too
   const nightDays = tripSettings().noNight ? afterDarkDays() : [];

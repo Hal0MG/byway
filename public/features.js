@@ -1665,6 +1665,33 @@ async function liveRevise(opts = {}) {
     renderItinerary();
   }
 }
+// "Fix long days" when moving the overnights is enough: instant, no AI. Undo like any change; the day guides catch up.
+function balanceLive() {
+  if (READONLY || !plan || liveState.busy) return false;
+  snapshotVersion("Moved the overnights to shorten long days");
+  const undo = trip.versions?.at(-1)?.id || null;
+  if (!balanceDays()) {
+    trip.versions.pop(); // nothing changed
+    return false;
+  }
+  const run = ++liveState.run;
+  const worst = Math.max(...dayGroups().map((g) => dayStats(g, "scenic")?.dur || 0));
+  Object.assign(liveState, { busy: false, error: "", undo, result: `Moved the overnights: the longest day is now ${fmtDur(worst)}.`, bg: "Rewriting the day guides..." });
+  renderStops();
+  renderItinerary();
+  renderLiveBar();
+  scheduleSave();
+  requestDetails(trip.prompt || trip.name, skeletonOf()).then((d) => {
+    if (run !== liveState.run) return;
+    if (!d.error) mergeDetails(d.details);
+    liveState.bg = "";
+    renderLiveBar();
+    renderItinerary();
+    scheduleSave();
+  });
+  return true;
+}
+
 $("live-bar")?.addEventListener("click", async (e) => {
   const act = e.target.closest("[data-live]")?.dataset.live;
   if (act === "close") Object.assign(liveState, { result: "", error: "" });
