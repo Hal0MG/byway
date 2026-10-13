@@ -1549,6 +1549,8 @@ async function runBatch(prompts, settings) {
       item.state = "error";
       item.note = progress.error;
       progress = null;
+      // a half-built trip isn't worth keeping in the trips list
+      await fetch(`/api/trips/${trip.id}`, { method: "DELETE" }).catch(() => {});
     } else {
       trip.preset = true;
       await saveNow();
