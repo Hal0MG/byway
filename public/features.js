@@ -1497,11 +1497,13 @@ async function downloadPage() {
   setView("itinerary");
   renderItinerary();
   const css = await (await fetch("/style.css")).text().catch(() => "");
-  const body = IT.innerHTML;
+  // the cost table open, and nothing that needs the app (renaming, the chart's cursor, the cost inputs)
+  const body = IT.innerHTML.replace(/<details class="cost-card"(?! open)/g, '<details class="cost-card" open');
   const html = `<!doctype html><html lang="en" data-theme="${theme}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(trip.name)}</title><style>${css}
-body{overflow:auto} #itinerary{position:static;padding-top:24px} .snapshot button,.snapshot form,.snapshot .roads-panel,.snapshot .hero-actions,.snapshot .settings-strip .btn,.snapshot .notes-add,.snapshot .rc-form{display:none!important}
-.sketch-wrap{max-width:1240px;margin:16px auto 0;padding:0 16px}.sketch{width:100%;height:auto;background:var(--surface);border-radius:22px;color:var(--text)}
+body{overflow:auto} #itinerary{position:static;padding-top:24px} .snapshot button,.snapshot form,.snapshot .roads-panel,.snapshot .hero-actions,.snapshot .settings-strip .btn,.snapshot .notes-add,.snapshot .rc-form,.snapshot .rc-side,.snapshot .cost-inputs,.snapshot .pf-tip,.snapshot .pf-cursor,.snapshot .tl-go{display:none!important}
+.snapshot .profile{cursor:default}.snapshot .day-index:hover{width:290px}
+.sketch-wrap{max-width:1240px;margin:16px auto 0;padding:0 16px}.sketch{width:100%;height:auto;background:var(--surface);border-radius:12px;color:var(--text)}
 </style></head><body><main id="itinerary" class="snapshot">${body.replace(/<section class="request-card"/, `<div class="sketch-wrap">${routeSketch()}</div><section class="request-card"`)}</main></body></html>`;
   downloadFile(html, `${fileName()}.html`, "text/html");
 }
