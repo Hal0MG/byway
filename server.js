@@ -1909,8 +1909,20 @@ async function countGemini(model, limited) {
 const GEMINI_BASE = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/$/, "");
 // `onText` (optional) gets the answer so far as it streams; `signal` cancels; `schema` (JSON Schema) makes Gemini answer
 // in exactly that shape (Flash-Lite without it sometimes wrote broken JSON, which cost a fallback to the next model).
+// When every model says it's busy ("high demand", which Google's free tier says in bursts), it waits and goes round
+// once or twice more (8 s, then 20 s) before giving up; a busy answer doesn't count against the free limit.
 async function callGemini(prompt, { signal, onText, schema } = {}) {
   const errors = [];
+  const busy = (m) => /high demand|overloaded|unavailable|try again later|503/i.test(m);
+  for (const [round, wait] of [[0, 0], [1, 8000], [2, 20000]]) {
+    if (round && !errors.slice(-GEMINI_MODELS.length).every((e) => busy(e))) break;
+    if (wait) {
+      console.log(`Gemini: every model busy, trying again in ${wait / 1000} s`);
+      await new Promise((ok, no) => {
+        const t = setTimeout(ok, wait);
+        signal?.addEventListener("abort", () => (clearTimeout(t), no(new Error("Cancelled."))), { once: true });
+      });
+    }
   for (const model of GEMINI_MODELS) {
     if (signal?.aborted) throw new Error("Cancelled.");
     try {
@@ -1956,7 +1968,10 @@ async function callGemini(prompt, { signal, onText, schema } = {}) {
       console.log(`Gemini ${model} failed: ${e.message}`);
     }
   }
-  throw new Error(`The AI is busy right now, please try again in a minute. (${errors.join("; ")})`);
+  }
+  const last = errors.slice(-GEMINI_MODELS.length);
+  if (last.every((e) => busy(e))) throw new Error("Google's free Gemini models are all busy right now (that comes and goes). Try again in a few minutes.");
+  throw new Error(`The AI couldn't answer, please try again in a minute. (${last.join("; ")})`);
 }
 
 // One Claude answer, streamed (long outputs), with the web search tool when searches > 0.
