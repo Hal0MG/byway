@@ -790,7 +790,7 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
 
 /* ---------- Home: the globe in space with floating trip windows (home.js) ---------- */
 #home { display: none; }
-body[data-view="home"] #home { display: block; position: fixed; inset: 0; z-index: 8; pointer-events: none; }
+body[data-view="home"] #home { display: block; position: fixed; inset: 0; z-index: 8; pointer-events: none; overflow: hidden; }
 body[data-view="home"] #itinerary, body[data-view="home"] #panel, body[data-view="home"] #map-profile,
 body[data-view="home"] .maplibregl-ctrl-top-right, body[data-view="home"] .pin, body[data-view="home"] .via-pin,
 body[data-view="home"] .spot-pin, body[data-view="home"] .pill, body[data-view="home"] .pf-marker { display: none !important; }
@@ -1265,7 +1265,12 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .trip-hero { min-height: 340px; border-radius: 10px; }
   .hero-inner { padding: 22px 18px; }
   .trip-hero h1, .rename-input { font-size: 30px; letter-spacing: -0.025em; }
-  .trip-hero .lede { font-size: 15px; }
+  .trip-hero .lede { font-size: 15px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+  /* the trip's buttons: one swipeable row instead of three rows of big buttons */
+  .hero-inner { min-width: 0; width: 100%; } /* the hero is a flex box: without this the row of buttons widens it */
+  .hero-actions { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-right: -18px; padding-right: 18px; }
+  .hero-actions::-webkit-scrollbar { display: none; }
+  .hero-actions .btn { flex: none; padding: 8px 12px; font-size: 13px; }
   .day-summary { font-size: 15px; line-height: 1.6; }
   .dc-key { display: none !important; }
   .tl-text b { font-size: 14px; }

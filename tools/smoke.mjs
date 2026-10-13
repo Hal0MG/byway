@@ -47,6 +47,16 @@ try {
         await fn();
         await sleep(wait);
         if (OUT) await page.screenshot({ path: path.join(OUT, `${size}-${theme}-${name}.png`) });
+        // nothing wider than the screen: the page, the view or an open sheet scrolling sideways on a phone
+        const wide = await js(() => {
+          const view = { trips: "#library .lib-main", about: "#about", home: "#home", map: "#panel" }[document.body.dataset.view] || "#itinerary";
+          return [document.scrollingElement, document.querySelector(view), document.querySelector(".overlay .sheet")]
+            .filter(Boolean)
+            .filter((el) => el.scrollWidth > el.clientWidth + 2 && !/hidden|clip/.test(getComputedStyle(el).overflowX))
+            .map((el) => `${el.id || el.className || el.tagName} is ${el.scrollWidth} px wide in ${el.clientWidth}`)
+            .join("; ");
+        });
+        if (wide && size === "phone") problems.push(`${size}/${theme} ${name}: wider than the screen: ${wide}`);
       } catch (e) {
         problems.push(`${size}/${theme} ${name}: ${e.message}`);
       }
