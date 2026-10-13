@@ -1840,6 +1840,8 @@ async function findRoutes({ fit = true } = {}) {
   }
 }
 $("route-btn").onclick = () => findRoutes();
+// Phones: the map credits sit just above the sheet (it covers the bottom of the map), whatever its height.
+new ResizeObserver(() => document.documentElement.style.setProperty("--panel-h", `${$("panel").offsetHeight}px`)).observe($("panel"));
 // Phones: the panel is a sheet showing the routes and search; the grip opens the stops and days.
 $("panel-grip").onclick = () => {
   const open = $("panel").classList.toggle("collapsed") === false;

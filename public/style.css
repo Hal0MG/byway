@@ -898,7 +898,13 @@ body[data-view="home"] #map {
   .hc-body small { font-size: 11px; }
   .home-top { top: 72px; left: 12px; }
   .home-legend { display: none; }
-  .home-dock { bottom: 10px; padding: 12px; border-radius: 12px; }
+  /* the map credits on one line at the bottom edge, and the dock above them */
+  .maplibregl-ctrl-attrib { font-size: 10px; }
+  body[data-view="map"] .maplibregl-ctrl-bottom-right, body[data-view="map"] .maplibregl-ctrl-bottom-left { bottom: var(--panel-h, 0px); }
+  .home-dock { bottom: 38px; padding: 12px; border-radius: 12px; }
+  .home-actions { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-right: -12px; padding-right: 12px; }
+  .home-actions::-webkit-scrollbar { display: none; }
+  .home-actions .chip { flex: none; }
   .home-dock h1 { font-size: 20px; margin-bottom: 8px; }
   .home-ask .btn { padding: 10px 12px; }
   .home-actions .chip.region, .home-actions .sep { display: none; }

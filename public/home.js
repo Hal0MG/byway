@@ -178,7 +178,7 @@ function homeArea() {
   return {
     W, mobile,
     top: mobile ? 72 : 84,
-    bottom: innerHeight - (HOME.querySelector(".home-dock")?.offsetHeight || 150) - (mobile ? 18 : 26),
+    bottom: innerHeight - (HOME.querySelector(".home-dock")?.offsetHeight || 150) - (mobile ? 48 : 26),
     cw: mobile ? 164 : 210,
     ch: mobile ? 150 : 176,
   };
