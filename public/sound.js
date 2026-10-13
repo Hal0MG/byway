@@ -105,14 +105,34 @@ function whoosh(out, { up = true, dur = 0.32, vol = 0.12 } = {}) {
   src.start(t);
 }
 
-// The interface sounds, quiet and short, in the spirit of a console's home menu.
+// The interface sounds, quiet and short, in the spirit of a console's home menu. Each kind of control has its own
+// voice, and pitches are picked from a pentatonic scale so repeated presses don't sound like a metronome.
+const PENTA = [1, 9 / 8, 5 / 4, 3 / 2, 5 / 3, 2];
+const pick = (xs) => xs[Math.floor(Math.random() * xs.length)];
 const SFX = {
-  hover: (o) => tone(o, 2093, { dur: 0.06, vol: 0.05, partial: 1.5 }),
+  hover: (o) => tone(o, 1568 * pick(PENTA.slice(0, 4)), { dur: 0.06, vol: 0.04, partial: 1.5 }),
+  // a plain button: a soft bell
   click: (o) => {
-    tone(o, 1046.5, { dur: 0.22, vol: 0.12, partial: 2.76 });
-    tone(o, 1568, { at: 0.035, dur: 0.18, vol: 0.06 });
+    const f = 880 * pick([1, 9 / 8, 5 / 4]);
+    tone(o, f, { dur: 0.22, vol: 0.11, partial: 2.76 });
+    tone(o, f * 1.5, { at: 0.035, dur: 0.18, vol: 0.05 });
   },
-  toggle: (o) => tone(o, 1318.5, { dur: 0.14, vol: 0.1, partial: 2 }),
+  // the main action (blue buttons): two notes rising
+  confirm: (o) => {
+    const f = 784 * pick([1, 9 / 8]);
+    tone(o, f, { dur: 0.25, vol: 0.1, partial: 2 });
+    tone(o, f * 1.5, { at: 0.08, dur: 0.35, vol: 0.09, partial: 2 });
+  },
+  // the views in the top bar: a short airy tap
+  nav: (o) => {
+    whoosh(o, { up: true, dur: 0.16, vol: 0.05 });
+    tone(o, 1174.7 * pick([1, 9 / 8, 5 / 4]), { dur: 0.12, vol: 0.07, type: "triangle" });
+  },
+  // a floating trip on the globe: a glassy chord
+  card: (o) => [1, 5 / 4, 3 / 2].forEach((r, i) => tone(o, 1046.5 * r, { at: i * 0.03, dur: 0.5, vol: 0.05, partial: 3 })),
+  // round icon buttons: a small wooden pop
+  pop: (o) => tone(o, 620 * pick([1, 9 / 8, 4 / 3]), { dur: 0.09, vol: 0.12, type: "triangle", glide: 0.7 }),
+  toggle: (o) => tone(o, 1318.5 * pick([1, 9 / 8]), { dur: 0.14, vol: 0.1, partial: 2 }),
   open: (o) => {
     whoosh(o, { up: true });
     tone(o, 784, { at: 0.05, dur: 0.35, vol: 0.06, partial: 2 });
@@ -252,8 +272,15 @@ document.addEventListener("pointerover", (e) => {
 document.addEventListener("click", (e) => {
   const el = e.target.closest?.(PRESSABLE);
   if (!el || el.disabled) return;
-  // pressing a switch or radio gets the lighter toggle sound
-  sfx(el.matches('[role="radio"], [role="tab"], [aria-pressed], .chip') ? "toggle" : "click");
+  // each kind of control has its own sound
+  sfx(
+    el.matches(".seg button") ? "nav"
+    : el.matches(".home-card") ? "card"
+    : el.matches('[role="radio"], [role="tab"], [role="switch"], [aria-pressed], .chip') ? "toggle"
+    : el.matches(".btn.blue, [data-primary]") ? "confirm"
+    : el.matches(".icon-btn") ? "pop"
+    : "click"
+  );
 }, { capture: true });
 document.addEventListener("visibilitychange", () => {
   if (!audio) return;

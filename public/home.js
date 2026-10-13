@@ -98,7 +98,6 @@ function renderHome() {
     <div class="home-cards"></div>
     <div class="home-top">
       ${current || last ? `<button class="home-continue" data-home="continue">${icon("route", 18)}<span class="hc-cont"><small>Continue</small><b data-fit="12">${esc((current || last).name)}</b></span>${icon("chevron", 14)}</button>` : ""}
-      <p class="home-legend"><span class="k-ready"></span>Ready to go <span class="k-mine"></span>Your trips <span class="k-idea"></span>Ideas, planned when you pick one</p>
     </div>
     <div class="home-detail" hidden></div>
     <div class="home-dock">
@@ -150,6 +149,31 @@ function globeOnScreen() {
 }
 
 // ---------- the loop: turn the globe, choose and place the windows ----------
+
+// Shooting stars now and then, in the dark around the globe (never across it).
+let shootTimer = 0;
+function shootingStars() {
+  clearTimeout(shootTimer);
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  shootTimer = setTimeout(() => {
+    if (document.body.dataset.view === "home" && !document.hidden) {
+      const g = globeOnScreen();
+      for (let i = 0; i < 8; i++) {
+        const x = Math.random() * innerWidth;
+        const y = 70 + Math.random() * (innerHeight * 0.6);
+        if (Math.hypot(x - g.x, y - g.y) < g.r + 140) continue;
+        const el = document.createElement("i");
+        el.className = "shoot";
+        el.style.cssText = `left:${x}px;top:${y}px;--a:${(Math.random() < 0.5 ? 150 : 30) + (Math.random() * 20 - 10)}deg;--len:${120 + Math.random() * 120}px`;
+        HOME.prepend(el);
+        setTimeout(() => el.remove(), 1600);
+        break;
+      }
+    }
+    shootingStars();
+  }, 2500 + Math.random() * 5000);
+}
+shootingStars();
 
 function startHomeLoop() {
   cancelAnimationFrame(homeState.raf);
@@ -226,7 +250,7 @@ function layoutHome() {
   visible.sort((a, b) => (s.cards.get(b.it.key)?.shown ? 1 : 0) - (s.cards.get(a.it.key)?.shown ? 1 : 0) || rank[a.it.kind] - rank[b.it.kind] || a.d - b.d);
 
   const placed = []; // { v, x, y, slot }
-  // keep clear of Continue and the legend (top left); measured once per render and resize
+  // keep clear of Continue (top left); measured once per render and resize
   const tl = (s.topRect ||= HOME.querySelector(".home-top")?.getBoundingClientRect() || { width: 0 });
   const clear = (x, y) =>
     !tl.width || x - cw / 2 >= tl.right + gap || x + cw / 2 <= tl.left - gap || y - ch / 2 >= tl.bottom + gap || y + ch / 2 <= tl.top - gap;
@@ -250,8 +274,10 @@ function layoutHome() {
       if (prev != null && diff(prev) < 0.7) tries.unshift(prev);
       for (const a of tries) {
         if (diff(a) > 1.4) break;
-        const x = g.x + Math.cos(a) * (g.r + 26 + cw / 2);
-        const y = g.y + Math.sin(a) * (g.r + 20 + ch / 2);
+        // out into the free space at the sides: the ring is wider than it is tall
+        const side = Math.max(0, Math.min(170, (W / 2 - g.r - cw - 40) * 0.6));
+        const x = g.x + Math.cos(a) * (g.r + 46 + cw / 2 + side);
+        const y = g.y + Math.sin(a) * (g.r + 24 + ch / 2);
         if (fits(x, y)) {
           spot = { x, y, slot: a };
           break;
