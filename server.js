@@ -491,7 +491,7 @@ function routeOsrm(coords) {
           "?overview=false&steps=true&geometries=geojson";
         const r = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(30000) });
         const d = await r.json().catch(() => ({}));
-        if (d.code === "Ok" && d.routes?.length) return osrmResult(d.routes[0]);
+        if (d.code === "Ok" && d.routes?.length) return await addElevation(osrmResult(d.routes[0]));
         last = new RouteError(d.message || `Backup routing failed (${r.status})`);
         if (d.code === "NoRoute" || d.code === "NoSegment") break; // the other server has the same map
       } catch (e) {
@@ -566,6 +566,82 @@ function osrmResult(route) {
     note: "Measured with the backup router (OpenStreetMap's OSRM) because OpenRouteService couldn't answer: no elevation or road surface this time.",
   };
 }
+// Heights for a backup route from Open-Meteo's free elevation API (Copernicus 90 m terrain, no key). Open-Meteo counts
+// every point as a call (free: 600 a minute, 5,000 an hour, 10,000 a day, shared with the weather), so a route gets at
+// most ~300 samples (every 0.5 to several km) filled in between by distance, heights already looked up are kept a year
+// (data/elevation-cache.json, per ~100 m), and lookups stop at 1,500 points an hour and 3,000 a day
+// (data/elevation-usage.json) to leave the rest for the weather. Best effort: a route without heights is still a route.
+const elevCache = diskCache("elevation-cache.json", 365, 60000);
+const ELEV_USAGE_FILE = path.resolve("data", "elevation-usage.json");
+const ELEV_HOUR = 1500;
+const ELEV_DAY = 3000;
+let elevUsage = null;
+async function elevAllowance(n) {
+  if (!elevUsage) elevUsage = JSON.parse(await fs.readFile(ELEV_USAGE_FILE, "utf8").catch(() => "{}"));
+  const hour = new Date().toISOString().slice(0, 13);
+  if (elevUsage.hour !== hour) Object.assign(elevUsage, { hour, h: 0 });
+  if (elevUsage.day !== hour.slice(0, 10)) Object.assign(elevUsage, { day: hour.slice(0, 10), d: 0 });
+  if (elevUsage.h + n > ELEV_HOUR || elevUsage.d + n > ELEV_DAY) return false;
+  elevUsage.h += n;
+  elevUsage.d += n;
+  fs.writeFile(ELEV_USAGE_FILE, JSON.stringify(elevUsage)).catch(() => {});
+  return true;
+}
+let elevChain = Promise.resolve();
+function elevFetch(points) {
+  const job = elevChain.then(async () => {
+    if (!(await elevAllowance(points.length))) throw new Error("this hour's or today's share of free height lookups is used");
+    const url = `https://api.open-meteo.com/v1/elevation?latitude=${points.map((p) => p[1]).join(",")}&longitude=${points.map((p) => p[0]).join(",")}`;
+    const r = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(15000) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !Array.isArray(d.elevation) || d.elevation.length !== points.length) throw new Error(d.reason || `elevation ${r.status}`);
+    // a short pause between requests keeps well under the minute limit
+    await new Promise((ok) => setTimeout(ok, 1500));
+    return d.elevation;
+  });
+  elevChain = job.catch(() => {});
+  return job;
+}
+async function addElevation(result) {
+  const coords = result.geometry.coordinates;
+  if (coords.length < 2 || coords[0].length > 2) return result;
+  try {
+    const cum = [0];
+    for (let k = 1; k < coords.length; k++) cum.push(cum[k - 1] + haversine(coords[k - 1], coords[k]));
+    const step = Math.max(500, cum.at(-1) / 300);
+    const idx = [];
+    for (let k = 0, next = 0; k < coords.length; k++) {
+      if (cum[k] >= next || k === coords.length - 1) {
+        idx.push(k);
+        next = cum[k] + step;
+      }
+    }
+    // heights already known (the same roads again: undo, reopening, a rebuilt trip) come from the cache
+    const key = (k) => `${coords[k][1].toFixed(3)},${coords[k][0].toFixed(3)}`;
+    const ele = await Promise.all(idx.map((k) => elevCache.get(key(k))));
+    const missing = idx.map((k, i) => (ele[i] == null ? i : -1)).filter((i) => i >= 0);
+    for (let i = 0; i < missing.length; i += 100) {
+      const part = missing.slice(i, i + 100);
+      const got = await elevFetch(part.map((j) => [coords[idx[j]][0].toFixed(3), coords[idx[j]][1].toFixed(3)]));
+      part.forEach((j, n) => {
+        ele[j] = got[n];
+        elevCache.set(key(idx[j]), got[n]);
+      });
+    }
+    for (let k = 0, j = 0; k < coords.length; k++) {
+      while (j < idx.length - 2 && cum[idx[j + 1]] < cum[k]) j++;
+      const a = idx[j];
+      const b = idx[j + 1] ?? a;
+      const t = b === a ? 0 : Math.min(1, Math.max(0, (cum[k] - cum[a]) / (cum[b] - cum[a])));
+      const e = ele[j] + ((ele[j + 1] ?? ele[j]) - ele[j]) * t;
+      coords[k] = [coords[k][0], coords[k][1], Math.round(e * 10) / 10];
+    }
+    result.note = "Measured with the backup router (OpenStreetMap's OSRM) because OpenRouteService couldn't answer: heights from Open-Meteo, no road surface this time.";
+  } catch (e) {
+    console.log(`Heights for the backup route failed (${e.message})`);
+  }
+  return result;
+}
 
 // ---------- long routes in pieces ----------
 // ORS takes at most 50 points and about 6,000 km per request (a two-week cross-country trip is more). Longer routes are
@@ -639,6 +715,8 @@ async function routeCacheGet(key) {
   try {
     const e = JSON.parse(await fs.readFile(path.join(ROUTE_DIR, `${key}.json`), "utf8"));
     // failures and backup-router routes only a day: ORS's own route (with elevation) is better once it answers again
+    // backup routes from before they had heights are measured again
+    if (e.result?.engine === "osrm" && (e.result.geometry?.coordinates?.[0]?.length || 0) < 3) return null;
     return Date.now() - e.at < (e.error || e.result?.engine !== "openrouteservice" ? ROUTE_FAIL_MS : ROUTE_KEEP_MS) ? e : null;
   } catch {
     return null;
@@ -712,6 +790,17 @@ app.post("/api/route", async (req, res) => {
     }
     res.status(422).json({ error: e.message });
   }
+});
+
+// POST /api/heights { coordinates: [[lng, lat], ...] } -> { coordinates: [[lng, lat, m], ...] }: heights for a route
+// measured without them (older backup routes), from Open-Meteo like addElevation, within its budget. Used by
+// tools/add-heights.mjs (which does what the budget allows and can be run again later for the rest).
+app.post("/api/heights", async (req, res) => {
+  const coords = asArray(req.body?.coordinates).filter((c) => Array.isArray(c) && Math.abs(c[0]) <= 180 && Math.abs(c[1]) <= 90).map((c) => [+c[0], +c[1]]);
+  if (coords.length < 2 || coords.length > 200000) return res.status(400).json({ error: "Send 2 to 200,000 points." });
+  const out = await addElevation({ geometry: { coordinates: coords } });
+  if (out.geometry.coordinates[0].length < 3) return res.status(502).json({ error: "Heights aren't available right now." });
+  res.json({ coordinates: out.geometry.coordinates });
 });
 
 // Which routing engine is available, for the status line in the app.

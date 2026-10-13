@@ -81,7 +81,7 @@ function setupHtml() {
 
     <section class="su-step">
       <h3>${tick(s.ors.set)} 2. Routes and drive times <em>recommended</em></h3>
-      <p>Without a key, routes come from OpenStreetMap's free backup router, without elevation. With a free OpenRouteService key (no card) every drive gets elevation, road surfaces and more exact times: sign up, open the dashboard, and copy your API key.</p>
+      <p>Without a key, routes come from OpenStreetMap's free backup router, with heights from Open-Meteo. With a free OpenRouteService key (no card) every drive also gets road surfaces and more exact times: sign up, open the dashboard, and copy your API key.</p>
       ${keyField("ors", "OpenRouteService key", s.ors, "Paste your key", "https://openrouteservice.org/dev/#/signup", "Get a free key")}
     </section>
 

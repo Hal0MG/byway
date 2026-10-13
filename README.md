@@ -38,8 +38,8 @@ in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own co
    The first time it installs what the app needs (about a minute), then opens the app in your browser.
 3. The Setup screen opens and walks you through the rest, all free:
    - an [OpenRouteService](https://openrouteservice.org/dev/#/signup) key for measuring routes (recommended, no card;
-     without it, or when its daily allowance runs out, routes come from OpenStreetMap's public OSRM servers, without
-     elevation),
+     without it, or when its daily allowance runs out, routes come from OpenStreetMap's public OSRM servers, with
+     heights from Open-Meteo),
    - the trip planner AI: a free [Google Gemini](https://aistudio.google.com/apikey) key (Flash-Lite: a plan in a few
      seconds, no graphics card needed), or a model on your own computer with [LM Studio](https://lmstudio.ai)
      (unlimited and private, needs about 8 GB of graphics memory or an Apple Silicon Mac; Setup can start it, download

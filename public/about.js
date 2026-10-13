@@ -49,7 +49,7 @@ function aboutHtml() {
     </section>
 
     <section class="ab-credits ab-in">
-      <p>Built on open data and free services: maps and places from OpenStreetMap, routes from OpenRouteService and OSRM, photos and articles from Wikipedia and Wikimedia Commons, weather from Open-Meteo. Your trips and keys stay on your own computer.</p>
+      <p>Built on open data and free services: maps and places from OpenStreetMap, routes from OpenRouteService and OSRM, photos and articles from Wikipedia and Wikimedia Commons, weather and heights from Open-Meteo. Your trips and keys stay on your own computer.</p>
       <p class="ab-links"><a href="privacy.html" target="_blank" rel="noopener">Privacy policy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms of use</a></p>
     </section>
 
