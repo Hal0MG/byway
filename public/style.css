@@ -1201,6 +1201,12 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .it-layout { display: block; padding: 0; }
   .day-index, .hero-actions, .roads-panel, .rc-form, .along-bar, .settings-strip .btn, .settings-strip .link-btn,
   .links, .spot-actions, .notes-add, .icon-btn, .tl-link, .gal-hint { display: none !important; }
+  /* screen-only controls: renaming, tabs and buttons in the request card, the cost inputs, send to phone, map links */
+  .rename-btn, .rc-side, .request-card .rc-tabs, .cost-inputs, .cost-chev, .send-phone, button.app-link, .tl-go,
+  .dc-key, .pf-tip, .pf-cursor, .road-reviews .fine { display: none !important; }
+  .cost-card > .cost-body { display: block !important; }
+  .request-card { grid-template-columns: 1fr !important; }
+  .day-stats a.app-link { background: none; padding: 0 4px; }
   .trip-hero { min-height: 260px; margin: 0; break-inside: avoid; }
   .request-card, .settings-strip, .stats { margin-left: 0; margin-right: 0; }
   .day { break-before: page; margin-bottom: 0; }

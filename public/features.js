@@ -213,6 +213,9 @@ function costCard() {
 document.addEventListener("toggle", (e) => {
   if (e.target.classList?.contains("cost-card")) costOpen = e.target.open;
 }, true);
+// printed trips show the cost table (a closed <details> hides its body even with print styles)
+addEventListener("beforeprint", () => document.querySelectorAll(".cost-card").forEach((d) => (d.dataset.wasOpen = d.open, (d.open = true))));
+addEventListener("afterprint", () => document.querySelectorAll(".cost-card").forEach((d) => (d.open = d.dataset.wasOpen === "true")));
 document.addEventListener("change", (e) => {
   const form = e.target.closest?.("#cost-form");
   if (!form || READONLY) return;
