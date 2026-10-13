@@ -339,7 +339,7 @@ function showDetail(key) {
       <p class="hd-sub">${esc(it.sub)}</p>
       <div class="hd-actions">${actions}</div>
       ${it.text ? `<p class="hd-text">${esc(it.text)}</p>` : ""}
-      ${it.kind === "idea" ? `<p class="fine">“${esc(it.prompt)}”. Planning takes a few minutes on your GPU.</p>` : ""}
+      ${it.kind === "idea" ? `<p class="fine">“${esc(it.prompt)}”. ${esc(planTime())}</p>` : ""}
       ${it.kind === "ready" ? `<p class="fine">Opens as your own copy, so you can change it.</p>` : ""}
     </div>`;
   box.hidden = false;

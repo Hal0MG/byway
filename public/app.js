@@ -1071,6 +1071,8 @@ fetch("/api/status")
   .then((r) => r.json())
   .then((s) => (aiInfo = s.ai))
   .catch(() => {});
+// How long a plan takes, by planner: a cloud model answers in seconds, a local model in minutes.
+const planTime = () => (aiInfo?.provider === "local" ? "Planning takes a few minutes on this computer." : "Planning takes about a minute.");
 function aiLabel() {
   if (aiInfo?.provider === "local") {
     const name = /qwen/i.test(aiInfo.model) ? "Qwen3" : "The local model";

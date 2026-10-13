@@ -75,7 +75,7 @@ function renderStart() {
           <button class="btn blue" type="submit">${icon("sparkle", 18)} Plan my trip</button>
         </form>
         <div class="examples">${EXAMPLES.map((x) => `<button class="chip" data-act="example">${esc(x)}</button>`).join("")}</div>
-        <p class="fine">Takes a few minutes. You can also add stops by hand on the Map tab.</p>
+        <p class="fine">${esc(planTime())} You can also add stops by hand on the Map tab.</p>
         <p class="fine coverage-note">${icon("map", 14)} ${esc(COVERAGE_TEXT)}. Other places are grey on the map.</p>
       </div>
       ${presetsHtml()}
