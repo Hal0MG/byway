@@ -87,7 +87,7 @@ function setupHtml() {
 
     <section class="su-step">
       <h3>${tick(s.tavily.set)} 3. Web search while planning <em>optional</em></h3>
-      <p>With Tavily the planner reads what drivers say on forums and travel sites. Free: 1,000 searches a month, about 100 trips. Without it, it plans from what it knows.</p>
+      <p>With Tavily the planner reads what drivers say on forums and travel sites, and road cards can sum it up (“What drivers say”). Free: 1,000 searches a month, about 100 trips. Without it, it plans from what it knows.</p>
       ${keyField("tavily", "Tavily key", s.tavily, "Paste your key (starts with tvly-)", "https://app.tavily.com/sign-in", "Get a free key")}
     </section>
 
