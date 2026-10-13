@@ -240,8 +240,11 @@ $("library").addEventListener("click", async (e) => {
   } else if (act === "delete") {
     const t = libState.mine.find((x) => x.id === id);
     if (!confirm(`Delete "${t?.name || "this trip"}"? This can't be undone.`)) return;
+    // the open trip: drop its pending save first, or that save brings it back right after the delete
+    const open = id === trip.id;
+    if (open) await dropPendingSave();
     await fetch(`/api/trips/${id}`, { method: "DELETE" });
-    if (id === trip.id) await newTrip();
+    if (open) await newTrip();
     libState.open = null;
     await loadLibrary(true);
   }

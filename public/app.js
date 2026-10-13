@@ -2001,6 +2001,14 @@ async function saveNow() {
   return saving;
 }
 
+// Forget the open trip's unsaved change (before deleting it) and wait for a save already on its way.
+async function dropPendingSave() {
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  await saving;
+  trip.saved = false;
+  stops.length = 0;
+}
 async function flushSave() {
   if (saveTimer) await saveNow();
   await saving;
