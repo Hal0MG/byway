@@ -455,6 +455,105 @@ const inBbox = (bbox, [lng, lat]) =>
 // Route between stops. coordinates: [[lng, lat], ...], mode: "scenic" | "fastest".
 // Uses GraphHopper when it is running and its map covers every stop,
 // otherwise OpenRouteService.
+// ---------- backup router: OSRM (OpenStreetMap's public routing servers, no key) ----------
+// Used when OpenRouteService can't answer (the free daily allowance ran out on 2026-10-12, or it's down). The public
+// servers are meant for light use (about one request a second, a real User-Agent), so requests wait their turn. OSRM has
+// one car profile (scenic and fastest differ only by the via points), no elevation and no road surface; freeways,
+// tolls and ferries come from each step's road classes. OSRM_URLS overrides the list.
+const OSRM = process.env.OSRM_URLS?.split(",").map((x) => x.trim()).filter(Boolean) || [
+  "https://routing.openstreetmap.de/routed-car",
+  "https://router.project-osrm.org",
+];
+let osrmChain = Promise.resolve();
+let osrmLast = 0;
+function routeOsrm(coords) {
+  const job = osrmChain.then(async () => {
+    const wait = 1100 - (Date.now() - osrmLast);
+    if (wait > 0) await new Promise((ok) => setTimeout(ok, wait));
+    osrmLast = Date.now();
+    let last = null;
+    for (const base of OSRM) {
+      try {
+        const url = `${base}/route/v1/driving/${coords.map((c) => `${(+c[0]).toFixed(6)},${(+c[1]).toFixed(6)}`).join(";")}` +
+          "?overview=false&steps=true&geometries=geojson";
+        const r = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(30000) });
+        const d = await r.json().catch(() => ({}));
+        if (d.code === "Ok" && d.routes?.length) return osrmResult(d.routes[0]);
+        last = new RouteError(d.message || `Backup routing failed (${r.status})`);
+        if (d.code === "NoRoute" || d.code === "NoSegment") break; // the other server has the same map
+      } catch (e) {
+        last = e;
+      }
+    }
+    throw last || new RouteError("Backup routing failed");
+  });
+  osrmChain = job.catch(() => {});
+  return job;
+}
+// OSRM's answer in the shape routeOrs returns. The line is built from the steps, so step and leg boundaries are
+// indexes into it, like ORS's way_points.
+function osrmResult(route) {
+  const coords = [];
+  const wp = [0];
+  const steps = [];
+  const cats = [];
+  for (const [li, leg] of route.legs.entries()) {
+    for (const st of leg.steps) {
+      const pts = st.geometry?.coordinates || [];
+      const a = Math.max(0, coords.length - 1);
+      for (const [k, c] of pts.entries()) {
+        const prev = coords[coords.length - 1];
+        if (k === 0 && prev && prev[0] === c[0] && prev[1] === c[1]) continue;
+        coords.push(c);
+      }
+      const b = coords.length - 1;
+      const classes = new Set((st.intersections || []).flatMap((i) => i.classes || []));
+      // the public servers often leave out the motorway class, so interstates and named freeways count too
+      const freeway = classes.has("motorway") || /^(I|M)[ -]?\d/.test(st.ref || "") || /\b(Freeway|Motorway|Autobahn|Autoroute|Autostrada)\b/i.test(st.name || "");
+      const bits = (freeway ? 1 : 0) | (classes.has("toll") ? 2 : 0) | (st.mode === "ferry" || classes.has("ferry") ? 8 : 0);
+      if (bits) cats.push([a, b, bits]);
+      const name = [...String(st.ref || "").split(";"), st.name].map((x) => String(x || "").trim()).filter(Boolean).join(", ");
+      steps.push({ distance: st.distance, duration: st.duration, name: name || "-", way_points: [a, b], leg: li });
+    }
+    wp.push(coords.length - 1);
+  }
+  const cum = [0];
+  for (let k = 1; k < coords.length; k++) cum.push(cum[k - 1] + haversine(coords[k - 1], coords[k]));
+  const catBetween = (a, b, bit) => {
+    let m = 0;
+    for (const [from, to, v] of cats) {
+      if (!(v & bit) || (bit === 2 && v & 8)) continue;
+      const lo = Math.max(a, from);
+      const hi = Math.min(b, to);
+      if (hi > lo) m += cum[hi] - cum[lo];
+    }
+    return m;
+  };
+  const end = coords.length - 1;
+  const legs = legsFromIndexes(coords, wp, route.distance, route.duration, null).map((l, i) => ({
+    ...l,
+    distance_m: route.legs[i]?.distance ?? l.distance_m,
+    duration_s: route.legs[i]?.duration ?? l.duration_s,
+    ascent_m: null,
+    descent_m: null,
+    roads: roadsFromSteps(steps.filter((x) => x.leg === i), catBetween),
+  }));
+  return {
+    engine: "osrm",
+    geometry: { type: "LineString", coordinates: coords },
+    distance_m: route.distance,
+    duration_s: route.duration,
+    ascent_m: null,
+    descent_m: null,
+    highway_m: catBetween(0, end, 1),
+    toll_m: catBetween(0, end, 2),
+    ferry_m: catBetween(0, end, 8),
+    unpaved_m: 0,
+    legs,
+    note: "Measured with the backup router (OpenStreetMap's OSRM) because OpenRouteService couldn't answer: no elevation or road surface this time.",
+  };
+}
+
 // ---------- route cache ----------
 // OpenRouteService's free plan has a daily allowance, and it ran out on 2026-10-12. The same request (same points, same
 // route type) comes back often: Undo, reopening and re-measuring a trip, retries, rebuilding ready-made trips, the
@@ -465,12 +564,15 @@ const ROUTE_DIR = path.resolve("data", "route-cache");
 const ROUTE_KEEP_MS = 30 * 86400000;
 const ROUTE_FAIL_MS = 86400000;
 const ROUTE_MAX_FILES = 400;
+// ORS's answers that mean "no road route between these points", not "can't answer right now"
+const ROUTE_IMPOSSIBLE = /could not be found|unable to find a route|could not find routable point|coordinate \d+/i;
 const routeKey = (coords, mode) =>
   createHash("sha1").update(JSON.stringify([mode, coords.map((c) => c.map((v) => +Number(v).toFixed(5)))])).digest("hex");
 async function routeCacheGet(key) {
   try {
     const e = JSON.parse(await fs.readFile(path.join(ROUTE_DIR, `${key}.json`), "utf8"));
-    return Date.now() - e.at < (e.error ? ROUTE_FAIL_MS : ROUTE_KEEP_MS) ? e : null;
+    // failures and backup-router routes only a day: ORS's own route (with elevation) is better once it answers again
+    return Date.now() - e.at < (e.error || e.result?.engine === "osrm" ? ROUTE_FAIL_MS : ROUTE_KEEP_MS) ? e : null;
   } catch {
     return null;
   }
@@ -523,13 +625,22 @@ app.post("/api/route", async (req, res) => {
   const hit = await routeCacheGet(key);
   if (hit) return hit.error ? res.status(422).json({ error: hit.error }) : res.json(note ? { ...hit.result, note } : hit.result);
   try {
-    const result = await withSnapping(coordinates, (c) => routeOrs(c, mode));
+    let result;
+    try {
+      result = await withSnapping(coordinates, (c) => routeOrs(c, mode));
+    } catch (e) {
+      // ORS out of allowance, rate limited, down or unreachable: the backup router. A real "can't route there" stays
+      // an error, so the app can drop or move that point.
+      if (e instanceof RouteError && ROUTE_IMPOSSIBLE.test(e.message)) throw e;
+      console.log(`ORS failed (${e.message}), using the backup router`);
+      result = await routeOsrm(coordinates);
+    }
     routeCacheSet(key, { result });
     if (note) result.note = note;
     res.json(result);
   } catch (e) {
     // only ORS's own "can't route that" answers are kept; not quota, timeouts or network failures
-    if (e instanceof RouteError && /could not be found|unable to find a route|could not find routable point|coordinate \d+/i.test(e.message)) {
+    if (e instanceof RouteError && ROUTE_IMPOSSIBLE.test(e.message)) {
       routeCacheSet(key, { error: e.message });
     }
     res.status(422).json({ error: e.message });
