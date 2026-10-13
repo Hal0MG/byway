@@ -41,6 +41,8 @@ function renderItinerary() {
   else renderTrip();
   if ($("rename-input")) growRename($("rename-input"));
   fitText(IT.querySelector(".day-index") || IT);
+  tidyAxes(IT);
+  spyDays();
   if (keep) {
     const el = $(keep.id);
     if (el) {
@@ -713,6 +715,12 @@ function dayTimeline(g, segs, placed, line, st, startName, endName, arr) {
   const zone = (tz) => (shift && tz && arr?.date ? ` <i>${esc(tzAbbr(tz, arr.date))}</i>` : "");
   let stopped = 0;
   const rows = events.map((e) => {
+    const r = rowFor(e);
+    // where the row is in the day (0 to 1), so the day chart and the row can point at each other
+    if (r.html) r.html = r.html.replace(/^<li class="/, `<li data-f="${Math.min(1, Math.max(0, e.f)).toFixed(4)}" class="`);
+    return r;
+  });
+  function rowFor(e) {
     const min = start + (st.dur / 60) * e.f + stopped;
     const t = clock(min);
     const at = coordAt(line, e.f);
@@ -743,7 +751,7 @@ function dayTimeline(g, segs, placed, line, st, startName, endName, arr) {
     const btn = s.info?.lat != null ? `data-act="spot" data-i="${e.i}"` : go;
     return { min, html: `<li class="tl-row spot"><button ${btn}><time>${t}</time><span class="tl-ico t-${esc(s.type)}">${icon(spotType(s.type).icon, 16)}</span>
       <span class="tl-text"><b>${esc(s.name)}</b><small>${esc(spotType(s.type).label)}${mins ? ` · stop ${fmtShort(mins * 60)}` : ""}${esc(where)}</small></span></button></li>` };
-  });
+  }
   // Golden hour and sunset, when they come before the day ends (times at the destination, shown in the start's zone)
   const endMin = rows.at(-1).min;
   const sunRow = (m, label, ico) =>
@@ -753,7 +761,8 @@ function dayTimeline(g, segs, placed, line, st, startName, endName, arr) {
       : null;
   const sun = [sunRow(arr?.goldenMin, "Golden hour", "sun"), sunRow(arr?.sunsetMin, "Sunset", "sunset")].filter(Boolean);
   const all = [...rows.slice(0, -1), ...sun].sort((a, b) => a.min - b.min).concat(rows.at(-1));
-  return `<ol class="timeline">${all.map((r) => r.html).join("")}</ol>`;
+  const go = `<span class="tl-go">${icon("map", 14)} Map</span>`;
+  return `<ol class="timeline">${all.map((r) => r.html.replace("</button></li>", `${go}</button></li>`)).join("")}</ol>`;
 }
 
 function renderDay(g, gi, groups, segs) {
@@ -774,29 +783,6 @@ function renderDay(g, gi, groups, segs) {
   const long = st && st.dur > longDayS();
   const arr = routes.scenic ? dayArrival(g, gi) : null;
   const seasonal = seasonalForDay(g, segs);
-
-  // Route strip: the day's roads to scale, featured roads lit, spots placed where they are.
-  const { parts, total } = stripSegments(segs);
-  const strip = segs.length
-    ? `<div class="strip" aria-hidden="true">
-        <div class="strip-bar">
-          ${parts
-            .map((s) => {
-              const w = (s.d / total) * 100;
-              const label = w > 10 ? (s.road ? refLabel(s.road.ref) || s.road.name : refLabel(s.ref)) : "";
-              return `<span class="sseg ${s.kind}" style="flex:${s.d}" title="${esc(s.road?.name || [refLabel(s.ref), s.name].filter(Boolean).join(" · "))}, ${fmtMi(s.d)}">${label ? `<em>${esc(label)}</em>` : ""}</span>`;
-            })
-            .join("")}
-        </div>
-        <div class="strip-spots">
-          ${placed
-            .filter((p) => p.pos)
-            .map((p) => `<span class="strip-spot t-${esc(p.s.type)}" style="left:${(p.pos.along * 100).toFixed(1)}%" title="${esc(p.s.name)}">${icon(spotType(p.s.type).icon, 12)}</span>`)
-            .join("")}
-        </div>
-        <div class="strip-ends"><span>${esc(startName)}</span><span>${esc(endName)}</span></div>
-      </div>`
-    : "";
 
   const timeline = routes.scenic
     ? dayTimeline(g, segs, placed, line, st, startName, endName, arr)
@@ -900,9 +886,9 @@ function renderDay(g, gi, groups, segs) {
     </div>
     ${meta?.summary ? `<p class="day-summary">${esc(meta.summary)}</p>` : ""}
     ${seasonBox}
-    ${strip}
-    ${routes.scenic ? profileHtml(g, segs, placed) : ""}
-    <h3>${icon("clock", 18)} The day</h3>${timeline}
+    <h3>${icon("clock", 18)} The day</h3>
+    ${routes.scenic ? driveChartHtml(g, segs, placed, st, startName, endName) : ""}
+    ${timeline}
     ${alongHtml(g)}
     ${roadCards ? `<h3>${icon("route", 18)} Featured roads</h3><div class="road-cards">${roadCards}</div>` : ""}
     ${spotCards ? `<h3>${icon("viewpoint", 18)} Stops along the way</h3><div class="spot-grid">${spotCards}</div>` : ""}
@@ -994,6 +980,23 @@ IT.addEventListener("keydown", (e) => {
     e.target.form.requestSubmit();
   }
 });
+
+// Light the rail's number for the day being read.
+function spyDays() {
+  let cur = null;
+  for (const d of IT.querySelectorAll(".day")) {
+    if (d.getBoundingClientRect().top < 200) cur = d.id.slice(4);
+    else break;
+  }
+  IT.querySelectorAll(".day-index a").forEach((a) => a.classList.toggle("on", a.dataset.day === (cur ?? "1")));
+}
+let spyRaf = 0;
+IT.addEventListener("scroll", () => {
+  if (!spyRaf) spyRaf = requestAnimationFrame(() => {
+    spyRaf = 0;
+    spyDays();
+  });
+}, { passive: true });
 
 // The trip's own name when it was renamed, else the planner's title.
 const tripTitle = () => (trip.customName ? trip.name : plan?.title || trip.name);

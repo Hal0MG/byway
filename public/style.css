@@ -294,27 +294,36 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
 
 /* Layout: day index + days */
 .it-layout {
-  display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 36px;
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 24px;
   max-width: var(--page); margin: 36px auto 0; padding: 0 16px 90px;
 }
+/* the days as a slim rail of numbers; hovering it shows the titles over the page; the day being read is lit */
 .day-index {
-  position: sticky; top: 16px; align-self: start;
-  display: flex; flex-direction: column; gap: 4px;
-  max-height: calc(100vh - 120px); overflow-y: auto;
+  position: sticky; top: 16px; z-index: 4; align-self: start; width: 40px;
+  display: flex; flex-direction: column; gap: 2px; padding: 2px;
+  max-height: calc(100vh - 120px); overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+  border-radius: 8px; transition: width 0.12s;
 }
 .day-index a {
-  display: flex; align-items: center; gap: 12px; padding: 9px 10px;
-  border-radius: 8px; text-decoration: none;
+  display: flex; align-items: center; gap: 10px; padding: 4px;
+  border-radius: 6px; text-decoration: none;
 }
 .day-index a:hover { background: var(--card); }
 .di-num {
-  flex: none; width: 30px; height: 30px; border-radius: 50%;
-  display: grid; place-items: center; font-size: 13px; font-weight: 700;
-  background: var(--card-strong);
+  flex: none; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 12px; font-weight: 700;
+  background: var(--card-strong); transition: background 0.15s, color 0.15s;
 }
-.di-text { min-width: 0; }
-.di-text b { font-size: 14px; line-height: 1.25; font-weight: 600; }
+.day-index a.on .di-num { background: var(--blue); color: #fff; }
+.di-text { display: none; min-width: 0; }
+.di-text b { font-size: 13px; line-height: 1.25; font-weight: 600; }
 .di-text small { font-size: 12px; color: var(--muted); }
+@media (hover: hover) and (min-width: 761px) {
+  .day-index:hover, .day-index:focus-within {
+    width: 290px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), var(--shadow);
+  }
+  .day-index:hover .di-text, .day-index:focus-within .di-text { display: block; }
+}
 
 /* Day */
 .day { margin-bottom: 72px; scroll-margin-top: 16px; }
@@ -350,26 +359,6 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
   margin: 34px 0 14px; font-size: 13px; font-weight: 800;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
 }
-
-/* Route strip graphic */
-.strip { margin: 26px 0 0; padding: 26px 18px 12px; background: var(--surface); border-radius: 12px; }
-.strip-bar { display: flex; gap: 3px; height: 12px; }
-.sseg { position: relative; min-width: 2px; border-radius: 4px; background: var(--seg-road); }
-.sseg.freeway { background: var(--seg-freeway); }
-.sseg.featured { background: var(--blue); }
-.sseg em {
-  position: absolute; bottom: 17px; left: 50%; transform: translateX(-50%);
-  font-style: normal; font-size: 11px; font-weight: 700; white-space: nowrap; color: var(--muted);
-}
-.sseg.featured em { color: var(--teal); }
-.strip-spots { position: relative; height: 30px; margin-top: 6px; }
-.strip-spot {
-  position: absolute; top: 0; transform: translateX(-50%);
-  width: 24px; height: 24px; border-radius: 50%;
-  display: grid; place-items: center;
-  background: var(--surface-2); border: 2px solid currentColor;
-}
-.strip-ends { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--muted); }
 
 /* Spot type colors */
 .t-viewpoint { color: var(--blue); }
@@ -544,26 +533,29 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
 /* Day timeline */
 .timeline { list-style: none; margin: 0; padding: 0; position: relative; }
 .timeline::before {
-  /* runs through the centres of the icons: 12 padding + 76 time + 14 gap + 20 half icon - 1 */
-  content: ""; position: absolute; left: 121px; top: 22px; bottom: 22px; width: 2px; background: var(--line);
+  /* runs through the centres of the icons: 10 padding + 72 time + 12 gap + 16 half icon - 1 */
+  content: ""; position: absolute; left: 109px; top: 20px; bottom: 20px; width: 2px; background: var(--line);
 }
 .tl-row button {
-  position: relative; width: 100%; display: flex; align-items: center; gap: 14px;
-  padding: 8px 12px; border-radius: 8px; text-align: left;
+  position: relative; width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 6px 10px; border-radius: 6px; text-align: left;
 }
-.tl-row button:hover { background: var(--card); }
-.tl-row time { flex: none; width: 76px; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+.tl-row button:hover, .tl-row.tl-hot button { background: var(--card); }
+.tl-row time { flex: none; width: 72px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
 .tl-ico {
-  flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
   background: var(--surface-2); border: 2px solid var(--line);
 }
 .tl-row.spot .tl-ico { border-color: currentColor; }
 .tl-row .shield { position: relative; z-index: 1; }
 .tl-row.road button { background: rgba(10, 132, 255, 0.08); }
+.tl-row.road button:hover, .tl-row.road.tl-hot button { background: rgba(10, 132, 255, 0.16); }
 .tl-row.end .tl-ico { background: var(--blue); border-color: var(--blue); color: #fff; }
 .tl-text { min-width: 0; }
-.tl-text b { display: block; font-size: 16px; font-weight: 600; }
-.tl-text small { display: block; font-size: 13px; color: var(--muted); }
+.tl-text b { display: block; font-size: 15px; font-weight: 600; }
+.tl-go { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--blue); opacity: 0; transition: opacity 0.12s; }
+.tl-row button:hover .tl-go, .tl-row button:focus-visible .tl-go { opacity: 1; }
+.tl-text small { display: block; font-size: 12px; color: var(--muted); }
 
 /* Web sources the planner read */
 .sources h3 {
@@ -983,26 +975,48 @@ body[data-view="home"] #map {
 .day-stats .wx em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 
 /* elevation profile */
-.profile { margin: 16px 0 0; padding: 14px 16px 10px; background: var(--surface); border-radius: 12px; cursor: crosshair; }
-.profile figcaption { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.profile { margin: 16px 0 0; padding: 12px 14px 8px; background: var(--surface); border-radius: 8px; cursor: crosshair; }
+.profile figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .profile figcaption span { display: inline-flex; align-items: center; gap: 5px; }
 .profile figcaption span:first-child { color: var(--text); }
 .pf-box { position: relative; }
-.pf-box svg { display: block; width: 100%; height: 150px; overflow: visible; }
-.pf-line { fill: none; stroke: var(--teal); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.pf-box > svg { display: block; width: 100%; height: var(--h, 150px); overflow: visible; }
+.pf-line { fill: none; stroke: var(--blue); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.pf-fill { fill: rgba(10, 132, 255, 0.14); }
 .pf-band { fill: rgba(10, 132, 255, 0.13); }
 .pf-spot {
   position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%;
   background: var(--surface); border: 2.5px solid currentColor; pointer-events: none;
 }
 .pf-cursor { stroke: var(--text); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0; }
-.profile:hover .pf-cursor { opacity: 0.6; }
-.pf-label { position: absolute; top: -2px; transform: translateX(-50%); font-size: 11px; font-weight: 800; color: var(--teal); pointer-events: none; }
+.profile:hover .pf-cursor, .profile.cursoring .pf-cursor { opacity: 0.6; }
+.pf-label { position: absolute; top: -2px; transform: translateX(-50%); font-size: 11px; font-weight: 700; color: var(--muted); pointer-events: none; }
 .pf-tip {
-  position: absolute; bottom: calc(100% - 6px); transform: translateX(-50%); padding: 4px 8px; border-radius: 5px;
-  background: var(--pill-bg); color: var(--pill-text); font-size: 12px; font-weight: 700; white-space: nowrap; pointer-events: none;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  position: absolute; bottom: calc(100% + 4px); transform: translateX(-50%); padding: 4px 8px; border-radius: 4px;
+  background: var(--pill-bg); color: var(--pill-text); font-size: 12px; font-weight: 600; white-space: nowrap; pointer-events: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); z-index: 2;
 }
+/* the day's drive chart */
+.profile.drive { margin: 0 0 10px; }
+.dc-key { margin-left: auto; font-size: 11px; font-weight: 600; gap: 5px !important; }
+.dc-key .dc-kind { position: static; display: inline-block; width: 12px; height: 4px; margin-left: 6px; }
+.dc-band { position: absolute; top: 0; bottom: 0; background: rgba(10, 132, 255, 0.12); border-left: 1px solid rgba(10, 132, 255, 0.35); pointer-events: none; }
+.dc-band em { position: absolute; bottom: 3px; left: 5px; font-style: normal; font-size: 11px; font-weight: 700; color: var(--blue); white-space: nowrap; }
+.dc-spot {
+  position: absolute; z-index: 1; width: 18px; height: 18px; transform: translate(-50%, -50%); border-radius: 50%;
+  display: grid; place-items: center; background: var(--surface); border: 1.5px solid currentColor; pointer-events: none;
+}
+.dc-kinds { position: relative; height: 4px; margin-top: 4px; }
+.dc-kind { position: absolute; top: 0; height: 4px; background: var(--seg-road); }
+.dc-kind.featured { background: var(--blue); }
+.dc-kind.freeway { background: var(--seg-freeway); }
+.dc-kind.ferry { background: var(--teal); }
+.dc-axis { position: relative; height: 18px; margin-top: 4px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dc-axis span { position: absolute; top: 0; white-space: nowrap; }
+.dc-tick { transform: translateX(-50%); }
+.dc-tick::before { content: ""; position: absolute; left: 50%; top: -6px; width: 1px; height: 4px; background: var(--muted); opacity: 0.6; }
+.dc-end b { color: var(--text); font-weight: 600; }
+.dc-end i { font-style: normal; }
 .pf-marker { width: 16px; height: 16px; border-radius: 50%; background: var(--teal); border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); }
 #map-profile {
   position: fixed; z-index: 6; left: 364px; right: 60px; bottom: 12px;
@@ -1012,7 +1026,7 @@ body[data-view="home"] #map {
 }
 body[data-view="itinerary"] #map-profile { display: none; }
 #map-profile .profile { margin: 0; padding: 0; background: none; }
-#map-profile .pf-box svg { height: 110px; }
+#map-profile .pf-box > svg { height: 110px; }
 #map-profile figcaption { padding-right: 40px; }
 .mp-close { position: absolute; top: 6px; right: 8px; width: 32px; height: 32px; }
 
@@ -1049,10 +1063,9 @@ body[data-view="itinerary"] #map-profile { display: none; }
 .tl-row.ferry { position: relative; }
 .tl-row.ferry .tl-ico { color: var(--teal); border-color: var(--teal); }
 .tl-link { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 13px; font-weight: 700; color: var(--blue); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
-.tl-static { position: relative; display: flex; align-items: center; gap: 14px; padding: 4px 12px; }
-.tl-row.sun .tl-ico { width: 40px; height: 30px; border: 0; background: none; color: var(--gold); }
+.tl-static { position: relative; display: flex; align-items: center; gap: 12px; padding: 3px 10px; }
+.tl-row.sun .tl-ico { width: 32px; height: 26px; border: 0; background: none; color: var(--gold); }
 .tl-row.sun b { font-size: 14px; font-weight: 600; color: var(--muted); }
-.sseg.ferry { background: repeating-linear-gradient(90deg, var(--teal) 0 6px, transparent 6px 10px); }
 
 /* photo galleries */
 .road-img-btn { position: relative; display: block; padding: 0; width: 100%; align-self: start; }
@@ -1194,14 +1207,17 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
 }
 
 /* ---------- Phones ---------- */
-@media (max-width: 960px) {
+@media (max-width: 760px) {
   .it-layout { grid-template-columns: 1fr; }
   .day-index {
-    position: static; flex-direction: row; overflow-x: auto; max-height: none;
-    padding-bottom: 4px; margin: 0 -16px; padding: 0 16px 4px;
+    position: static; width: auto; flex-direction: row; overflow-x: auto; max-height: none;
+    margin: 0 -16px; padding: 0 16px 4px;
   }
-  .day-index a { flex: none; max-width: 230px; background: var(--surface); }
+  .day-index a { flex: none; max-width: 230px; padding: 6px 10px 6px 6px; background: var(--surface); }
+  .day-index .di-text { display: block; }
   .day-index .di-text small { display: none; }
+}
+@media (max-width: 960px) {
   .stats { grid-template-columns: repeat(3, 1fr); }
   .road-card { grid-template-columns: 1fr; }
   .request-card { grid-template-columns: 1fr; }
@@ -1223,6 +1239,9 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .hero-inner { padding: 22px 18px; }
   .trip-hero h1, .rename-input { font-size: 30px; letter-spacing: -0.025em; }
   .trip-hero .lede { font-size: 15px; }
+  .day-summary { font-size: 15px; line-height: 1.6; }
+  .dc-key { display: none !important; }
+  .tl-text b { font-size: 14px; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .stat { padding: 14px 16px; }
   .stat-value { font-size: 28px; }
@@ -1244,7 +1263,7 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   #routes-card .credit { display: none; }
   .maplibregl-ctrl-top-right { top: 70px; }
   #map-profile { display: none !important; }
-  .tl-link { position: static; transform: none; display: inline-flex; margin: 0 0 6px 102px; }
+  .tl-link { position: static; transform: none; display: inline-flex; margin: 0 0 6px 94px; }
   .opt-row { gap: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {

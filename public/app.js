@@ -87,7 +87,10 @@ function fitText(root = document) {
 let fitTimer = null;
 addEventListener("resize", () => {
   clearTimeout(fitTimer);
-  fitTimer = setTimeout(() => fitText(), 150);
+  fitTimer = setTimeout(() => {
+    fitText();
+    if (typeof tidyAxes === "function") tidyAxes();
+  }, 150);
 });
 
 let toastTimer = null;
@@ -151,7 +154,11 @@ function setView(v) {
     map.resize();
     declutter();
   });
-  requestAnimationFrame(() => fitText()); // titles drawn while their view was hidden
+  requestAnimationFrame(() => {
+    // titles and chart labels drawn while their view was hidden
+    fitText();
+    if (typeof tidyAxes === "function") tidyAxes();
+  });
 }
 document.querySelectorAll(".seg button").forEach((b) => (b.onclick = () => setView(b.dataset.view)));
 $("brand").onclick = () => setView("home");

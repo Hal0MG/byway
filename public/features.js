@@ -601,9 +601,8 @@ function profileHtml(g, segs, placed, { id = `p${g.day}`, height = 150, title = 
     </figcaption>
     <div class="pf-box">
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Elevation profile, ${fmtElev(cs.min)} to ${fmtElev(cs.max)}">
-        <defs><linearGradient id="pf-g-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#30d1c6" stop-opacity=".55"/><stop offset="1" stop-color="#0a84ff" stop-opacity=".04"/></linearGradient></defs>
         ${bands}
-        <polygon points="0,${H} ${pts} ${W},${H}" fill="url(#pf-g-${id})"/>
+        <polygon points="0,${H} ${pts} ${W},${H}" class="pf-fill"/>
         <polyline points="${pts}" class="pf-line"/>
         <line class="pf-cursor" x1="-10" x2="-10" y1="0" y2="${H}"/>
       </svg>
@@ -613,22 +612,149 @@ function profileHtml(g, segs, placed, { id = `p${g.day}`, height = 150, title = 
     </div>
   </figure>`;
 }
-// Hover on any profile: a cursor line, the height and distance, and a marker on the map.
+// The day's drive in one chart (replaces the road strip and the separate elevation chart): the climb when the route
+// has heights, featured roads shaded and named, the road types along the bottom, stops marked, the clock underneath.
+// Hovering says where and when and lights that row of the timeline; hovering a timeline row moves the cursor here;
+// clicking opens the map there.
+function driveChartHtml(g, segs, placed, st, startName, endName) {
+  const line = st && routes.scenic ? dayLine(g.day) : null;
+  if (!line || line.coords.length < 2) return "";
+  const legs = legsByEnd(routes.scenic);
+  const base = legs.get(g.items.find((i) => legs.get(i)))?.from ?? 0;
+  const coords = routes.scenic.geometry.coordinates;
+  const total = line.cum.at(-1) || 1;
+  const step = Math.max(50, total / 400);
+  const sm = elevSamples(coords, base, base + line.coords.length - 1, step, Math.max(150, step));
+  if (sm.d.length < 3) return "";
+  const elev = hasElevation() && Math.max(...sm.e) > Math.min(...sm.e);
+  const cs = elev ? memo(`dayclimb:${g.day}`, () => climbStats(elevSamples(coords, base, base + line.coords.length - 1, 100, 200))) : null;
+  // the clock: driving time spread over the distance, plus the stops' minutes once they're passed
+  const start = startMinutes();
+  const stopsAt = (placed || []).filter((p) => p.pos).map((p) => ({ f: p.pos.along, min: Number(p.s.minutes) || 0 }));
+  const timeAt = (f) => start + (st.dur / 60) * f + stopsAt.reduce((a, x) => a + (x.f < f ? x.min : 0), 0);
+  const fAt = (m) => {
+    let lo = 0, hi = 1;
+    for (let k = 0; k < 24; k++) {
+      const mid = (lo + hi) / 2;
+      if (timeAt(mid) < m) lo = mid;
+      else hi = mid;
+    }
+    return hi;
+  };
+  const endMin = timeAt(1);
+  const every = endMin - start > 9 * 60 ? 120 : endMin - start > 150 ? 60 : 30;
+  const ticks = [];
+  for (let m = Math.floor(start / every) * every + every; m < endMin - every * 0.35; m += every) {
+    const f = fAt(m);
+    if (f > 0.06) ticks.push({ f, label: clock(m).replace(":00 ", " ") });
+  }
+  // featured roads by position on the day's line
+  const bands = [];
+  for (const sg of segs || []) {
+    if (!sg.road || sg.from == null) continue;
+    const a = line.cum[clamp(sg.from - base, 0, line.cum.length - 1)] / total;
+    const b = line.cum[clamp(sg.to - base, 0, line.cum.length - 1)] / total;
+    const last = bands.at(-1);
+    if (last && last.road === sg.road && a - last.b < 0.02) last.b = b;
+    else bands.push({ road: sg.road, a, b });
+  }
+  const id = `d${g.day}`;
+  PROFILES.set(id, { sm, total, day: g.day, timeAt, bands });
+  const W = 1000;
+  const H = elev ? 110 : 34;
+  const lo = elev ? Math.min(...sm.e) - (cs.max - cs.min) * 0.15 - 20 : -1;
+  const hi = elev ? Math.max(...sm.e) + (cs.max - cs.min) * 0.12 + 20 : 1;
+  const X = (d) => (d / total) * W;
+  const Y = (e) => H - ((e - lo) / (hi - lo)) * (H - 14) - 2;
+  const pts = sm.d.map((d, i) => `${X(d).toFixed(1)},${(elev ? Y(sm.e[i]) : H / 2).toFixed(1)}`).join(" ");
+  const pct = (f) => `${(f * 100).toFixed(2)}%`;
+  const yAt = (f) => {
+    if (!elev) return 50;
+    const k = sm.d.findIndex((d) => d >= f * total);
+    return (Y(sm.e[k < 0 ? sm.e.length - 1 : k]) / H) * 100;
+  };
+  const { parts, total: partsTotal } = stripSegments(segs || []);
+  let acc = 0;
+  const kinds = parts
+    .map((p) => {
+      const html = `<i class="dc-kind ${p.kind}" style="left:${pct(acc / partsTotal)};width:${pct(p.d / partsTotal)}"></i>`;
+      acc += p.d;
+      return html;
+    })
+    .join("");
+  const hiIdx = elev ? sm.e.indexOf(Math.max(...sm.e)) : -1;
+  return `<figure class="profile drive" data-profile="${id}">
+    <figcaption>
+      <span>${icon("route", 16)} ${fmtShort(st.dur)} · ${fmtMi(st.dist)}</span>
+      ${elev ? `<span>${icon("trend-up", 14)} ${fmtElev(cs.up)} up</span><span>${icon("trend-down", 14)} ${fmtElev(cs.down)} down</span>` : `<span class="fine">No heights for this route</span>`}
+      <span class="dc-key"><i class="dc-kind featured"></i> featured <i class="dc-kind freeway"></i> freeway <i class="dc-kind road"></i> other roads</span>
+    </figcaption>
+    <div class="pf-box" style="--h:${H}px">
+      ${bands.map((b) => `<span class="dc-band" style="left:${pct(b.a)};width:${pct(Math.max(0.004, b.b - b.a))}" title="${esc(b.road.name)}">${b.b - b.a > 0.09 ? `<em>${esc(refLabel(b.road.ref) || b.road.name)}</em>` : ""}</span>`).join("")}
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="The day's drive${elev ? `, ${fmtElev(cs.min)} to ${fmtElev(cs.max)}` : ""}">
+        ${elev ? `<polygon points="0,${H} ${pts} ${W},${H}" class="pf-fill"/>` : ""}
+        <polyline points="${pts}" class="pf-line"/>
+        <line class="pf-cursor" x1="-10" x2="-10" y1="0" y2="${H}"/>
+      </svg>
+      ${(placed || []).filter((p) => p.pos).map((p) => `<span class="dc-spot t-${esc(p.s.type)}" style="left:${pct(p.pos.along)};top:${yAt(p.pos.along).toFixed(1)}%" title="${esc(p.s.name)}">${icon(spotType(p.s.type).icon, 11)}</span>`).join("")}
+      ${elev ? `<span class="pf-label hi" style="left:${pct(sm.d[hiIdx] / total)}">${fmtElev(cs.max)}</span>` : ""}
+      <span class="pf-tip" hidden></span>
+    </div>
+    <div class="dc-kinds">${kinds}</div>
+    <div class="dc-axis">
+      <span class="dc-end" style="left:0"><b>${clock(start)}</b><i> ${esc(startName)}</i></span>
+      ${ticks.map((t) => `<span class="dc-tick" style="left:${pct(t.f)}">${esc(t.label)}</span>`).join("")}
+      <span class="dc-end right" style="right:0"><i>${esc(endName)} </i><b>${clock(endMin)}</b></span>
+    </div>
+  </figure>`;
+}
+
+// Labels under the drive charts that would touch: town names go first, then the hour ticks nearest the ends.
+function tidyAxes(root = document) {
+  for (const ax of root.querySelectorAll(".dc-axis")) {
+    if (!ax.clientWidth) continue;
+    const spans = [...ax.querySelectorAll("span, i")];
+    spans.forEach((x) => (x.style.visibility = ""));
+    const [a, b] = ax.querySelectorAll(".dc-end");
+    if (a.getBoundingClientRect().right + 10 > b.getBoundingClientRect().left) ax.querySelectorAll(".dc-end i").forEach((x) => (x.style.visibility = "hidden"));
+    // the ends' times always stay; a name that's hidden doesn't take room
+    const taken = [a, b].map((e) => {
+      const r = e.querySelector("b").getBoundingClientRect();
+      const n = e.querySelector("i");
+      const nr = n.style.visibility ? r : n.getBoundingClientRect();
+      return { left: Math.min(r.left, nr.left), right: Math.max(r.right, nr.right) };
+    });
+    for (const t of ax.querySelectorAll(".dc-tick")) {
+      const r = t.getBoundingClientRect();
+      if (taken.some((k) => r.left < k.right + 8 && r.right > k.left - 8)) t.style.visibility = "hidden";
+      else taken.push(r);
+    }
+  }
+}
+
+// The cursor on a profile at fraction f of the day: a line, a tip (height, distance; time and road on a drive chart),
+// a marker on the map in the map view, and on a drive chart the timeline row for that moment lit.
 let profileMarker = null;
-function profileHover(fig, clientX) {
+function profileAt(fig, f) {
   const p = PROFILES.get(fig.dataset.profile);
   if (!p) return;
-  const box = fig.querySelector(".pf-box").getBoundingClientRect();
-  const f = clamp((clientX - box.left) / box.width, 0, 1);
   const target = f * p.total;
   let i = p.sm.d.findIndex((d) => d >= target);
   if (i < 0) i = p.sm.d.length - 1;
+  fig.classList.add("cursoring");
   fig.querySelector(".pf-cursor").setAttribute("x1", String(f * 1000));
   fig.querySelector(".pf-cursor").setAttribute("x2", String(f * 1000));
   const tip = fig.querySelector(".pf-tip");
   tip.hidden = false;
-  tip.style.left = `${(f * 100).toFixed(1)}%`;
-  tip.textContent = `${fmtElev(p.sm.e[i])} · ${fmtMi(p.sm.d[i])}`;
+  tip.style.left = `${(clamp(f, 0.06, 0.94) * 100).toFixed(1)}%`;
+  const elev = hasElevation() && p.sm.e[i] ? fmtElev(p.sm.e[i]) : "";
+  if (p.timeAt) {
+    const road = p.bands.find((b) => f >= b.a && f <= b.b)?.road;
+    tip.textContent = [clock(p.timeAt(f)), road?.name, elev, `${fmtMi(p.sm.d[i])} in`].filter(Boolean).join(" · ");
+    const rows = [...(fig.closest(".day")?.querySelectorAll(".tl-row[data-f]") || [])];
+    const at = rows.filter((r) => Number(r.dataset.f) <= f + 0.004).at(-1);
+    rows.forEach((r) => r.classList.toggle("tl-hot", r === at));
+  } else tip.textContent = [elev, fmtMi(p.sm.d[i])].filter(Boolean).join(" · ");
   const c = routes.scenic?.geometry.coordinates[p.sm.k[i]];
   if (c && document.body.dataset.view === "map") {
     if (!profileMarker) {
@@ -639,25 +765,44 @@ function profileHover(fig, clientX) {
     profileMarker.setLngLat([c[0], c[1]]).addTo(map);
   }
 }
+function profileOff(fig) {
+  fig.classList.remove("cursoring");
+  fig.querySelector(".pf-tip").hidden = true;
+  fig.closest(".day")?.querySelectorAll(".tl-hot").forEach((r) => r.classList.remove("tl-hot"));
+  profileMarker?.remove();
+}
+const profileF = (fig, clientX) => {
+  const box = fig.querySelector(".pf-box").getBoundingClientRect();
+  return clamp((clientX - box.left) / box.width, 0, 1);
+};
 document.addEventListener("pointermove", (e) => {
   const fig = e.target.closest?.(".profile");
-  if (fig) profileHover(fig, e.clientX);
+  if (fig) profileAt(fig, profileF(fig, e.clientX));
 });
 document.addEventListener("pointerleave", (e) => {
   const fig = e.target.closest?.(".profile");
-  if (!fig) return;
-  fig.querySelector(".pf-tip").hidden = true;
-  profileMarker?.remove();
+  if (fig && e.target === fig) profileOff(fig);
 }, true);
+// a timeline row moves the day chart's cursor to its moment
+document.addEventListener("pointerover", (e) => {
+  const row = e.target.closest?.(".tl-row[data-f]");
+  const fig = row?.closest(".day")?.querySelector(".profile.drive");
+  if (fig) profileAt(fig, Number(row.dataset.f));
+});
+document.addEventListener("pointerout", (e) => {
+  const row = e.target.closest?.(".tl-row[data-f]");
+  if (!row || row.contains(e.relatedTarget)) return;
+  const fig = row.closest(".day")?.querySelector(".profile.drive");
+  if (fig) profileOff(fig);
+});
 document.addEventListener("click", (e) => {
   const fig = e.target.closest?.(".profile");
   if (!fig || document.body.dataset.view !== "itinerary") return;
   // clicking a profile in the itinerary opens that spot on the map
   const p = PROFILES.get(fig.dataset.profile);
-  const box = fig.querySelector(".pf-box").getBoundingClientRect();
-  const f = clamp((e.clientX - box.left) / box.width, 0, 1);
-  let i = p?.sm.d.findIndex((d) => d >= f * p.total) ?? -1;
   if (!p) return;
+  const f = profileF(fig, e.clientX);
+  let i = p.sm.d.findIndex((d) => d >= f * p.total);
   if (i < 0) i = p.sm.d.length - 1;
   const c = routes.scenic?.geometry.coordinates[p.sm.k[i]];
   if (c) showPointOnMap(c[0], c[1], p.day);
