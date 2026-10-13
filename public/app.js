@@ -57,6 +57,38 @@ const fmtTemp = (c) => (c == null ? "" : TEMP_F ? `${Math.round(c * 1.8 + 32)}°
 const esc = (t) =>
   String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
+// Titles marked data-fit="<smallest px>" shrink to the largest size (half pixels) that fits their lines (CSS --lines,
+// 2 by default). One still too long at the smallest size gets one more line at that size, and only past that the
+// ellipsis. All titles are searched together, one layout per pass.
+const overflows = (el) => el.scrollHeight > el.clientHeight + 1;
+function fitText(root = document) {
+  const els = [...root.querySelectorAll("[data-fit]")].filter((el) => el.clientWidth);
+  for (const el of els) {
+    el.style.removeProperty("font-size");
+    el.style.removeProperty("--lines");
+  }
+  let todo = els.filter(overflows).map((el) => ({ el, lo: Number(el.dataset.fit) || 12, hi: parseFloat(getComputedStyle(el).fontSize) }));
+  for (const t of todo) t.el.style.fontSize = `${t.lo}px`;
+  const longer = todo.filter((t) => overflows(t.el));
+  todo = todo.filter((t) => !longer.includes(t));
+  while (todo.length) {
+    todo = todo.filter((t) => {
+      if (t.hi - t.lo > 0.5) return true;
+      t.el.style.fontSize = `${t.lo}px`;
+      return false;
+    });
+    for (const t of todo) t.el.style.fontSize = `${(t.mid = Math.round(t.lo + t.hi) / 2)}px`;
+    for (const t of todo) t[overflows(t.el) ? "hi" : "lo"] = t.mid;
+  }
+  const lines = longer.map((t) => (parseInt(getComputedStyle(t.el).getPropertyValue("--lines")) || 2) + 1);
+  longer.forEach((t, i) => t.el.style.setProperty("--lines", lines[i]));
+}
+let fitTimer = null;
+addEventListener("resize", () => {
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(() => fitText(), 150);
+});
+
 let toastTimer = null;
 function setStatus(msg) {
   $("status").textContent = msg || "";
@@ -118,6 +150,7 @@ function setView(v) {
     map.resize();
     declutter();
   });
+  requestAnimationFrame(() => fitText()); // titles drawn while their view was hidden
 }
 document.querySelectorAll(".seg button").forEach((b) => (b.onclick = () => setView(b.dataset.view)));
 $("brand").onclick = () => setView("home");
@@ -633,17 +666,21 @@ function move(i, d) {
 }
 
 function fitStops() {
-  if (!stops.length) return;
+  // On the globe (home) leaving home fits the stops; MapLibre's globe throws when the padding is large (phones)
+  if (!stops.length || document.body.dataset.view === "home") return;
   const b = new maplibregl.LngLatBounds();
   stops.forEach((s) => b.extend([s.lng, s.lat]));
-  map.fitBounds(b, { padding: pad(), maxZoom: 10, duration: 0 });
+  try {
+    map.fitBounds(b, { padding: pad(), maxZoom: 10, duration: 0 });
+  } catch {
+    try { map.fitBounds(b, { padding: 20, maxZoom: 10, duration: 0 }); } catch {}
+  }
 }
 
 const shortName = (n) => n.split(",")[0].trim();
 function autoName() {
   if (trip.customName || stops.length < 2) return;
   trip.name = plan?.title || `${shortName(stops[0].name)} to ${shortName(stops[stops.length - 1].name)}`;
-  $("trip-name").value = trip.name;
 }
 
 // Called whenever the list of stops changes by hand.
@@ -1123,7 +1160,6 @@ async function planTrip(prompt, settings) {
   if (stops.length || plan) {
     resetTrip();
     trip = { id: newId(), name: DEFAULT_NAME, customName: false, saved: false, prompt, edits: [], settings: {}, versions: [], notes: null };
-    $("trip-name").value = trip.name;
   }
   trip.prompt = prompt;
   if (settings) {
@@ -1877,7 +1913,6 @@ async function newTrip() {
   resetTrip();
   progress = null;
   trip = { id: newId(), name: DEFAULT_NAME, customName: false, saved: false, prompt: "", edits: [], settings: {}, versions: [], notes: null };
-  $("trip-name").value = trip.name;
   renderStops();
   renderItinerary();
 }
@@ -1894,7 +1929,6 @@ async function openTrip(id) {
     prompt: t.prompt || "", edits: t.edits || [], settings: t.settings || {}, versions: t.versions || [],
     notes: t.notes || null, preset: !!t.preset,
   };
-  $("trip-name").value = t.name;
   t.stops.forEach((s) => {
     const p = { kind: "stop", road: "", ...s };
     // Trips from before 1.5 kept the day inside the note, like "Day 2: ..."
@@ -1930,14 +1964,16 @@ async function openTrip(id) {
   $("save-state").textContent = "Saved";
 }
 
-$("trip-name").addEventListener("input", () => {
-  trip.name = $("trip-name").value.trim() || DEFAULT_NAME;
-  trip.customName = true;
+// Renaming happens on the trip's title in the itinerary (itinerary.js); the top bar keeps the app's name.
+function renameTrip(name) {
+  name = String(name || "").trim().slice(0, 120);
+  if (!name || name === trip.name) return;
+  trip.name = name;
+  trip.customName = name !== plan?.title;
   scheduleSave();
-});
-$("trip-name").addEventListener("keydown", (e) => e.key === "Enter" && e.target.blur());
+}
 
-// ---------- trips sheet ----------
+// ---------- trips ----------
 
 function fmtWhen(iso) {
   if (!iso) return "";
@@ -1949,75 +1985,10 @@ function fmtWhen(iso) {
   return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
 }
 
-async function renderTrips() {
-  const ul = $("trips");
-  ul.innerHTML = "";
-  let list = [];
-  try {
-    const r = await fetch("/api/trips");
-    list = (await r.json()).trips || [];
-  } catch {
-    $("trips-empty").textContent = "Could not load trips. Is the server running?";
-    $("trips-empty").hidden = false;
-    return;
-  }
-  $("trips-empty").hidden = list.length > 0;
-  for (const t of list) {
-    const li = document.createElement("li");
-    li.className = "trip" + (t.id === trip.id ? " current" : "");
-
-    const open = document.createElement("button");
-    open.className = "trip-open";
-    const b = document.createElement("b");
-    b.textContent = t.name;
-    const small = document.createElement("small");
-    small.textContent = `${t.stopCount} ${t.stopCount === 1 ? "point" : "points"}, edited ${fmtWhen(t.updatedAt)}`;
-    open.append(b, small);
-    open.onclick = async () => {
-      try {
-        await openTrip(t.id);
-        closeTrips();
-      } catch (e) {
-        $("trips-empty").textContent = e.message;
-        $("trips-empty").hidden = false;
-      }
-    };
-
-    const del = document.createElement("button");
-    del.className = "trip-delete";
-    del.innerHTML = icon("close", 16);
-    del.setAttribute("aria-label", `Delete ${t.name}`);
-    del.onclick = async () => {
-      if (!confirm(`Delete "${t.name}"? This can't be undone.`)) return;
-      await fetch(`/api/trips/${t.id}`, { method: "DELETE" });
-      if (t.id === trip.id) {
-        clearTimeout(saveTimer);
-        saveTimer = null;
-        await goHome();
-      }
-      renderTrips();
-    };
-
-    li.append(open, del);
-    ul.appendChild(li);
-  }
-}
-
-function closeTrips() {
-  $("trips-sheet").hidden = true;
-  $("trips-btn").focus();
-}
 // the list button (and "Your trips" on Home) opens the Trips tab
 $("trips-btn").onclick = async () => {
   await flushSave();
   setView("trips");
-};
-$("trips-done").onclick = closeTrips;
-$("trips-sheet").addEventListener("click", (e) => e.target === $("trips-sheet") && closeTrips());
-addEventListener("keydown", (e) => e.key === "Escape" && !$("trips-sheet").hidden && closeTrips());
-$("new-trip").onclick = async () => {
-  await goHome();
-  closeTrips();
 };
 
 // ---------- GPX export ----------

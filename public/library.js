@@ -85,7 +85,7 @@ function libCard(t) {
       ${sketchSvg(t) ? `<span class="lib-sketch-wrap">${sketchSvg(t)}</span>` : ""}</span>
     <span class="lib-body">
       <small class="lib-region">${esc(regionName(t) || "")}${t.loop ? " · Loop" : ""}</small>
-      <b>${esc(t.name)}</b>
+      <b data-fit="14">${esc(t.name)}</b>
       <span class="lib-facts">${t.days} day${t.days === 1 ? "" : "s"}${t.distance_m ? ` · ${libDist(t, t.distance_m)}` : ""}${t.duration_s ? ` · ${fmtShort(t.duration_s)} driving` : ""}</span>
       ${roads.length ? `<span class="lib-roads">${roads.map((r) => `<span>${esc(r.name)}</span>`).join("")}${t.roads.length > 3 ? `<span>+${t.roads.length - 3}</span>` : ""}</span>` : ""}
     </span>
@@ -132,7 +132,7 @@ function libPreviewHtml(t) {
   const fmtDay = (d) => `${d.secs ? fmtShort(d.secs) : ""}${d.meters ? ` · ${libDist(t, d.meters)}` : ""}`;
   const stat = (v, l) => (v ? `<div><b>${v}</b><small>${l}</small></div>` : "");
   return `<button class="icon-btn lib-close" data-lib="close" aria-label="Close">${icon("close", 20)}</button>
-    <div class="lib-photos">${(t.images?.length ? t.images : [t.image]).filter(Boolean).slice(0, 4).map((src) => `<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">`).join("") || `<div class="lib-ph"></div>`}</div>
+    <div class="lib-photos">${(t.images?.length ? t.images : [t.image]).filter(Boolean).slice(0, 3).map((src) => `<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">`).join("") || `<div class="lib-ph"></div>`}</div>
     <div class="lib-pv-body">
       <small class="lib-region">${t.preset ? "Ready-made trip" : `Your trip · edited ${esc(fmtWhen(t.updatedAt))}`}${regionName(t) ? ` · ${esc(regionName(t))}` : ""}</small>
       <h2>${esc(t.name)}</h2>
@@ -183,6 +183,7 @@ function renderLibrary() {
   el.classList.toggle("previewing", !!t);
   if (t) pv.innerHTML = libPreviewHtml(t);
   el.querySelectorAll(".lib-card").forEach((c) => c.classList.toggle("on", c.dataset.id === libState.open));
+  fitText(el);
 }
 function libOpen(id) {
   libState.open = id;

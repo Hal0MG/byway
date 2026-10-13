@@ -39,6 +39,8 @@ function renderItinerary() {
   else if (BATCH && !stops.length && !plan) IT.innerHTML = batchHtml();
   else if (!stops.length && !plan) renderStart();
   else renderTrip();
+  if ($("rename-input")) growRename($("rename-input"));
+  fitText(IT.querySelector(".day-index") || IT);
   if (keep) {
     const el = $(keep.id);
     if (el) {
@@ -359,7 +361,9 @@ function renderTrip() {
       <div class="hero-shade"></div>
       <div class="hero-inner">
         <p class="kicker">${icon("route", 16)} ${groups.length} ${groups.length === 1 ? "day" : "days"} · ${esc(shortName(stops[0]?.name || ""))} to ${esc(shortName(stops.at(-1)?.name || ""))}</p>
-        <h1>${esc(plan?.title || trip.name)}</h1>
+        ${renameDraft != null
+          ? `<textarea id="rename-input" class="rename-input" rows="1" maxlength="120" aria-label="Trip name">${esc(renameDraft)}</textarea>`
+          : `<h1>${esc(tripTitle())}${READONLY ? "" : ` <button class="rename-btn" data-act="rename" title="Rename the trip" aria-label="Rename the trip">${icon("pencil", 20)}</button>`}</h1>`}
         ${plan?.summary ? `<p class="lede">${esc(plan.summary)}</p>` : ""}
         ${(() => {
           const out = uncoveredStops();
@@ -415,7 +419,7 @@ function renderTrip() {
           const st = dayStats(g, "scenic");
           return `<a href="#day-${g.day}" data-act="jump" data-day="${g.day}">
             <span class="di-num">${g.day}</span>
-            <span class="di-text"><b>${esc(meta?.title || `Day ${g.day}`)}</b><small>${st ? fmtShort(st.dur) + " · " + fmtMi(st.dist) : ""}</small></span>
+            <span class="di-text"><b data-fit="12">${esc(meta?.title || `Day ${g.day}`)}</b><small>${st ? fmtShort(st.dur) + " · " + fmtMi(st.dist) : ""}</small></span>
           </a>`;
         })
         .join("")}
@@ -991,6 +995,46 @@ IT.addEventListener("keydown", (e) => {
   }
 });
 
+// The trip's own name when it was renamed, else the planner's title.
+const tripTitle = () => (trip.customName ? trip.name : plan?.title || trip.name);
+// Rename in place: the title becomes a box of the same size (kept across re-renders while typing); Enter or leaving
+// it saves, Esc cancels.
+let renameDraft = null;
+function startRename() {
+  if (READONLY) return;
+  renameDraft = tripTitle();
+  renderItinerary();
+  $("rename-input")?.focus();
+  $("rename-input")?.select();
+}
+function finishRename(save) {
+  if (renameDraft == null) return;
+  const name = renameDraft.replace(/\s+/g, " ");
+  renameDraft = null;
+  if (save) renameTrip(name);
+  renderItinerary();
+}
+function growRename(el) {
+  el.style.height = "auto";
+  el.style.height = `${el.scrollHeight}px`;
+}
+IT.addEventListener("input", (e) => {
+  if (e.target.id !== "rename-input") return;
+  renameDraft = e.target.value;
+  growRename(e.target);
+});
+IT.addEventListener("keydown", (e) => {
+  if (e.target.id !== "rename-input") return;
+  if (e.key === "Enter") {
+    e.preventDefault();
+    finishRename(true);
+  } else if (e.key === "Escape") finishRename(false);
+});
+// leaving the box saves; a re-render also blurs it but puts focus straight back in the new box
+IT.addEventListener("focusout", (e) => {
+  if (e.target.id === "rename-input") setTimeout(() => document.activeElement?.id !== "rename-input" && finishRename(true));
+});
+
 IT.addEventListener("click", (e) => {
   const t = e.target.closest("[data-act]");
   if (!t) return;
@@ -999,6 +1043,7 @@ IT.addEventListener("click", (e) => {
     $("plan-prompt").value = t.textContent;
     $("plan-prompt").focus();
   } else if (act === "map") setView("map");
+  else if (act === "rename") startRename();
   else if (act === "route") findRoutes();
   else if (act === "fix") fixLongDays();
   else if (act === "details") writeDetails();

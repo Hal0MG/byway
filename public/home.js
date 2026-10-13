@@ -96,7 +96,7 @@ function renderHome() {
     <svg class="home-lines" aria-hidden="true"></svg>
     <div class="home-cards"></div>
     <div class="home-top">
-      ${current || last ? `<button class="home-continue" data-home="continue">${icon("route", 16)} <span>Continue <b>${esc((current || last).name)}</b></span>${icon("chevron", 14)}</button>` : ""}
+      ${current || last ? `<button class="home-continue" data-home="continue">${icon("route", 18)}<span class="hc-cont"><small>Continue</small><b data-fit="12">${esc((current || last).name)}</b></span>${icon("chevron", 14)}</button>` : ""}
       <p class="home-legend"><span class="k-ready"></span>Ready to go <span class="k-mine"></span>Your trips <span class="k-idea"></span>Ideas, planned when you pick one</p>
     </div>
     <div class="home-detail" hidden></div>
@@ -117,13 +117,15 @@ function renderHome() {
         ${REGION_VIEWS.map(([n], i) => `<button class="chip region" data-home="region" data-i="${i}">${esc(n)}</button>`).join("")}
       </div>
     </div>`;
+  fitText(HOME.querySelector(".home-top"));
+  s.topRect = null;
   s.cards.clear();
   startHomeLoop();
 }
 
 function cardHtml(it) {
   return `<span class="hc-img">${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" onerror="this.remove()">` : ""}</span>
-    <span class="hc-body"><span class="hc-kind k-${it.kind}">${esc(KIND_LABEL[it.kind])}</span><b>${esc(it.title)}</b><small>${esc(it.sub)}</small></span>`;
+    <span class="hc-body"><span class="hc-kind k-${it.kind}">${esc(KIND_LABEL[it.kind])}</span><b data-fit="${innerWidth < 760 ? 11 : 12}">${esc(it.title)}</b><small>${esc(it.sub)}</small></span>`;
 }
 
 // ---------- geometry ----------
@@ -176,8 +178,8 @@ function homeArea() {
     W, mobile,
     top: mobile ? 72 : 84,
     bottom: innerHeight - (HOME.querySelector(".home-dock")?.offsetHeight || 150) - (mobile ? 18 : 26),
-    cw: mobile ? 160 : 200,
-    ch: mobile ? 138 : 164,
+    cw: mobile ? 164 : 210,
+    ch: mobile ? 150 : 176,
   };
 }
 // Center the globe in the free space and size it so the windows fit around it.
@@ -193,7 +195,10 @@ function frameGlobe(animate) {
     else map.setZoom(zoom);
   }
 }
-addEventListener("resize", () => document.body.dataset.view === "home" && frameGlobe(false));
+addEventListener("resize", () => {
+  homeState.topRect = null;
+  if (document.body.dataset.view === "home") frameGlobe(false);
+});
 
 function layoutHome() {
   const s = homeState;
@@ -219,8 +224,12 @@ function layoutHome() {
   visible.sort((a, b) => (s.cards.get(b.it.key)?.shown ? 1 : 0) - (s.cards.get(a.it.key)?.shown ? 1 : 0) || rank[a.it.kind] - rank[b.it.kind] || a.d - b.d);
 
   const placed = []; // { v, x, y, slot }
+  // keep clear of Continue and the legend (top left); measured once per render and resize
+  const tl = (s.topRect ||= HOME.querySelector(".home-top")?.getBoundingClientRect() || { width: 0 });
+  const clear = (x, y) =>
+    !tl.width || x - cw / 2 >= tl.right + gap || x + cw / 2 <= tl.left - gap || y - ch / 2 >= tl.bottom + gap || y + ch / 2 <= tl.top - gap;
   const fits = (x, y) =>
-    x - cw / 2 >= 10 && x + cw / 2 <= W - 10 && y - ch / 2 >= top && y + ch / 2 <= bottom &&
+    x - cw / 2 >= 10 && x + cw / 2 <= W - 10 && y - ch / 2 >= top && y + ch / 2 <= bottom && clear(x, y) &&
     placed.every((q) => Math.abs(q.x - x) >= cw + gap || Math.abs(q.y - y) >= ch + gap);
   let mine = 0;
   for (const v of visible) {
@@ -284,6 +293,7 @@ function layoutHome() {
       el.style.animationDelay = `${-Math.random() * 6}s`;
       el.innerHTML = cardHtml(it);
       box.appendChild(el);
+      fitText(el);
       c = { el, x: t.x, y: t.y, shown: false };
       s.cards.set(it.key, c);
       requestAnimationFrame(() => el.classList.add("on"));

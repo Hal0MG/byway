@@ -19,6 +19,7 @@ const ICON_PATHS = {
   gauge: '<path d="M3.5 17a8.5 8.5 0 1 1 17 0"/><path d="M12 17l4.5-5.5"/><circle cx="12" cy="17" r="1"/>',
   route: '<circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="5" r="2.2"/><path d="M8.2 19H14a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h5.8"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  pencil: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
   chevron: '<path d="M9 5l7 7-7 7"/>',
   check: '<path d="M4.5 12.5l5 5 10-11"/>',

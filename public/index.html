@@ -22,7 +22,6 @@
     <button id="brand" class="brand" title="Home" aria-label="Home"></button>
     <div class="trip-title">
       <span class="wordmark">Byway</span>
-      <input id="trip-name" class="title-input" type="text" value="New trip" aria-label="Trip name" maxlength="120" />
       <span id="save-state" class="subtle" aria-live="polite"></span>
     </div>
     <nav class="seg" aria-label="View">
@@ -90,21 +89,6 @@
       <p class="credit">Routes and elevation by OpenRouteService. Map data from OpenStreetMap. Photos and articles from Wikipedia and Wikimedia Commons.</p>
     </footer>
   </aside>
-
-  <!-- Saved trips -->
-  <div id="trips-sheet" class="sheet-backdrop" hidden>
-    <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="trips-title">
-      <header>
-        <h2 id="trips-title">Your trips</h2>
-        <button id="trips-done" class="icon-btn" aria-label="Close" data-icon="close"></button>
-      </header>
-      <button id="new-trip" class="btn blue">New trip</button>
-      <div id="trips-scroll">
-        <p id="trips-empty" class="subtle" hidden>No saved trips yet. Trips save automatically once you add a stop.</p>
-        <ul id="trips"></ul>
-      </div>
-    </section>
-  </div>
 
   <!-- Elevation of the day shown on the map (features.js) -->
   <div id="map-profile" hidden></div>
