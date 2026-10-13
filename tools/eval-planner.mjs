@@ -154,7 +154,8 @@ for (const model of models) {
   const file = path.join(out, `${model}.jsonl`);
   // resume: keep the finished requests, run the rest again (failed ones too)
   const kept = fs.existsSync(file)
-    ? fs.readFileSync(file, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l)).filter((r) => !r.error)
+    ? [...new Map(fs.readFileSync(file, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l))
+      .filter((r) => !r.error).map((r) => [`${r.id}#${r.rep}`, r])).values()]
     : [];
   fs.writeFileSync(file, kept.map((r) => `${JSON.stringify(r)}\n`).join(""));
   const done = new Set(kept.map((r) => `${r.id}#${r.rep}`));
@@ -179,7 +180,8 @@ for (const model of models) {
         } catch (e) {
           rec = { model, error: `harness: ${e.message}` };
         }
-        if (!/busy|high demand|overloaded/i.test(rec.error || "")) break;
+        // busy, or the tab crashed (it happens now and then in headless Chrome): try again in a new tab
+        if (!/busy|high demand|overloaded|Target closed|Session closed/i.test(rec.error || "")) break;
       }
       rec = { id: p.id, region: p.region, rep, tries, ...rec };
       if (rec.roadsPlanned) rec.roadsGrounded = rec.roadsPlanned.filter(grounded).length;

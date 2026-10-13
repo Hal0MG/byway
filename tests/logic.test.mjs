@@ -147,3 +147,21 @@ test("matchRoad: road numbers as each country's map writes them", () => {
   assert.ok(!hit(seg("Hwy 63"), "N63")); // an Irish N road isn't a bare number
   assert.ok(!hit(seg("US 89"), "US 191"));
 });
+
+test("route lines packed for storage come back the same, to about a metre", () => {
+  const coords = [[-122.408337, 37.787825, 49], [-122.40812, 37.78801, 49.4], [-122.40812, 37.78801, 49.4], [7.6862, 62.5677, -3.2], [-179.99, -45.1, 1203]];
+  const back = S.decodeLine(S.encodeLine(coords));
+  assert.equal(back.length, coords.length); // every point kept, so leg indexes still hold
+  back.forEach((p, i) => {
+    assert.ok(Math.abs(p[0] - coords[i][0]) < 1e-5 && Math.abs(p[1] - coords[i][1]) < 1e-5);
+    assert.ok(Math.abs(p[2] - coords[i][2]) < 0.06);
+  });
+  const flat = [[1.5, 2.5], [1.6, 2.4]];
+  assert.equal(JSON.stringify(S.decodeLine(S.encodeLine(flat))), JSON.stringify(flat));
+  const routes = { scenic: { distance_m: 5, geometry: { type: "LineString", coordinates: coords } }, fastest: null };
+  const packed = S.packRoutes(routes);
+  assert.ok(packed.scenic.geometry.packed && !packed.scenic.geometry.coordinates);
+  assert.equal(packed.scenic.distance_m, 5);
+  assert.equal(S.unpackRoutes(packed).scenic.geometry.coordinates.length, coords.length);
+  assert.equal(S.unpackRoutes(routes).scenic.geometry.coordinates, coords); // old trips pass through
+});

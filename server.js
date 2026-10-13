@@ -7,6 +7,7 @@ import os from "node:os";
 import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
 import { Agent, fetch as undiciFetch } from "undici";
 
 // The app's own files (the pages in public/, the road lists and ready-made trips in data/) sit next to this file. What
@@ -19,6 +20,50 @@ const app = express();
 app.use(express.json({ limit: "15mb" }));
 // An error that escapes a route is logged instead of stopping the app (one in the day guides' error handler once did).
 process.on("unhandledRejection", (e) => console.log(`Unhandled error: ${e?.stack || e}`));
+
+// Compression: JSON answers over 2 KB (a trip is ~600 KB of route, ~150 KB gzipped) and the app's text files go out
+// gzipped when the browser accepts it. Streamed answers (res.write: the live planning events) are left alone, so
+// they still arrive as they're written.
+const acceptsGzip = (req) => /\bgzip\b/.test(req.headers["accept-encoding"] || "");
+app.use((req, res, next) => {
+  const json = res.json.bind(res);
+  res.json = (body) => {
+    const text = JSON.stringify(body);
+    if (!acceptsGzip(req) || text.length < 2048 || res.headersSent) return json(body);
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Encoding", "gzip");
+    res.setHeader("Vary", "Accept-Encoding");
+    return res.end(gzipSync(text));
+  };
+  next();
+});
+// The app's own files, gzipped once per version of the file and kept in memory (the biggest, coverage.json, goes from
+// 480 KB to ~150 KB). Everything else (and browsers without gzip) falls through to express.static.
+const GZ_TYPES = { ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".html": "text/html", ".svg": "image/svg+xml", ".webmanifest": "application/manifest+json" };
+const gzFiles = new Map();
+app.use(async (req, res, next) => {
+  if ((req.method !== "GET" && req.method !== "HEAD") || !acceptsGzip(req)) return next();
+  const rel = decodeURIComponent(req.path === "/" ? "/index.html" : req.path);
+  const type = GZ_TYPES[path.extname(rel)];
+  const root = appFile("public");
+  const file = path.join(root, rel);
+  if (!type || !file.startsWith(root + path.sep)) return next();
+  try {
+    const st = await fs.stat(file);
+    const tag = `W/"gz-${st.size.toString(16)}-${Math.round(st.mtimeMs).toString(16)}"`;
+    res.setHeader("ETag", tag);
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Vary", "Accept-Encoding");
+    if (req.headers["if-none-match"] === tag) return res.status(304).end();
+    let hit = gzFiles.get(file);
+    if (hit?.tag !== tag) gzFiles.set(file, (hit = { tag, body: gzipSync(await fs.readFile(file)) }));
+    res.setHeader("Content-Type", `${type}; charset=utf-8`);
+    res.setHeader("Content-Encoding", "gzip");
+    res.end(req.method === "HEAD" ? undefined : hit.body);
+  } catch {
+    next();
+  }
+});
 app.use(express.static(appFile("public")));
 
 // Keys and choices that the in-app setup can change while the server runs (see "setup" below): reloaded from
@@ -819,6 +864,62 @@ app.get("/api/status", async (req, res) => {
 
 // ---------- saved trips (stored in data/trips.json) ----------
 
+// Route lines are stored as encoded polylines (Google's format, 5 decimals: about 1 m) with the height as a third value
+// (tenths of a metre), instead of [lng, lat, height] arrays: 24 MB of ready-made trips become ~5.5 MB. Every point
+// is kept, so the leg and road indexes into the line still hold. The app sends and receives plain arrays as before;
+// packing happens only on disk.
+function encodeLine(coords) {
+  const dims = coords[0]?.length >= 3 ? 3 : 2;
+  const f = [1e5, 1e5, 10];
+  const prev = [0, 0, 0];
+  let out = "";
+  for (const c of coords) {
+    for (let d = 0; d < dims; d++) {
+      const q = Math.round((d === 0 ? c[1] : d === 1 ? c[0] : c[2] ?? 0) * f[d]);
+      let v = q - prev[d];
+      prev[d] = q;
+      v = v < 0 ? ~(v << 1) : v << 1;
+      while (v >= 0x20) {
+        out += String.fromCharCode((0x20 | (v & 0x1f)) + 63);
+        v >>= 5;
+      }
+      out += String.fromCharCode(v + 63);
+    }
+  }
+  return { dims, line: out };
+}
+function decodeLine({ dims, line }) {
+  const coords = [];
+  const f = [1e5, 1e5, 10];
+  const prev = [0, 0, 0];
+  let i = 0;
+  while (i < line.length) {
+    const p = [];
+    for (let d = 0; d < dims; d++) {
+      let shift = 0;
+      let v = 0;
+      let b;
+      do {
+        b = line.charCodeAt(i++) - 63;
+        v |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      prev[d] += v & 1 ? ~(v >> 1) : v >> 1;
+      p.push(prev[d] / f[d]);
+    }
+    coords.push(dims === 3 ? [p[1], p[0], p[2]] : [p[1], p[0]]);
+  }
+  return coords;
+}
+// { scenic, fastest } with geometry.coordinates <-> geometry.packed; anything else passes through unchanged
+const mapRoutes = (routes, fn) =>
+  routes && typeof routes === "object" ? Object.fromEntries(Object.entries(routes).map(([k, r]) => [k, r?.geometry ? { ...r, geometry: fn(r.geometry) } : r])) : routes;
+const packRoutes = (routes) =>
+  mapRoutes(routes, (g) => (Array.isArray(g.coordinates) && g.coordinates.length ? { type: g.type || "LineString", packed: encodeLine(g.coordinates) } : g));
+const unpackRoutes = (routes) =>
+  mapRoutes(routes, (g) => (g.packed ? { type: g.type || "LineString", coordinates: decodeLine(g.packed) } : g));
+const unpackTrip = (t) => (t?.routes ? { ...t, routes: unpackRoutes(t.routes) } : t);
+
 const DATA_DIR = path.resolve("data");
 const TRIPS_FILE = path.join(DATA_DIR, "trips.json");
 const ID_RE = /^[a-z0-9-]{6,40}$/;
@@ -847,11 +948,30 @@ function updateTrips(fn) {
   writeChain = job.catch(() => {});
   return job;
 }
+// Trips saved before 1.0 have plain route arrays: packed once at start, after keeping a copy of the old file.
+async function packOldTrips() {
+  const trips = await readTrips().catch(() => ({}));
+  if (!Object.values(trips).some((t) => Object.values(t.routes || {}).some((r) => Array.isArray(r?.geometry?.coordinates)))) return;
+  await fs.copyFile(TRIPS_FILE, path.join(DATA_DIR, "trips.pre-1.0.json")).catch(() => {});
+  await updateTrips((all) => {
+    for (const t of Object.values(all)) if (t.routes) t.routes = packRoutes(t.routes);
+  });
+  console.log("Saved trips: route lines packed (the old file is kept as data/trips.pre-1.0.json)");
+}
+if (!process.env.BYWAY_TEST) packOldTrips().catch((e) => console.log(`Packing saved trips failed: ${e.message}`));
 
 // A short summary of a trip for lists (the trips sheet and the ready-made trips gallery).
 // What the Trips tab shows for a trip without opening it: the numbers, each day (title, overnight, driving), the
 // featured roads, a few photos and a light sketch of the route per day (about 120 points in all, for an SVG).
+const summaries = new Map(); // id -> { at, summary }: decoding every route for each list request adds up
 function tripSummary(t) {
+  const hit = summaries.get(t.id);
+  if (hit && hit.at === t.updatedAt) return hit.summary;
+  const summary = makeSummary(unpackTrip(t));
+  summaries.set(t.id, { at: t.updatedAt, summary });
+  return summary;
+}
+function makeSummary(t) {
   const sc = t.routes?.scenic;
   const stops = t.stops || [];
   const days = new Set(stops.map((s) => s.day)).size;
@@ -957,7 +1077,7 @@ app.get("/api/trips/:id", async (req, res) => {
   const trips = await readTrips().catch(() => ({}));
   const trip = trips[req.params.id] || (await shipped())[req.params.id];
   if (!trip) return res.status(404).json({ error: "That trip no longer exists." });
-  res.json(trip);
+  res.json(unpackTrip(trip));
 });
 
 // PUT from the app, POST .../beacon when the tab is closing.
@@ -995,7 +1115,7 @@ async function saveTrip(req, res) {
           ...(Array.isArray(s.photos) && { photos: s.photos.slice(0, 4).map(String) }),
         })),
         mode: mode === "fastest" ? "fastest" : "scenic",
-        routes: routes && typeof routes === "object" ? routes : null,
+        routes: routes && typeof routes === "object" ? packRoutes(routes) : null,
         // AI plan with its days, featured roads and spots (plus their Wikipedia details)
         plan: plan && typeof plan === "object" && !Array.isArray(plan) ? plan : null,
         createdAt: trips[id]?.createdAt || new Date().toISOString(),
@@ -1630,8 +1750,19 @@ app.get("/api/lan", async (req, res) => {
 // The cache is kept on disk (data/wikimedia-cache.json) so restarting the server doesn't repeat lookups.
 const WM_CACHE_FILE = path.resolve("data", "wikimedia-cache.json");
 const wmCache = new Map();
+// Wikimedia answers carry a lot the app never reads (srcset variants, paging, tracking parameters on every image URL):
+// about 30 KB per Commons search, most of the 40 MB the cache had grown to. Kept answers are trimmed to what's used.
+const WM_UNUSED = new Set(["responsiveUrls", "thumbattribs", "continue", "batchcomplete", "imagerepository", "descriptionshorturl", "warnings"]);
+function wmTrim(v) {
+  if (typeof v === "string") return v.replace(/\?utm_source=[^"\s]*$/, "");
+  if (Array.isArray(v)) return v.map(wmTrim);
+  if (!v || typeof v !== "object") return v;
+  // an image's full-size url and edit link aren't used once it has a thumbnail
+  const skip = (k) => WM_UNUSED.has(k) || ("thumburl" in v && (k === "url" || k === "editurl"));
+  return Object.fromEntries(Object.entries(v).filter(([k]) => !skip(k)).map(([k, x]) => [k, wmTrim(x)]));
+}
 try {
-  for (const [k, v] of Object.entries(JSON.parse(await fs.readFile(WM_CACHE_FILE, "utf8")))) wmCache.set(k, v);
+  for (const [k, v] of Object.entries(JSON.parse(await fs.readFile(WM_CACHE_FILE, "utf8")))) wmCache.set(k, wmTrim(v));
 } catch {
   // no cache yet
 }
@@ -1665,7 +1796,7 @@ function wmFetch(url) {
           await new Promise((ok) => setTimeout(ok, Math.min((Number(r.headers.get("retry-after")) || 2) * 1000, 5000)));
           continue;
         }
-        const d = await r.json();
+        const d = wmTrim(await r.json());
         await new Promise((ok) => setTimeout(ok, 300));
         wmCache.set(key, d);
         saveWmCache();
@@ -3403,7 +3534,7 @@ function openBrowser() {
   spawn(cmd, args, { detached: true, stdio: "ignore", windowsHide: true }).unref();
 }
 // The tests import this file for its plan checks without starting the app (BYWAY_TEST=1).
-export { checkPlan, requestedDays, partialJson, samePlace, osrmResult, routePieces };
+export { checkPlan, requestedDays, partialJson, samePlace, osrmResult, routePieces, encodeLine, decodeLine, packRoutes, unpackRoutes };
 if (!process.env.BYWAY_TEST) app.listen(port, () => {
   console.log(`Running on ${url}`);
   openBrowser();
