@@ -75,6 +75,12 @@ try {
             .map((el) => `${el.id || el.className || el.tagName} is ${el.scrollWidth} px wide in ${el.clientWidth}`)
             .join("; ");
         });
+        // every top bar button inside the bar (the language flag once pushed the light/dark switch off a phone's edge)
+        const bar = await js(() => {
+          const r = document.getElementById("topbar").getBoundingClientRect();
+          return [...document.querySelectorAll("#topbar button")].filter((b) => b.offsetWidth && b.getBoundingClientRect().right > r.right + 1).map((b) => b.id || b.dataset.view).join(", ");
+        });
+        if (bar) problems.push(`${size}/${theme}/${lang} ${name}: top bar buttons past its edge: ${bar}`);
         if (wide && size === "phone") problems.push(`${size}/${theme}/${lang} ${name}: wider than the screen: ${wide}`);
         // the map credits (OpenStreetMap and the tile providers) must stay visible wherever the map shows
         const hidden = await js(() => {

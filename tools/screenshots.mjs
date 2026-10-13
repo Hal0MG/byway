@@ -27,6 +27,7 @@ await ctx.overridePermissions("http://localhost:3000", ["geolocation"]);
 const page = await browser.newPage();
 await page.setGeolocation({ latitude: 44.92, longitude: -110.42 });
 await page.evaluateOnNewDocument(() => {
+  localStorage.setItem("welcomed", "1"); // no welcome screen over the shots
   // screenshots only: the page's clock reads 10:40 AM in Yellowstone (16:40 UTC) today
   const RealDate = Date;
   const target = new RealDate(); target.setUTCHours(16, 40, 0, 0);

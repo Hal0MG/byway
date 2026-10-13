@@ -1297,14 +1297,25 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .notes-grid, .versions { grid-template-columns: 1fr; }
   #map-profile { left: 16px; right: 16px; }
 }
+@media (max-width: 400px) {
+  /* 360 px phones: the logo, five views and four buttons in one row */
+  #topbar { gap: 6px !important; padding: 0 6px !important; }
+  .brand { width: 34px; height: 34px; }
+  .brand svg { width: 34px; height: 34px; }
+  .seg button { padding: 8px 6px !important; }
+}
 @media (max-width: 760px) {
   #topbar { top: 8px; left: 8px; right: 8px; height: 56px; gap: 8px; padding: 0 8px; }
   /* the logo stands in for the name: the view buttons need the room */
   .trip-title { display: none; }
   .seg { margin-right: auto; }
-  .seg button { padding: 8px 10px; }
+  .seg button { padding: 8px 8px; }
   .seg button span:not(.seg-ico) { display: none; }
-  .top-actions .icon-btn { width: 36px; height: 36px; }
+  /* four buttons on the right since the language flag: a little tighter so the bar fits 360 px */
+  .top-actions { gap: 4px; }
+  .top-actions .icon-btn { width: 34px; height: 34px; }
+  .icon-btn.lang-btn { width: 34px; padding: 0; justify-content: center; }
+  .lang-btn .ico { display: none; }
   #itinerary { padding-top: 74px; }
   .trip-hero { min-height: 340px; border-radius: 10px; }
   .hero-inner { padding: 22px 18px; }
