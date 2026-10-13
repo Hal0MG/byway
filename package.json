@@ -10,7 +10,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "desktop": "electron .",
-    "desktop:build": "electron-builder --publish never"
+    "desktop:build": "electron-builder --publish never",
+    "smoke": "node tools/smoke.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",

@@ -842,7 +842,6 @@ function profileAt(fig, f) {
   fig.querySelector(".pf-cursor").setAttribute("x2", String(f * 1000));
   const tip = fig.querySelector(".pf-tip");
   tip.hidden = false;
-  tip.style.left = `${(clamp(f, 0.06, 0.94) * 100).toFixed(1)}%`;
   const elev = hasElevation() && p.sm.e[i] ? fmtElev(p.sm.e[i]) : "";
   if (p.timeAt) {
     const road = p.bands.find((b) => f >= b.a && f <= b.b)?.road;
@@ -851,6 +850,9 @@ function profileAt(fig, f) {
     const at = rows.filter((r) => Number(r.dataset.f) <= f + 0.004).at(-1);
     rows.forEach((r) => r.classList.toggle("tl-hot", r === at));
   } else tip.textContent = [elev, fmtMi(p.sm.d[i])].filter(Boolean).join(" · ");
+  // centred on the cursor, but kept inside the chart (a long tip near either end was cut off on phones)
+  const w = fig.querySelector(".pf-box").clientWidth;
+  tip.style.left = `${clamp(f * w - tip.offsetWidth / 2, 0, Math.max(0, w - tip.offsetWidth))}px`;
   const c = routes.scenic?.geometry.coordinates[p.sm.k[i]];
   if (c && document.body.dataset.view === "map") {
     if (!profileMarker) {
@@ -884,6 +886,17 @@ document.addEventListener("pointerover", (e) => {
   const row = e.target.closest?.(".tl-row[data-f]");
   const fig = row?.closest(".day")?.querySelector(".profile.drive");
   if (fig) profileAt(fig, Number(row.dataset.f));
+});
+// the same with the keyboard: tabbing through the timeline moves the cursor
+document.addEventListener("focusin", (e) => {
+  const row = e.target.closest?.(".tl-row[data-f]");
+  const fig = row?.closest(".day")?.querySelector(".profile.drive");
+  if (fig) profileAt(fig, Number(row.dataset.f));
+});
+document.addEventListener("focusout", (e) => {
+  const row = e.target.closest?.(".tl-row[data-f]");
+  const fig = row?.closest(".day")?.querySelector(".profile.drive");
+  if (fig && !e.relatedTarget?.closest?.(".tl-row[data-f]")) profileOff(fig);
 });
 document.addEventListener("pointerout", (e) => {
   const row = e.target.closest?.(".tl-row[data-f]");
