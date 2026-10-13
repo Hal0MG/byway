@@ -16,19 +16,24 @@ const EXAMPLES = [
 // Where the planner has a road list. Keep in step with tools/build-coverage.mjs and data/*-drives.json.
 const COVERAGE_TEXT = "Covered: the US · Canada from BC to Newfoundland · Australia: NSW, Victoria, ACT, Queensland, Tasmania · New Zealand · the UK · the Alps (Switzerland, Austria, Bavaria, the Italian and French Alps)";
 
-// Layered mountains and a road, used on the start and progress screens.
-const ART = `<svg class="art" viewBox="0 0 600 220" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+// Layered mountains and a road, used on the start, progress and How it works screens. Each copy gets its own gradient
+// ids: with shared ones, a copy in a hidden view (the start screen) took the ids and the visible one lost its sky.
+let artCount = 0;
+function artSvg() {
+  const n = ++artCount;
+  return `<svg class="art" viewBox="0 0 600 220" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a84ff" stop-opacity=".35"/><stop offset="1" stop-color="#30d1c6" stop-opacity="0"/></linearGradient>
-    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity=".35"/></linearGradient>
+    <linearGradient id="sky${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a84ff" stop-opacity=".35"/><stop offset="1" stop-color="#30d1c6" stop-opacity="0"/></linearGradient>
+    <linearGradient id="road${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity=".35"/></linearGradient>
   </defs>
-  <rect width="600" height="220" fill="url(#sky)"/>
+  <rect width="600" height="220" fill="url(#sky${n})"/>
   <circle cx="455" cy="62" r="20" fill="#ffd60a" opacity=".55"/>
   <path d="M0 150 L90 80 L150 128 L230 52 L310 120 L370 88 L450 140 L520 96 L600 132 V220 H0z" fill="#30d1c6" opacity=".18"/>
   <path d="M0 176 L70 132 L140 168 L210 116 L290 172 L360 130 L430 170 L520 128 L600 162 V220 H0z" fill="#0a84ff" opacity=".22"/>
-  <path d="M286 220 C 292 196, 300 186, 304 176 L 310 176 C 312 188, 326 200, 350 220 z" fill="url(#road)"/>
+  <path d="M286 220 C 292 196, 300 186, 304 176 L 310 176 C 312 188, 326 200, 350 220 z" fill="url(#road${n})"/>
   <path d="M305 220 L306 210 M306 202 L306.6 195 M307 189 L307.3 184" stroke="#ffd60a" stroke-width="1.6" opacity=".7"/>
 </svg>`;
+}
 
 function renderItinerary() {
   // Re-rendering replaces the page, so keep whatever the traveler is typing (and where) across it.
@@ -63,7 +68,7 @@ function renderStart() {
   const s = { ...DEFAULT_SETTINGS, ...rememberedSettings(), ...(trip.settings || {}) };
   IT.innerHTML = `
     <section class="start">
-      ${ART}
+      ${artSvg()}
       <div class="start-inner">
         <p class="kicker">${icon("sparkle", 16)} Scenic road trip planner</p>
         <h1>Where to?</h1>
@@ -167,7 +172,7 @@ function renderProgress() {
     : "";
   IT.innerHTML = `
     <section class="start progress">
-      ${ART}
+      ${artSvg()}
       <div class="start-inner">
         <p class="kicker">${icon("sparkle", 16)} ${p.error ? "Planning stopped" : "Planning your trip"}</p>
         <h1>${esc(trip.prompt || trip.name)}</h1>
@@ -359,7 +364,7 @@ function renderTrip() {
 
   const hero = `
     <header class="trip-hero">
-      ${heroImg ? `<img class="hero-img" src="${esc(heroImg)}" alt="" onerror="this.remove()">` : ART}
+      ${heroImg ? `<img class="hero-img" src="${esc(heroImg)}" alt="" onerror="this.remove()">` : artSvg()}
       <div class="hero-shade"></div>
       <div class="hero-inner">
         <p class="kicker">${icon("route", 16)} ${groups.length} ${groups.length === 1 ? "day" : "days"} · ${esc(shortName(stops[0]?.name || ""))} to ${esc(shortName(stops.at(-1)?.name || ""))}</p>

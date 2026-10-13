@@ -50,7 +50,9 @@
   --gold: #946200;
   --muted: #5f5f66;
 }
-[data-theme="light"] :is(#home, .trip-hero, .day-hero, .ab-hero, .lib-badge, .spot-type, .lightbox, .overnight:has(img)) {
+/* the How it works art is light in light mode: a deeper teal still on the pale sky */
+[data-theme="light"] .ab-hero .kicker, [data-theme="light"] .ab-hero .ab-grad { color: #055c56; }
+[data-theme="light"] :is(#home, .trip-hero, .day-hero, .lib-badge, .spot-type, .lightbox, .overnight:has(img)) {
   --blue: #0a84ff; --teal: #30d1c6; --green: #30d158; --orange: #ff9f0a; --red: #ff453a; --gold: #ffd60a;
 }
 

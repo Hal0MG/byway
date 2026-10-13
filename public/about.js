@@ -23,7 +23,7 @@ const ABOUT_TILES = [
 function aboutHtml() {
   return `<div class="ab">
     <section class="ab-hero">
-      ${ART}
+      ${artSvg()}
       <div class="ab-hero-text">
         <p class="kicker">${icon("sparkle", 16)} How it works</p>
         <h1>Road trips built around <span class="ab-grad">the drive itself</span></h1>
