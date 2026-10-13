@@ -1,0 +1,52 @@
+# To turn this on: move it to .github/workflows/desktop.yml and push. Pushing workflow files needs GitHub's "workflow"
+# permission, which this Mac's sign-in didn't have (`gh auth refresh -s workflow` adds it, or add the file on github.com).
+# Desktop apps: builds Byway for Mac (.dmg and .zip) and Windows (installer and .zip) as downloadable artifacts of the run.
+# Nothing is published. Start it from the Actions tab (Desktop apps > Run workflow) or by pushing a tag like v1.15.
+# The apps are unsigned: the first time, right-click > Open on a Mac, and "More info > Run anyway" on Windows.
+# On a private repo, Mac minutes count ten times against the free Actions allowance.
+name: Desktop apps
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npx electron-builder --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      # the built app starts its server, draws the home screen, saves a screenshot and quits (BYWAY_SMOKE in desktop/main.cjs)
+      - name: Start the built app once
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then APP="$(ls -d dist/mac*/Byway.app | head -1)/Contents/MacOS/Byway"; else APP="dist/win-unpacked/Byway.exe"; fi
+          SHOT="$PWD/smoke-$RUNNER_OS.png"
+          BYWAY_SMOKE="$SHOT" BYWAY_SMOKE_WAIT=15000 "$APP" &
+          for i in $(seq 1 60); do [ -f "$SHOT" ] && break; sleep 2; done
+          test -f "$SHOT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: byway-${{ runner.os }}
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/*.exe
+            smoke-*.png
+          if-no-files-found: error

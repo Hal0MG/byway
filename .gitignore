@@ -22,3 +22,6 @@ graphhopper/*.pbf
 graphhopper/graph-*/
 graphhopper/*.jar
 .browsers/
+
+# desktop app builds
+dist/

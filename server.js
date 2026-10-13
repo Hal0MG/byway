@@ -6,13 +6,20 @@ import path from "node:path";
 import os from "node:os";
 import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { Agent, fetch as undiciFetch } from "undici";
+
+// The app's own files (the pages in public/, the road lists and ready-made trips in data/) sit next to this file. What
+// the app writes (trips, caches, .env) goes in the folder it runs from: the same folder for start.sh, the user's app
+// data folder for the desktop app (desktop/main.cjs).
+const APP_ROOT = path.dirname(fileURLToPath(import.meta.url));
+const appFile = (...parts) => path.join(APP_ROOT, ...parts);
 
 const app = express();
 app.use(express.json({ limit: "15mb" }));
 // An error that escapes a route is logged instead of stopping the app (one in the day guides' error handler once did).
 process.on("unhandledRejection", (e) => console.log(`Unhandled error: ${e?.stack || e}`));
-app.use(express.static("public"));
+app.use(express.static(appFile("public")));
 
 // Keys and choices that the in-app setup can change while the server runs (see "setup" below): reloaded from
 // process.env by applyConfig().
@@ -815,7 +822,7 @@ let shippedPresets = null;
 async function shipped() {
   if (!shippedPresets) {
     try {
-      shippedPresets = JSON.parse(await fs.readFile(path.join(DATA_DIR, "presets.json"), "utf8"));
+      shippedPresets = JSON.parse(await fs.readFile(appFile("data", "presets.json"), "utf8"));
     } catch {
       shippedPresets = {};
     }
@@ -2400,7 +2407,7 @@ async function loadByways() {
   if (!byways) {
     const read = async (file) => {
       try {
-        return JSON.parse(await fs.readFile(path.resolve("data", file), "utf8"));
+        return JSON.parse(await fs.readFile(appFile("data", file), "utf8"));
       } catch {
         return [];
       }
@@ -2441,7 +2448,7 @@ let seasonal = null;
 async function seasonalRoads() {
   if (!seasonal) {
     try {
-      seasonal = JSON.parse(await fs.readFile(path.resolve("public", "seasonal-roads.json"), "utf8")).roads || [];
+      seasonal = JSON.parse(await fs.readFile(appFile("public", "seasonal-roads.json"), "utf8")).roads || [];
     } catch {
       seasonal = [];
     }

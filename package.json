@@ -3,9 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "desktop/main.cjs",
+  "description": "Road trips built around the drive itself",
+  "author": "Zarif",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "desktop": "electron .",
+    "desktop:build": "electron-builder --publish never"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
@@ -18,6 +23,54 @@
   },
   "devDependencies": {
     "@turf/turf": "^7.1.0",
+    "electron": "44.4.5",
+    "electron-builder": "26.15.3",
     "puppeteer-core": "^23.11.1"
+  },
+  "build": {
+    "appId": "app.byway.desktop",
+    "productName": "Byway",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "package.json",
+      "server.js",
+      "desktop/**",
+      "public/**",
+      "data/byways.json",
+      "data/*-drives.json",
+      "data/presets.json",
+      "node_modules/**",
+      "!node_modules/.cache/**"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.travel",
+      "icon": "public/icons/icon-512.png",
+      "identity": null
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "public/icons/icon-512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Travel",
+      "icon": "public/icons/icon-512.png"
+    }
   }
 }
