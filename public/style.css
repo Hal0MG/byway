@@ -1625,3 +1625,21 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
 .road-reviews .fine { margin-top: 8px; }
 .road-reviews a { color: var(--blue); }
 .road-reviews .warn { color: var(--orange); }
+
+/* Sheets on phones: less padding, smaller titles; Today's cards compact */
+@media (max-width: 760px) {
+  .sheet-backdrop { padding: 8px; }
+  .sheet { padding: 14px; max-height: 90vh; gap: 10px; }
+  .sheet h2 { font-size: 21px; }
+  .td-top { flex-wrap: nowrap; gap: 8px; }
+  .td-top label:last-child { flex: 1; min-width: 0; }
+  .td-top label:last-child select { flex: 1; min-width: 0; }
+  .td-grid { gap: 6px; }
+  .td-card { padding: 10px 12px; gap: 10px; }
+  .td-card b { font-size: 17px; }
+  .td-card span { font-size: 12px; }
+  .td-h { margin: 12px 0 4px; }
+  .td-list { font-size: 14px; }
+  .td-spots li { padding: 6px 0; font-size: 13px; }
+}
+
