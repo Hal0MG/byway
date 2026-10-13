@@ -1281,9 +1281,17 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .day-stats .short { display: inline; }
   .dc-key { display: none !important; }
   .tl-text b { font-size: 14px; }
-  .stats { grid-template-columns: repeat(2, 1fr); }
-  .stat { padding: 14px 16px; }
-  .stat-value { font-size: 28px; }
+  .stats { grid-template-columns: repeat(3, 1fr); }
+  .stat { padding: 10px 10px 12px; gap: 2px; }
+  .stat-value { font-size: 22px; }
+  .stat-label { font-size: 10px; letter-spacing: 0.08em; }
+  .stat small { font-size: 11px; line-height: 1.3; }
+  /* five numbers (no climb yet): the last one takes the empty space */
+  .stat:last-child:nth-child(3n + 2) { grid-column: span 2; }
+  .stat:last-child:nth-child(3n + 1) { grid-column: span 3; }
+  .settings-strip .link-btn { text-align: left; }
+  .rc-prompt { font-size: 16px; }
+  .request-card { padding: 16px; }
   .day-hero { height: 230px; }
   .day-stats .grow { display: none; }
   /* the panel is a sheet: routes and search, the grip opens the stops and days */
