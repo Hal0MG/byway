@@ -20,3 +20,4 @@ node_modules/
 graphhopper/*.pbf
 graphhopper/graph-*/
 graphhopper/*.jar
+.browsers/
