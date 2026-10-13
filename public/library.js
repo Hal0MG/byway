@@ -57,6 +57,8 @@ function sketchSvg(t, w = 120, h = 80, stroke = 3) {
     .join("")}</svg>`;
 }
 
+// How far a trip starts from the home base set in "Roads near me" (meters; Infinity without one).
+const fromHome = (t) => (nearState.home && t.start ? haversine(nearState.home.at, [t.start.lng, t.start.lat]) : Infinity);
 function libFiltered(list) {
   const q = libState.q.trim().toLowerCase();
   const [lo, hi] = libState.length ? libState.length.split("-").map(Number) : [0, 99];
@@ -73,7 +75,8 @@ function libFiltered(list) {
     short: (a, b) => (a.duration_s || 0) - (b.duration_s || 0),
     long: (a, b) => (b.duration_s || 0) - (a.duration_s || 0),
     days: (a, b) => a.days - b.days || a.name.localeCompare(b.name),
-  }[libState.sort];
+    near: (a, b) => fromHome(a) - fromHome(b),
+  }[libState.sort === "near" && !nearState.home ? "recent" : libState.sort];
   return out.sort(by);
 }
 
@@ -86,7 +89,7 @@ function libCard(t) {
     <span class="lib-body">
       <small class="lib-region">${esc(regionName(t) || "")}${t.loop ? " · Loop" : ""}</small>
       <b data-fit="14">${esc(t.name)}</b>
-      <span class="lib-facts">${t.days} day${t.days === 1 ? "" : "s"}${t.distance_m ? ` · ${libDist(t, t.distance_m)}` : ""}${t.duration_s ? ` · ${fmtShort(t.duration_s)} driving` : ""}</span>
+      <span class="lib-facts">${t.days} day${t.days === 1 ? "" : "s"}${t.distance_m ? ` · ${libDist(t, t.distance_m)}` : ""}${t.duration_s ? ` · ${fmtShort(t.duration_s)} driving` : ""}${libState.sort === "near" && isFinite(fromHome(t)) ? (fromHome(t) < 16000 ? " · starts at home" : ` · starts ${libDist(t, fromHome(t))} away`) : ""}</span>
       ${roads.length ? `<span class="lib-roads">${roads.map((r) => `<span>${esc(r.name)}</span>`).join("")}${t.roads.length > 3 ? `<span>+${t.roads.length - 3}</span>` : ""}</span>` : ""}
     </span>
   </button>`;
@@ -118,7 +121,7 @@ function libraryHtml() {
         ${[["all", "All"], ["mine", "Yours"], ["ready", "Ready-made"]].map(([k, l]) => `<button role="tab" class="${libState.show === k ? "on" : ""}" aria-selected="${libState.show === k}" data-lib="show" data-v="${k}">${l}</button>`).join("")}
       </div>
       <select id="lib-sort" aria-label="Sort">
-        ${[["recent", "Recently edited"], ["name", "Name"], ["days", "Fewest days"], ["short", "Least driving"], ["long", "Most driving"]].map(([k, l]) => `<option value="${k}" ${libState.sort === k ? "selected" : ""}>${l}</option>`).join("")}
+        ${[["recent", "Recently edited"], ...(nearState.home ? [["near", `Nearest to ${shortName(nearState.home.name)}`]] : []), ["name", "Name"], ["days", "Fewest days"], ["short", "Least driving"], ["long", "Most driving"]].map(([k, l]) => `<option value="${k}" ${libState.sort === k ? "selected" : ""}>${esc(l)}</option>`).join("")}
       </select>
     </div>
     <div class="lib-chips">${chips("region", REGIONS, libState.region)}</div>
