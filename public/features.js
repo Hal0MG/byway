@@ -1237,7 +1237,7 @@ function setTerrain(on) {
 // EOX Sentinel-2 cloudless everywhere (10 m, free for non-commercial use with credit; sharp to about zoom 13) and
 // USGS aerial imagery over the US (public domain, sharp to street level). Drawn under the style's labels, so road and
 // place names stay on top.
-let satelliteOn = store.get("satellite") === "1";
+let satelliteOn = store.get("satellite") !== "0"; // on unless switched off
 const USGS_TILES = ["https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"];
 const USGS_CREDIT = "Imagery: USGS The National Map";
 const SAT_SOURCES = {
@@ -1291,11 +1291,14 @@ class SatelliteControl {
 }
 map.addControl(new SatelliteControl(), "top-right");
 
-map.on("style.load", () => {
+const onStyle = () => {
   applySatellite();
   applyTerrain();
   drawAlongLayer();
-});
+};
+map.on("style.load", onStyle);
+// the style can finish loading before this script runs (the page parser yields between scripts): catch up
+if (styleReady) onStyle();
 class TerrainControl {
   onAdd() {
     this.el = document.createElement("div");

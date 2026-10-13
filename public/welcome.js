@@ -1,12 +1,12 @@
 // The welcome screen: the first time the app opens (like a new phone), a "hello" in many languages and a few short
-// steps: language, light or dark, sound, the AI planner (only on the computer running the app) and a home base for
+// steps: language, sound, the AI planner (only on the computer running the app) and a home base for
 // Roads near me. Every step can be skipped; nothing here is needed to use the app. Setup can show it again.
 
 const HELLOS = ["Hello", "Bonjour", "你好", "হ্যালো", "Hola", "Ciao", "こんにちは", "Hallo", "Olá", "안녕하세요", "Merhaba", "Namaste"];
 const welcomeState = { step: 0, steps: [], hello: 0, timer: 0, setup: null, msg: "", busy: false, langAtStart: LANG };
 
 function welcomeSteps() {
-  return ["hello", "lang", "look", "sound", ...(welcomeState.setup ? ["planner"] : []), "home", "done"];
+  return ["hello", "lang", "sound", ...(welcomeState.setup ? ["planner"] : []), "home", "done"];
 }
 
 function welcomeHtml() {
@@ -30,13 +30,6 @@ function welcomeHtml() {
       <div class="wl-options" role="radiogroup" aria-label="Language">
         ${LANGS.map((l) => `<button role="radio" aria-checked="${l.code === LANG}" class="wl-option ${l.code === LANG ? "on" : ""}" data-wl="lang" data-v="${l.code}">
           <span class="flag big">${FLAGS[l.code]}</span><b>${esc(l.name)}</b></button>`).join("")}
-      </div>
-      ${nav(undefined, { skip: false })}`,
-    look: () => `<h2>${icon(theme === "dark" ? "moon" : "sun", 26)} ${t("Light or dark?")}</h2>
-      <p class="wl-sub">${t("You can switch any time with the button in the top bar.")}</p>
-      <div class="wl-options two" role="radiogroup" aria-label="Appearance">
-        ${["light", "dark"].map((m) => `<button role="radio" aria-checked="${theme === m}" class="wl-option wl-look ${theme === m ? "on" : ""}" data-wl="look" data-v="${m}">
-          <span class="wl-preview ${m}"><i></i><i></i><i></i></span><b>${m === "light" ? t("Light") : t("Dark")}</b></button>`).join("")}
       </div>
       ${nav(undefined, { skip: false })}`,
     sound: () => `<h2>${icon("sound", 26)} ${t("Sound")}</h2>
@@ -155,6 +148,7 @@ function closeWelcome() {
   setTimeout(() => {
     el?.remove();
     musicWanted();
+    if (typeof playIntro === "function") playIntro();
     // a new language: everything else is drawn again in it
     if (LANG !== welcomeState.langAtStart) setLang(LANG, true);
   }, 450);
@@ -225,10 +219,6 @@ function welcomeClick(e) {
     try {
       localStorage.setItem("lang", LANG);
     } catch {}
-    return renderWelcome();
-  }
-  if (act === "look") {
-    if (theme !== b.dataset.v) $("theme-btn").click();
     return renderWelcome();
   }
   if (act === "snd") {

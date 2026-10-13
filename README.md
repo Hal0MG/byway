@@ -86,8 +86,9 @@ top bar and only works on the computer running the app. Keep the start window op
 - **Import a GPX file** (Trips tab): a Byway export comes back as it was; a route, waypoints or a recorded track from
   another app becomes a trip, measured and split into days.
 - **How it works**: a short tour in the top bar, with an "In depth" version on the methods behind each step.
-- **Welcome screen**: the first time it opens, a few skippable steps (language, light or dark, sound, the AI planner,
-  your home town). Setup can show it again.
+- **Welcome screen**: the first time it opens, a few skippable steps (language, sound, the AI planner,
+  your home town). Setup can show it again. It opens on a satellite view of your town (or San Francisco) and pulls back
+  to the globe. Dark and satellite are the defaults; both switch from the top bar and the map.
 - **Languages**: English, French, Chinese (simplified) and Bangla, from the flag next to the light/dark switch. The
   AI writes plans and guides in the chosen language; place and road names stay as maps know them. Most screens are
   translated; less-used sheets are still in English.

@@ -112,7 +112,8 @@ $("brand").innerHTML = LOGO;
 
 // ---------- map and theme ----------
 
-let theme = store.get("theme") || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+// dark unless the traveler switched to light themselves
+let theme = store.get("theme") || "dark";
 document.documentElement.dataset.theme = theme;
 const themeIcon = () => ($("theme-btn").innerHTML = icon(theme === "dark" ? "sun" : "moon", 20));
 themeIcon();

@@ -1856,3 +1856,15 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .wl-dots { order: -1; width: 100%; justify-content: center; }
   .wl-go { margin-left: auto; }
 }
+
+/* ---------- Home opening: the globe pulls back from a city, then the rest fades in (home.js playIntro) ---------- */
+body.home-intro #topbar, body.home-intro .home-cards, body.home-intro .home-lines, body.home-intro .home-glow,
+body.home-intro .home-top, body.home-intro .home-dock, body.home-intro .home-detail {
+  opacity: 0 !important; pointer-events: none !important;
+}
+body.home-intro .home-dock { transform: translateX(-50%) translateY(24px); }
+body.home-intro #topbar { transform: translateY(-12px); }
+body.home-reveal .home-cards, body.home-reveal .home-lines, body.home-reveal .home-glow { transition: opacity 0.9s ease-out; }
+body.home-reveal .home-top { transition: opacity 0.8s ease-out 0.5s; }
+body.home-reveal .home-dock { transition: opacity 0.8s ease-out 0.7s, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.7s; }
+body.home-reveal #topbar { transition: opacity 0.8s ease-out 1.1s, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 1.1s; }

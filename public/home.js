@@ -199,7 +199,7 @@ function frameGlobe(animate) {
 }
 addEventListener("resize", () => {
   homeState.topRect = null;
-  if (document.body.dataset.view === "home") frameGlobe(false);
+  if (document.body.dataset.view === "home" && intro.state === "done") frameGlobe(false);
 });
 
 function layoutHome() {
@@ -421,16 +421,69 @@ addEventListener("keydown", (e) => e.key === "Escape" && homeState.detail && clo
 
 // Called by setView (app.js). Home shows the globe; the other views use the flat map.
 let homeCamera = { center: [-98, 30], zoom: 1.5 };
+
+// The opening: when the app starts on Home, the camera begins over a city (the home town from the welcome screen or
+// Roads near me, else San Francisco) and pulls back to the globe; then the floating trips, the search panel and the
+// top bar fade in, one after the other. Waits for the welcome screen, and skipped with reduced motion.
+const intro = { state: matchMedia("(prefers-reduced-motion: reduce)").matches ? "done" : "wait" };
+if (intro.state === "wait" && document.body.dataset.view === "home" && !new URLSearchParams(location.search).get("trip")) {
+  document.body.classList.add("home-intro");
+} else intro.state = "done";
+function introCity() {
+  try {
+    const h = JSON.parse(localStorage.getItem("homeBase") || "null");
+    if (h?.at) return h.at;
+  } catch {}
+  return [-122.4194, 37.7749];
+}
+function playIntro() {
+  if (intro.state !== "ready" || document.getElementById("welcome")) return;
+  intro.state = "flying";
+  const fit = Math.min(innerWidth, innerHeight);
+  const go = () =>
+    map.flyTo({ center: [introCity()[0] + 40, 30], zoom: fit < 700 ? 0.9 : homeCamera.zoom, duration: 6500, curve: 1.4, essential: true });
+  // start once the city's imagery has all arrived (two checks in a row), or after 6 s whatever happens
+  const t0 = Date.now();
+  let loaded = 0;
+  const wait = setInterval(() => {
+    loaded = map.areTilesLoaded() ? loaded + 1 : 0;
+    if (loaded >= 2 || Date.now() - t0 > 6000) {
+      clearInterval(wait);
+      go();
+    }
+  }, 250);
+  map.once("moveend", () => {
+    intro.state = "done";
+    homeState.lastTouch = Date.now() - 4000; // start turning soon after
+    frameGlobe(true);
+    document.body.classList.add("home-reveal");
+    document.body.classList.remove("home-intro");
+    setTimeout(() => document.body.classList.remove("home-reveal"), 2500);
+  });
+}
 function onViewChange(v, prev) {
   if (!styleReady) return;
+  if (v !== "home" && intro.state !== "done") {
+    // left Home before the opening finished: show everything
+    intro.state = "done";
+    document.body.classList.remove("home-intro");
+  }
   if (v === "home") {
     homeState.ready = false; // reload the lists: trips may have been saved, deleted or made ready-made since
     map.setProjection({ type: "globe" });
     setHomeLayers(false);
     const fit = Math.min(innerWidth, innerHeight);
-    map.jumpTo({ center: homeCamera.center, zoom: fit < 700 ? 0.9 : homeCamera.zoom, pitch: 0, bearing: 0 });
-    // once the dock is on screen, center the globe in the space above it
-    requestAnimationFrame(() => requestAnimationFrame(() => frameGlobe(false)));
+    if (intro.state === "wait") {
+      intro.state = "ready";
+      map.jumpTo({ center: introCity(), zoom: 10, pitch: 0, bearing: 0 });
+      // lower-zoom imagery of the surroundings loads with the city, so pulling back shows land instead of black
+      map.setPrefetchZoomDelta?.(6);
+      playIntro();
+    } else if (intro.state === "done") {
+      map.jumpTo({ center: homeCamera.center, zoom: fit < 700 ? 0.9 : homeCamera.zoom, pitch: 0, bearing: 0 });
+      // once the dock is on screen, center the globe in the space above it
+      requestAnimationFrame(() => requestAnimationFrame(() => frameGlobe(false)));
+    }
     if (typeof setTerrain === "function" && terrainOn) {
       terrainOn = false;
       applyTerrain();
@@ -457,6 +510,7 @@ function setHomeLayers(show) {
   }
 }
 map.on("style.load", () => onViewChange(document.body.dataset.view, null));
+if (styleReady) onViewChange(document.body.dataset.view, null); // the style loaded before this script ran
 
 // A starfield behind the globe, drawn once.
 (function stars() {

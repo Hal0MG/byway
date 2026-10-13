@@ -4,7 +4,9 @@
 
 The first release, with the desktop app for Mac and Windows.
 
-- **Welcome screen** on first launch: language, light or dark, sound, the AI planner and a home town, every step
+- **Opening**: the globe pulls back from a satellite view of your town, then the trips, search and top bar fade in.
+  Dark and satellite by default.
+- **Welcome screen** on first launch: language, sound, the AI planner and a home town, every step
   skippable.
 - **Languages**: English, French, Chinese (simplified) and Bangla, from the flag menu in the top bar. The AI writes trip
   plans, guides and answers in the chosen language.
