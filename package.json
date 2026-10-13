@@ -11,7 +11,8 @@
     "dev": "node --watch server.js",
     "desktop": "electron .",
     "desktop:build": "electron-builder --publish never",
-    "smoke": "node tools/smoke.mjs"
+    "smoke": "node tools/smoke.mjs",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",

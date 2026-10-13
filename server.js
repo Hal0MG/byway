@@ -3386,7 +3386,9 @@ function openBrowser() {
   const [cmd, args] = process.platform === "win32" ? ["cmd", ["/c", "start", "", url]] : process.platform === "darwin" ? ["open", [url]] : ["xdg-open", [url]];
   spawn(cmd, args, { detached: true, stdio: "ignore", windowsHide: true }).unref();
 }
-app.listen(port, () => {
+// The tests import this file for its plan checks without starting the app (BYWAY_TEST=1).
+export { checkPlan, requestedDays, partialJson, samePlace, osrmResult, routePieces };
+if (!process.env.BYWAY_TEST) app.listen(port, () => {
   console.log(`Running on ${url}`);
   openBrowser();
 }).on("error", (e) => {
