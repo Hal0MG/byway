@@ -368,7 +368,12 @@ async function routeOrs(coords, mode) {
   });
   const data = await r.json();
   if (!r.ok) {
-    const msg = typeof data?.error === "string" ? data.error : data?.error?.message || "Routing failed";
+    let msg = typeof data?.error === "string" ? data.error : data?.error?.message || "Routing failed";
+    // the free plan's daily allowance; it ran out on 2026-10-12 after a day of testing and a 35-trip batch
+    if (r.status === 403 && /quota/i.test(msg)) {
+      msg = "Today's free routing from OpenRouteService is used up, so routes can't be measured until it resets " +
+        "(within 24 hours). Planned trips still open.";
+    }
     const m = msg.match(/coordinate (\d+)/);
     throw new RouteError(msg, { pointIndex: m ? parseInt(m[1], 10) : null });
   }

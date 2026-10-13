@@ -172,25 +172,36 @@ let progress = null;
 // ---------- geocoding (Nominatim public server allows about 1 request per second) ----------
 
 let lastGeocode = 0;
-async function nominatim(q) {
+// Up to `limit` matches, best first: [{ lng, lat, cls }] (cls: OpenStreetMap's class, "place" for towns).
+// `towns`: only cities, towns and villages.
+async function nominatimAll(q, limit = 1, towns = false) {
   const wait = 1100 - (Date.now() - lastGeocode);
   if (wait > 0) await sleep(wait);
   lastGeocode = Date.now();
-  const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`);
+  const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=${limit}${towns ? "&featureType=settlement" : ""}&q=${encodeURIComponent(q)}`);
   const data = await r.json();
-  return data.length ? { lng: parseFloat(data[0].lon), lat: parseFloat(data[0].lat) } : null;
+  return data.map((d) => ({ lng: parseFloat(d.lon), lat: parseFloat(d.lat), cls: d.class }));
 }
+const nominatim = async (q) => (await nominatimAll(q))[0] || null;
 // The AI sometimes gets the region wrong ("Mount Cook Village, Otago" is in Canterbury) or names a spot the map
 // doesn't know ("Arthur's Pass Summit"). Then try the place with just its country, and without words like "Summit".
 async function geocode(q) {
+  return (await geocodeAll(q, 1))[0];
+}
+// All the matches of the first query form that finds any (see geocode). Several towns share a name ("Blue River,
+// British Columbia" is also a place near the Yukon), so placePoints picks among them by the route.
+async function geocodeAll(q, limit = 5) {
   const parts = q.split(",").map((s) => s.trim()).filter(Boolean);
   const tries = [q];
   if (parts.length > 2) tries.push(`${parts[0]}, ${parts.at(-1)}`);
   const plain = parts[0].replace(/\b(summit|lookout|viewpoint|scenic overlook|overlook|trailhead)\b/gi, "").replace(/\s+/g, " ").trim();
   if (plain && plain !== parts[0]) tries.push([plain, ...parts.slice(1)].join(", "), parts.length > 1 ? `${plain}, ${parts.at(-1)}` : plain);
   for (const t of [...new Set(tries)]) {
-    const hit = await nominatim(t);
-    if (hit) return hit;
+    const hits = await nominatimAll(t, limit);
+    if (!hits.length) continue;
+    // "Green River, Utah" only finds the river; when nothing is a town, add the towns of that name
+    if (limit > 1 && !hits.some((h) => /^(place|boundary)$/.test(h.cls))) hits.push(...(await nominatimAll(t, 3, true).catch(() => [])));
+    return hits;
   }
   throw new Error(`No match for "${q}". Try a city or landmark name.`);
 }
@@ -665,6 +676,32 @@ const skeletonOf = () => ({
   roads: (plan?.roads || []).map(({ name, ref, byway, days, segment }) => ({ name, ref, byway, days, segment })),
 });
 
+// Each point has its map matches in `cands`; choose one each so the whole route is shortest (Viterbi over the
+// matches), with a penalty for rivers, lakes and the like when a town shares the name ("Green River, Utah" is also the
+// river by Flaming Gorge). Sets lng/lat and removes `cands`.
+function pickAlongRoute(points) {
+  const cost = (c) => (c.cls && !/^(place|boundary|tourism|amenity|building|historic|highway|railway|aeroway|leisure)$/.test(c.cls) ? 100000 : 0);
+  let prev = null; // [{ total, path }] per candidate of the previous point
+  for (const p of points) {
+    const cands = p.cands?.length ? p.cands : [{ lng: p.lng, lat: p.lat }];
+    prev = cands.map((c) => {
+      if (!prev) return { total: cost(c), path: [c] };
+      let best = null;
+      for (const q of prev) {
+        const t = q.total + haversine([q.path.at(-1).lng, q.path.at(-1).lat], [c.lng, c.lat]) + cost(c);
+        if (!best || t < best.total) best = { total: t, path: [...q.path, c] };
+      }
+      return best;
+    });
+  }
+  const best = prev?.reduce((a, b) => (b.total < a.total ? b : a));
+  points.forEach((p, i) => {
+    if (best) Object.assign(p, { lng: best.path[i].lng, lat: best.path[i].lat });
+    delete p.cands;
+    delete p.cls;
+  });
+}
+
 // Replace the stops with the AI's points. Points that keep their name reuse their location and photos.
 async function placePoints(skel) {
   const keepSpots = plan?.spots || [];
@@ -688,15 +725,17 @@ async function placePoints(skel) {
     };
     const k = known.get(s.name);
     if (k) {
-      next.push({ ...p, lng: k.lng, lat: k.lat, photos: k.photos, photosP: k.photosP });
+      next.push({ ...p, lng: k.lng, lat: k.lat, photos: k.photos, photosP: k.photosP, cands: [k] });
       continue;
     }
     try {
-      next.push({ ...p, ...(await geocode(s.name)) });
+      const cands = await geocodeAll(s.name);
+      next.push({ ...p, ...cands[0], cands });
     } catch {
       missed.push(s.name);
     }
   }
+  pickAlongRoute(next);
   const dropped = dropDetours(next);
   const saved = fixOrder(next);
   stops.length = 0;
@@ -865,7 +904,9 @@ async function applyOrderFix() {
 function dropDetours(points) {
   const removed = [];
   for (let i = 1; i < points.length; i++) {
-    if (haversine([points[i - 1].lng, points[i - 1].lat], [points[i].lng, points[i].lat]) < 2000) {
+    // the same overnight town two days running is a rest day (or a day of exploring there), not a duplicate
+    const restDay = points[i].day !== points[i - 1].day && !isVia(points[i]) && !isVia(points[i - 1]);
+    if (!restDay && haversine([points[i - 1].lng, points[i - 1].lat], [points[i].lng, points[i].lat]) < 2000) {
       removed.push(points[i].name);
       points.splice(i--, 1);
     }
