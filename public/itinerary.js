@@ -263,6 +263,15 @@ function daySegments(g) {
   const all = plan?.roads || [];
   const today = all.filter((r) => (r.days || []).map(Number).includes(g.day));
   for (const s of out) s.road = matchRoad(s, today.length ? today : all);
+  // stretches the router has no name for, that run along a featured road's mapped shape
+  const shaped = all.filter((r) => r.shape?.length);
+  if (shaped.length) {
+    const coords = routes.scenic.geometry.coordinates;
+    for (const s of out) {
+      if (s.road || s.from == null || s.ref) continue; // a numbered road isn't an unnamed park road
+      s.road = shaped.find((r) => alongShape(coords.slice(s.from, s.to + 1), r.shape)) || null;
+    }
+  }
   return out;
 }
 

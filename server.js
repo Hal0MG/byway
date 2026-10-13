@@ -3016,7 +3016,12 @@ function roadEnds(pts, near, name) {
   const midTarget = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
   const mid = use.reduce((m, p) => (haversine(p, midTarget) < haversine(m, midTarget) ? p : m), use[0]);
   const pt = (p, label) => ({ name: `${name} (${label})`, lng: p[0], lat: p[1] });
-  return [pt(a, "one end"), pt(mid, "middle"), pt(b, "other end")];
+  const ends = [pt(a, "one end"), pt(mid, "middle"), pt(b, "other end")];
+  // the road's shape near the trip, so the app can tell whether the route really drives it (routers often have no name
+  // for park roads like Skyline Drive): at most ~400 points, rounded to ~10 m
+  const keep = Math.max(1, Math.ceil(use.length / 400));
+  ends.shape = use.filter((_, k) => k % keep === 0).map(([x, y]) => [Math.round(x * 1e4) / 1e4, Math.round(y * 1e4) / 1e4]);
+  return ends;
 }
 
 app.post("/api/road-points", async (req, res) => {
@@ -3051,14 +3056,21 @@ app.post("/api/road-points", async (req, res) => {
       else queries.push(`${kind} ${m[4]}${st ? `, ${st}` : ""}`);
       break;
     }
-    queries.push(`${name}${states[0] ? `, ${states[0]}` : ""}`);
+    // by name in each of the trip's states (up to 4): "Skyline Drive" exists in a dozen states
+    for (const st of states.length ? states.slice(0, 4) : [""]) queries.push(`${name}${st ? `, ${st}` : ""}`);
+    // the match nearest where the trip expects the road (there's a Skyline Drive in Virginia and another near
+    // Asheville); between matches about as near, the longer one. Over 60 km away isn't it.
+    const offTrip = (ends) => (nearPts.length ? Math.min(...ends.map((p) => Math.min(...nearPts.map((n) => haversine(n, [p.lng, p.lat]))))) : 0);
     let best = null;
-    for (const q of queries) {
+    for (const q of [...new Set(queries)]) {
       const ends = roadEnds(await roadShape(q), nearPts, name);
-      const span = ends ? haversine([ends[0].lng, ends[0].lat], [ends[2].lng, ends[2].lat]) : 0;
-      if (ends && (!best || span > best.span)) best = { ends, span, q };
+      if (!ends) continue;
+      const off = offTrip(ends);
+      if (off > 60000) continue;
+      const span = haversine([ends[0].lng, ends[0].lat], [ends[2].lng, ends[2].lat]);
+      if (!best || off < best.off - 5000 || (off < best.off + 5000 && span > best.span)) best = { ends, span, off, q };
     }
-    if (best) return res.json({ points: best.ends, source: `map: ${best.q}` });
+    if (best) return res.json({ points: best.ends, shape: best.ends.shape, source: `map: ${best.q}` });
 
     // 2. The AI's places, kept only within 80 km of where the map puts the road (or of each other)
     if (noAI()) return res.json({ points: [] });

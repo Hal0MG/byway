@@ -1963,6 +1963,8 @@ async function liveRevise(opts = {}) {
       liveStep("Making sure the route drives your roads");
       if ((await enforceRoads(roadEdits.add)).length) await findRoutes({ fit: false });
     }
+    // and every featured road the new route misses
+    await driveFeaturedRoads(liveStep);
     // long days that moving the overnights can fix are fixed right away, without asking the AI again
     if (longDays().length) balanceDays();
     renderSpotMarkers();

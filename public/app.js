@@ -1221,6 +1221,7 @@ async function planTrip(prompt, settings) {
     if (placed.reordered) detailsP = requestDetails(prompt, skeletonOf());
     progressSet("drive", "doing", "Routing with OpenRouteService");
     if (!(await findRoutes({ fit: false }))) throw new Error($("status").textContent || "Routing failed.");
+    await driveFeaturedRoads((t) => progressSet("drive", "doing", t));
 
     // Up to two rounds of "these days are too long", while each round helps (fewer long days, or the longest shorter).
     const worst = () => Math.max(0, ...dayGroups().map((g) => dayStats(g, "scenic")?.dur || 0));
@@ -1286,8 +1287,37 @@ const revisePlan = (opts) => liveRevise(opts);
 function metersOnRoad(r) {
   if (!routes.scenic) return 0;
   let m = 0;
-  for (const g of dayGroups()) for (const s of daySegments(g)) if (matchRoad(s, [r])) m += s.distance_m;
+  for (const g of dayGroups()) for (const s of daySegments(g)) if (s.road === r || matchRoad(s, [r])) m += s.distance_m;
   return m;
+}
+// Whether a stretch of the route runs along a road's mapped shape (r.shape from /api/road-points): most of its points
+// within 250 m. For roads the router has no name for (Skyline Drive, many park and pass roads).
+function alongShape(coords, shape) {
+  if (!shape?.length || coords.length < 2) return false;
+  const near = (p) => {
+    for (let k = 0; k < shape.length; k++) {
+      if (haversine(p, shape[k]) < 250) return true;
+      // between two shape points that belong to the same stretch (under 3 km apart)
+      const q = shape[k + 1];
+      if (q && haversine(shape[k], q) < 3000 && distToSegment(p, shape[k], q) < 250) return true;
+    }
+    return false;
+  };
+  const step = Math.max(1, Math.floor(coords.length / 12));
+  let hit = 0;
+  let n = 0;
+  for (let k = 0; k < coords.length; k += step, n++) if (near(coords[k])) hit++;
+  return hit / n >= 0.7;
+}
+// Meters from p to the segment a-b, on a local flat projection (fine at these distances).
+function distToSegment(p, a, b) {
+  const kx = 111320 * Math.cos((p[1] * Math.PI) / 180);
+  const ky = 110540;
+  const [px, py, ax, ay, bx, by] = [p[0] * kx, p[1] * ky, a[0] * kx, a[1] * ky, b[0] * kx, b[1] * ky];
+  const dx = bx - ax;
+  const dy = by - ay;
+  const t = dx || dy ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy))) : 0;
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
 // Insert points along a road (in road order) into the trip where they add the least straight-line detour,
@@ -1313,20 +1343,45 @@ function insertRoadPoints(pts, r) {
 
 // For each road the route doesn't drive yet: find points on it and add them as via points.
 // Returns the names of the roads it added. Call findRoutes() afterwards.
-async function enforceRoads(roads) {
+// near: only roads within this many km of the current route (the automatic pass; a click on "Route through it" has none)
+async function enforceRoads(roads, { near = null } = {}) {
   const added = [];
   for (const r of roads) {
     if (metersOnRoad(r) >= 8047) continue; // already drives 5+ miles of it
     let pts = [];
+    let res = {};
     try {
-      pts = (await api("/api/road-points", {
-        name: r.name, ref: r.ref, states: [].concat(r.states || r.official?.states || tripStates()), near: stops.map((s) => [s.lng, s.lat]),
+      // where the plan expects the road: the points it put on it, else that road's days, else the whole trip
+      const own = stops.filter((s) => s.road && (sameRoad(s.road, r.name) || (r.ref && s.road === r.ref)));
+      const days = (r.days || []).map(Number);
+      const near = (own.length ? own : days.length ? stops.filter((s) => days.includes(s.day)) : stops).map((s) => [s.lng, s.lat]);
+      res = await api("/api/road-points", {
+        name: r.name, ref: r.ref, states: [].concat(r.states || r.official?.states || tripStates()), near,
         osm: r.osm || r.official?.osm || "",
-      })).points || [];
+      });
+      pts = res.points || [];
     } catch {
       pts = [];
     }
     if (!pts.length) continue;
+    // its shape, kept so the trip can tell it drives this road even where the router has no name for it
+    if (res.shape?.length) {
+      r.shape = res.shape;
+      const own = plan.roads.find((x) => sameRoad(x.name, r.name));
+      if (own) own.shape = res.shape;
+    }
+    // already on it by shape (the router just had no name): nothing to add
+    if (metersOnRoad(r) >= 8047) continue;
+    if (near && routes.scenic) {
+      const line = routes.scenic.geometry.coordinates;
+      const step = Math.max(1, Math.floor(line.length / 800));
+      const off = Math.min(...pts.map((p) => {
+        let d = Infinity;
+        for (let k = 0; k < line.length; k += step) d = Math.min(d, haversine(line[k], [p.lng, p.lat]));
+        return d;
+      }));
+      if (off > near * 1000) continue;
+    }
     const day = insertRoadPoints(pts, r);
     if (!plan.roads.some((x) => sameRoad(x.name, r.name))) {
       plan.roads.push({
@@ -1337,6 +1392,21 @@ async function enforceRoads(roads) {
     added.push(r.name);
   }
   return added;
+}
+
+// After measuring a plan: every featured road the route doesn't really drive (the planner's via points are often town
+// centres off the road, so the router takes the faster valley road) gets points on the road itself, and the trip is
+// measured again. Roads the router still can't drive (private, toll, closed) stay as they are, with the card's note.
+// Returns the names of the roads it routed through.
+async function driveFeaturedRoads(step = () => {}) {
+  const missed = (plan?.roads || []).filter((r) => metersOnRoad(r) < 8047 && !r.unroutable);
+  if (!missed.length) return [];
+  step(`Routing through ${missed.length === 1 ? missed[0].name : `${missed.length} featured roads`} the route missed`);
+  const added = await enforceRoads(missed, { near: 40 });
+  if (added.length) await findRoutes({ fit: false });
+  // tried once: don't try again on every change
+  for (const r of missed) if (metersOnRoad(r) < 8047) r.unroutable = true;
+  return added.filter((n) => metersOnRoad(plan.roads.find((r) => r.name === n) || {}) >= 8047);
 }
 
 // "Route through it" on a road card: add the road's points and reroute, without replanning the whole trip.
@@ -1596,8 +1666,11 @@ function tripStates() {
     const table = isAU(s) ? AU_STATES : isCA(s) ? CA_PROVINCES : STATE_NAMES;
     // "Québec" and "Quebec" are the same
     const key = (x) => x.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-    // "Lorne, Victoria, Australia" or "Ouray, CO": the state is the last part that names one
-    for (const part of s.name.split(",").map((x) => x.trim()).reverse()) {
+    // "Lorne, Victoria, Australia" or "Ouray, CO": the state is the last part that names one. "Washington, D.C." is
+    // the capital, not Washington State (its first part is the city).
+    const parts = s.name.split(",").map((x) => x.trim());
+    if (/^(D\.?C\.?|District of Columbia)$/i.test(parts[1] || "")) continue;
+    for (const part of parts.slice(1).reverse().concat(parts.length === 1 ? parts : [])) {
       const hit = table[part.toUpperCase()] || Object.values(table).find((x) => key(x) === key(part));
       if (hit) {
         out.add(hit);
