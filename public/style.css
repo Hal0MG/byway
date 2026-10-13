@@ -1649,6 +1649,11 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .td-h { margin: 12px 0 4px; }
   .td-list { font-size: 14px; }
   .td-spots li { padding: 6px 0; font-size: 13px; }
+  /* road and stop cards: a shorter photo and reading-size text */
+  .road-img { min-height: 0; max-height: none; aspect-ratio: 16 / 9; }
+  .road-body { padding: 16px; }
+  .road-body p, .road-body dd { font-size: 15px; }
+  .road-head h4 { font-size: 20px; }
   /* Setup: a step's tag ("to plan new trips") under its title, the footer's status on one line */
   .su-step h3 { flex-wrap: wrap; row-gap: 2px; font-size: 16px; }
   .su-step h3 em { flex-basis: 100%; padding-left: 34px; }
