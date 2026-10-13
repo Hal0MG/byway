@@ -5,6 +5,21 @@ Describe a trip and an AI plans it over the roads worth driving (designated scen
 the app measures every day's drive, writes a day-by-day guide with the stops worth pulling over for, and opens each day
 in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own computer, with free services.
 
+![Byway home screen: a globe with ready-made trips floating around it](docs/screenshots/home.jpg)
+
+| | |
+|---|---|
+| ![A trip: Grand Teton, Yellowstone and the Beartooth Highway](docs/screenshots/trip.jpg) | ![A day of the trip with its photo, drive and seasonal closures](docs/screenshots/day.jpg) |
+| **A trip at a glance**: miles, hours, featured roads, climbing and stops. | **Every day**: the drive, the guide, closures and winter rules. |
+| ![Featured road cards with curve, hairpin and climb ratings](docs/screenshots/roads.jpg) | ![The route on the map with each day's driving time](docs/screenshots/map.jpg) |
+| **Featured roads**, rated for curves, hairpins and climbs. | **The map**, with each day's time and the stops. |
+| ![The plan filling in live while the AI writes it](docs/screenshots/planning.jpg) | ![Other versions of the trip compared side by side](docs/screenshots/versions.jpg) |
+| **Planning live**: the days fill in as the AI writes them. | **Other versions**, measured and compared before you switch. |
+| ![Asking a question about the trip](docs/screenshots/ask.jpg) | ![Today: the next stop, tonight's arrival and roads ahead](docs/screenshots/today.jpg) |
+| **Ask your trip**, answered from its own days and places. | **Today**: what's next while you're on the road. |
+
+<p align="center"><img src="docs/screenshots/phone-today.jpg" width="300" alt="Today on a phone"></p>
+
 ## Getting started
 
 1. Install [Node.js](https://nodejs.org/en/download) (free, the LTS version).

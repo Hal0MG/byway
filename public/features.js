@@ -2022,7 +2022,7 @@ function todayHtml() {
   const sun = sunTimes(end.lat, end.lng, dayDate(g.day) || todayIso());
   const sunset = sun?.set ? localMinutes(sun.set, tz) : null;
   const arrive = nowMin + leftS / 60 + stopMin;
-  const roads = (plan?.roads || []).filter((r) => (r.days || []).map(Number).includes(g.day)).map((r) => r.name);
+  const roads = (plan?.roads || []).filter((r) => roadDays(r).includes(g.day)).map((r) => r.name);
   // the rest of the day for the phone's maps app: from here (or the picked point) through what's ahead
   const ll = (p) => `${p[1].toFixed(5)},${p[0].toFixed(5)}`;
   const here = todayState.at != null ? [stops[todayState.at].lng, stops[todayState.at].lat] : todayState.pos && along > 0 ? todayState.pos : [stops[start].lng, stops[start].lat];
