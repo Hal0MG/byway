@@ -419,7 +419,7 @@ async function routeOrs(coords, mode) {
     radiuses: coords.map(() => -1),
     preference: mode === "scenic" ? "recommended" : "fastest",
   };
-  const r = await fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
+  const r = await fetch("https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson", {
     method: "POST",
     headers: { Authorization: ORS_KEY, "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -3421,7 +3421,7 @@ app.post("/api/setup", localOnly, async (req, res) => {
   try {
     if (b.ors != null && b.ors.trim()) {
       const k = b.ors.trim();
-      const r = await fetch(`https://api.openrouteservice.org/v2/directions/driving-car?api_key=${encodeURIComponent(k)}&start=-122.42,37.77&end=-122.41,37.78`,
+      const r = await fetch(`https://api.heigit.org/openrouteservice/v2/directions/driving-car?api_key=${encodeURIComponent(k)}&start=-122.42,37.77&end=-122.41,37.78`,
         { signal: AbortSignal.timeout(15000) }).catch(() => null);
       if (r?.ok) save.ORS_API_KEY = k;
       else problems.ors = r ? `OpenRouteService didn't accept that key (${r.status}).` : "Couldn't reach OpenRouteService.";
