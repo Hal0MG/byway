@@ -1,48 +1,57 @@
 # Roadtrip Planner
 
-Road trip planner built around scenic driving roads, for the US, Canada, Australia (NSW, Victoria, ACT, Queensland,
-Tasmania), New Zealand, the UK and the Alps. Describe a trip and an AI plans it over the best driving roads (from
-officially designated scenic byways and hand-picked famous drives), the app measures every day's drive, writes a
-day-by-day guide with the roads and the spots worth stopping for, and opens each day in Google Maps or Apple Maps for
-turn-by-turn directions.
+A road trip planner built around scenic driving roads, for the US, Canada, Australia, New Zealand, the UK and the Alps.
+Describe a trip and an AI plans it over the roads worth driving (designated scenic byways and hand-picked famous drives),
+the app measures every day's drive, writes a day-by-day guide with the stops worth pulling over for, and opens each day
+in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own computer, with free services.
 
 ## Getting started
 
 1. Install [Node.js](https://nodejs.org/en/download) (free, the LTS version).
-2. Windows: double-click `start.cmd`. Mac: double-click `start.command` (the first time macOS may refuse it as
-   coming from an unidentified developer: right-click it, choose Open, then Open). Linux: run `sh start.sh`.
+2. Mac: double-click `start.command` (the first time, macOS may refuse it as coming from an unidentified developer:
+   right-click it, choose Open, then Open). Windows: double-click `start.cmd`. Linux, or a Mac from Terminal: `sh start.sh`.
    The first time it installs what the app needs (about a minute), then opens the app in your browser.
-3. The app opens its Setup screen and walks you through the rest, all free:
-   - an OpenRouteService key for routes (needed, no card),
-   - the trip planner AI: on your own PC with LM Studio (free and unlimited, needs a graphics card with about 8 GB;
-     Setup can start LM Studio, download the model and load it), or a free Google Gemini key (no GPU, about 20 plans a day),
-   - a Tavily key for web search while planning (optional),
-   - your email or website, so Wikipedia doesn't slow down photo lookups (recommended).
-
-On an Apple Silicon Mac (M1 or later, 16 GB) the local model runs on the Mac's GPU through LM Studio; planning takes a
-few times longer than on a desktop graphics card. `start-ai.sh` loads it from Terminal, or use Setup.
+3. The Setup screen opens and walks you through the rest, all free:
+   - an [OpenRouteService](https://openrouteservice.org/dev/#/signup) key for measuring routes (recommended, no card;
+     without it, or when its daily allowance runs out, routes come from OpenStreetMap's public OSRM servers, without
+     elevation),
+   - the trip planner AI: a free [Google Gemini](https://aistudio.google.com/apikey) key (Flash-Lite: a plan in a few
+     seconds, no graphics card needed), or a model on your own computer with [LM Studio](https://lmstudio.ai)
+     (unlimited and private, needs about 8 GB of graphics memory or an Apple Silicon Mac; Setup can start it, download
+     the model and load it, and pick another computer on LM Link to run it),
+   - a [Tavily](https://app.tavily.com) key for web search while planning with the local model (optional),
+   - your email or website, so Wikipedia and OpenStreetMap don't slow down lookups (recommended).
 
 Setup checks each key with its service before saving it to `.env` (see `.env.example`). It's the gear button in the
-top bar, and it only works on the PC running the app. Keep the start window open while you use the app.
+top bar and only works on the computer running the app. Keep the start window open while you use the app.
 
-## Using it
+## What it does
 
-- Start screen: describe the trip, pick a style (coast, mountains, twisty roads...), a start date, when you leave,
-  the longest day you want, loop trip, no night driving, electric car. Or open a ready-made trip instantly.
-- Each day shows the weather (forecast within 16 days, typical weather further out), sunset, the timeline with the
-  roads and stops (time zone changes included), an elevation profile, seasonal closures and winter rules, ferries,
-  tolls and gravel, featured road cards with curve, hairpin and climb ratings, spots, and where to stay.
-- "Find fuel, chargers and sights along the route" checks OpenStreetMap for the longest stretch without fuel (and
-  without a fast charger for electric cars), viewpoints, waterfalls, hot springs, diners and lodging.
-- Fix backtracking, Fix long days, Ask for a change, Pick roads, Versions (compare and restore earlier plans), Notes
-  and checklist.
-- Export and share: GPX (one track per day), print or save as PDF, download as a web page, or a read-only link for
-  phones on the same Wi-Fi.
-- Map tab: the route, spots, 3D terrain (the 3D button), "Fly it in 3D" on road cards, the day's elevation profile.
-- Trips save automatically to `data/trips.json`.
-- Batch mode (`http://localhost:3000/?batch=1`) plans a list of trips one after another and saves them as
-  ready-made trips. Leave it running; trips already built are skipped.
-- On the PC, Chrome and Edge offer to install the app (it opens saved trips offline too).
+- **Plan**: describe the trip, or pick a style (coast, mountains, twisty roads...), dates, when you leave, the longest
+  day you want, a loop, no night driving, an electric car. Or open one of the 35 ready-made trips instantly. The plan
+  fills in on screen as the AI writes it, and the app checks it (days, overnights, featured roads on the route) and
+  sends problems back once.
+- **Every day**: driving time and distance, weather, sunset, a timeline with the roads and stops, an elevation profile,
+  seasonal closures, ferries, tolls and gravel, featured road cards with curve and climb ratings, stops with photos,
+  fuel and charger gaps, and places to stay and eat at the overnight with booking searches for that night.
+- **Change it in plain words**: "skip Winnipeg", "add a night in Banff". Changes apply in place with Undo. Fix long
+  days moves the overnights first and only asks the AI when that isn't enough.
+- **Ask your trip**: "where should we eat in Moab?" Answers come from the trip's own days, stops and places, and a
+  suggested change can be applied with one tap.
+- **Other versions**: easier, more scenic or another way, measured and compared side by side.
+- **Edit on the map**: drag a stop, pull the route through a town, right-click or long-press to add a place.
+- **Today**: on the road, what's next, the next fuel or charger, roads and stops ahead, and arrival against sunset.
+- **Export and share**: GPX, print or PDF, a web page, or a read-only link for devices on the same network.
+- **How it works**: a short tour, in the top bar.
+
+## On your phone
+
+- **At home**: Setup's "On your phone" shows the app's address on your network with a QR code. Open it in Safari or
+  Chrome on a phone on the same Wi-Fi; on an iPhone, Share, then Add to Home Screen, makes it open like an app.
+  The computer has to be on with the app running.
+- **Away from home, offline use and location in Today**: these need a secure (https) address. A free way is
+  [Tailscale](https://tailscale.com): install it on the computer and the phone, sign in on both, then run
+  `tailscale serve --bg 3000` on the computer and open the `https://...ts.net` address it shows on the phone.
 
 ## Data and tools
 
@@ -52,11 +61,21 @@ top bar, and it only works on the PC running the app. Keep the start window open
 - `public/seasonal-roads.json`: roads that close for winter or need chains. `node tools/check-seasonal.mjs` checks the
   coordinates against OpenStreetMap.
 - `public/coverage.json`: covered regions and the grey mask (`node tools/build-coverage.mjs`, needs `@turf/turf`).
-- Caches in `data/`: Wikimedia, web searches and pages, research notes per region, weather, OpenStreetMap lookups.
+- `data/presets.json`: the ready-made trips. Build them with batch mode (`http://localhost:3000/?batch=1`, trips
+  already built are skipped), then `node tools/export-presets.mjs`.
+- `node tools/package.mjs` builds a zip like a GitHub download.
+- Your trips (`data/trips.json`), keys (`.env`) and caches (routes, places, weather, photos, searches) stay on your
+  computer and out of git.
 
 ## GraphHopper (optional, off by default)
 
 A self-hosted GraphHopper can fine-tune routes inside one region. It needs Java, a lot of RAM and a long first build,
-so the app doesn't need it. The California map and graph from 1.3 and 1.4 were deleted to save space (3 GB); to use it
-again, download a region from Geofabrik and the GraphHopper jar, set `USE_GRAPHHOPPER=1` in `.env` and run
-`graphhopper\start-graphhopper.cmd`.
+so the app doesn't need it. To use it, download a region from Geofabrik and the GraphHopper jar, set
+`USE_GRAPHHOPPER=1` in `.env` and run `graphhopper/start-graphhopper.cmd`.
+
+## Privacy, terms and license
+
+The app has no accounts, analytics or ads; see the [privacy policy](public/privacy.html) for what each outside service
+receives, and the [terms of use](public/terms.html). Map data © OpenStreetMap contributors (ODbL); the dark base map
+(CARTO) and the Sentinel-2 satellite layer (EOX) are for non-commercial use. The code is under the MIT License
+([LICENSE](LICENSE)).
