@@ -5,6 +5,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { execFile, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { Agent, fetch as undiciFetch } from "undici";
 
 const app = express();
@@ -454,6 +455,46 @@ const inBbox = (bbox, [lng, lat]) =>
 // Route between stops. coordinates: [[lng, lat], ...], mode: "scenic" | "fastest".
 // Uses GraphHopper when it is running and its map covers every stop,
 // otherwise OpenRouteService.
+// ---------- route cache ----------
+// OpenRouteService's free plan has a daily allowance, and it ran out on 2026-10-12. The same request (same points, same
+// route type) comes back often: Undo, reopening and re-measuring a trip, retries, rebuilding ready-made trips, the
+// probes that move unreachable stops. So answers are kept on disk, one file per route (a route with its elevation is a
+// few hundred KB): routes for 30 days, "can't route there" for a day. Running out of quota and network errors are
+// never kept.
+const ROUTE_DIR = path.resolve("data", "route-cache");
+const ROUTE_KEEP_MS = 30 * 86400000;
+const ROUTE_FAIL_MS = 86400000;
+const ROUTE_MAX_FILES = 400;
+const routeKey = (coords, mode) =>
+  createHash("sha1").update(JSON.stringify([mode, coords.map((c) => c.map((v) => +Number(v).toFixed(5)))])).digest("hex");
+async function routeCacheGet(key) {
+  try {
+    const e = JSON.parse(await fs.readFile(path.join(ROUTE_DIR, `${key}.json`), "utf8"));
+    return Date.now() - e.at < (e.error ? ROUTE_FAIL_MS : ROUTE_KEEP_MS) ? e : null;
+  } catch {
+    return null;
+  }
+}
+let routeWrites = 0;
+async function routeCacheSet(key, entry) {
+  try {
+    await fs.mkdir(ROUTE_DIR, { recursive: true });
+    await fs.writeFile(path.join(ROUTE_DIR, `${key}.json`), JSON.stringify({ at: Date.now(), ...entry }));
+    if (++routeWrites % 25) return;
+    // now and then: drop old routes, and the oldest ones past the file limit
+    const files = await Promise.all((await fs.readdir(ROUTE_DIR)).map(async (f) => {
+      const full = path.join(ROUTE_DIR, f);
+      return { full, t: (await fs.stat(full)).mtimeMs };
+    }));
+    files.sort((a, b) => b.t - a.t);
+    for (const [i, f] of files.entries()) {
+      if (i >= ROUTE_MAX_FILES || Date.now() - f.t > ROUTE_KEEP_MS) await fs.unlink(f.full).catch(() => {});
+    }
+  } catch {
+    // a cache that can't be written just means asking again
+  }
+}
+
 app.post("/api/route", async (req, res) => {
   const { coordinates, mode } = req.body;
   if (!Array.isArray(coordinates) || coordinates.length < 2) {
@@ -478,11 +519,19 @@ app.post("/api/route", async (req, res) => {
       error: "No routing engine available. Start GraphHopper or add ORS_API_KEY to .env.",
     });
   }
+  const key = routeKey(coordinates, mode);
+  const hit = await routeCacheGet(key);
+  if (hit) return hit.error ? res.status(422).json({ error: hit.error }) : res.json(note ? { ...hit.result, note } : hit.result);
   try {
     const result = await withSnapping(coordinates, (c) => routeOrs(c, mode));
+    routeCacheSet(key, { result });
     if (note) result.note = note;
     res.json(result);
   } catch (e) {
+    // only ORS's own "can't route that" answers are kept; not quota, timeouts or network failures
+    if (e instanceof RouteError && /could not be found|unable to find a route|could not find routable point|coordinate \d+/i.test(e.message)) {
+      routeCacheSet(key, { error: e.message });
+    }
     res.status(422).json({ error: e.message });
   }
 });
