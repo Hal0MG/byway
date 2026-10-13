@@ -2171,12 +2171,10 @@ function todayHtml() {
   // the rest of the day for the phone's maps app: from here (or the picked point) through what's ahead
   const ll = (p) => `${p[1].toFixed(5)},${p[0].toFixed(5)}`;
   const here = todayState.at != null ? [stops[todayState.at].lng, stops[todayState.at].lat] : todayState.pos && along > 0 ? todayState.pos : [stops[start].lng, stops[start].lat];
-  const rest = thinPoints(ahead.map((x) => x.i), MAX_LINK_STOPS).map((i) => [stops[i].lng, stops[i].lat]);
-  const route = [here, ...rest];
-  const ap = new URLSearchParams({ source: ll(route[0]), destination: ll(route.at(-1)), mode: "driving" });
-  route.slice(1, -1).forEach((p) => ap.append("waypoint", ll(p)));
-  const google = `https://www.google.com/maps/dir/${route.map(ll).join("/")}/data=!4m2!4m1!3e0`;
-  const apple = `https://maps.apple.com/directions?${ap}`;
+  // every place ahead, in parts when there are more than one link carries (each part starts where the last ended)
+  const route = [{ p: here, name: "here" }, ...ahead.map((x) => ({ p: [x.s.lng, x.s.lat], name: shortName(x.s.name) }))];
+  const parts = linkParts(route).map((part) => ({ ...mapLinksFor(part.map((x) => ll(x.p))), from: part[0].name, to: part.at(-1).name }));
+  const { google, apple } = parts[0];
   const card = (ico, label, big, small = "") => `<div class="td-card">${icon(ico, 20)}<div><small>${label}</small><b>${big}</b>${small ? `<span>${small}</span>` : ""}</div></div>`;
   return `${sheetHead("Today")}
     <div class="td-top">
@@ -2196,9 +2194,12 @@ function todayHtml() {
     </div>
     ${roads.length ? `<h4 class="td-h">${icon("road", 16)} Roads today</h4><p class="td-list">${roads.map(esc).join(" · ")}</p>` : ""}
     ${spots.length ? `<h4 class="td-h">${icon("viewpoint", 16)} Still ahead</h4><ol class="td-spots">${spots.slice(0, 6).map((y) => `<li><b>${esc(y.x.name)}</b><span>${fmtMi(y.a - along)}${y.x.minutes ? ` · ${y.x.minutes} min stop` : ""}</span></li>`).join("")}</ol>` : ""}
+    ${parts.length > 1 ? `<p class="td-parts">${icon("route", 14)} <span>Today's route has more places than one map link carries, so it goes in
+      ${parts.length} parts. Open the next part when you reach ${esc(parts[0].to)}:
+      ${parts.slice(1).map((p, k) => `<span class="td-part">Part ${k + 2} from ${esc(p.from)}: <a href="${esc(p.google)}" target="_blank" rel="noopener">Google</a> · <a href="${esc(p.apple)}" target="_blank" rel="noopener">Apple</a></span>`).join("")}</span></p>` : ""}
     <div class="sheet-actions">
-      <a class="btn ghost" href="${esc(apple)}" target="_blank" rel="noopener">${icon("pin", 18)} Apple Maps</a>
-      <a class="btn blue" href="${esc(google)}" target="_blank" rel="noopener">${icon("pin", 18)} Drive it in Google Maps</a>
+      <a class="btn ghost" href="${esc(apple)}" target="_blank" rel="noopener">${icon("pin", 18)} Apple Maps${parts.length > 1 ? ", part 1" : ""}</a>
+      <a class="btn blue" href="${esc(google)}" target="_blank" rel="noopener">${icon("pin", 18)} Drive it in Google Maps${parts.length > 1 ? ", part 1" : ""}</a>
     </div>`;
 }
 // keep the times fresh while it's open

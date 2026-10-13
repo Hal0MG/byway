@@ -880,8 +880,12 @@ function renderDay(g, gi, groups, segs) {
       ${sunChip}
       ${routeChips(segs)}
       <span class="grow"></span>
-      ${links ? `<a class="app-link" href="${esc(links.google)}" target="_blank" rel="noopener">${icon("pin", 16)} Google Maps</a>
-                 <a class="app-link" href="${esc(links.apple)}" target="_blank" rel="noopener">${icon("pin", 16)} Apple Maps</a>` : ""}
+      ${!links ? "" : links.parts.length > 1
+        // more places than one link carries: the day in parts that meet at a shared place
+        ? ["Google Maps", "Apple Maps"].map((app) => `<span class="app-link app-parts">${icon("pin", 16)} ${app}
+            ${links.parts.map((p, k) => `<a href="${esc(p[app.startsWith("G") ? "google" : "apple"])}" target="_blank" rel="noopener" title="${esc(`${p.from} to ${p.to}`)}">Part ${k + 1}</a>`).join("")}</span>`).join("")
+        : `<a class="app-link" href="${esc(links.google)}" target="_blank" rel="noopener">${icon("pin", 16)} Google Maps</a>
+           <a class="app-link" href="${esc(links.apple)}" target="_blank" rel="noopener">${icon("pin", 16)} Apple Maps</a>`}
       <button class="app-link" data-act="day-map" data-day="${day}">${icon("map", 16)} Show on map</button>
     </div>
     ${meta?.summary ? `<p class="day-summary">${esc(meta.summary)}</p>` : ""}

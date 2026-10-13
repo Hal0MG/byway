@@ -137,7 +137,7 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   padding: 9px 14px; border-radius: 6px;
-  font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap;
+  font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap; text-decoration: none;
 }
 .btn .ico { width: 16px; height: 16px; }
 .btn.blue { background: var(--blue); }
@@ -353,6 +353,11 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
   font-size: 14px; font-weight: 600; text-decoration: none;
 }
 .app-link:hover { background: var(--blue); color: #fff; }
+/* a long day's parts: one pill per app, a link per part */
+.app-link.app-parts { padding: 4px 4px 4px 12px; }
+.app-link.app-parts:hover { background: var(--card-strong); color: inherit; }
+.app-parts a { padding: 4px 8px; border-radius: 4px; background: var(--card); color: var(--text); text-decoration: none; }
+.app-parts a:hover { background: var(--blue); color: #fff; }
 .day-summary { margin: 18px 0 0; font-size: 17px; line-height: 1.65; max-width: 72ch; }
 .day h3 {
   display: flex; align-items: center; gap: 9px;
@@ -670,6 +675,8 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
   font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap;
 }
 .day-links a:hover { background: var(--blue); color: #fff; }
+.day-parts { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.day-parts a { padding: 3px 7px; }
 
 .via .stop-body { padding: 2px 4px 2px 10px; gap: 16px; }
 .via .title b { font-size: 13px; font-weight: 500; color: var(--muted); }
@@ -1480,3 +1487,9 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .lib-head .btn { padding: 10px 14px; }
   .lib-tools { margin-top: 16px; }
 }
+
+/* Today: the rest of the day in parts */
+.td-parts { display: flex; gap: 8px; margin: 14px 0 0; padding: 10px 12px; border-radius: 6px; background: var(--card); font-size: 13px; line-height: 1.5; color: var(--muted); }
+.td-parts > .ico { flex: none; margin-top: 3px; color: var(--blue); }
+.td-part { display: block; color: var(--text); }
+.td-part a { color: var(--blue); font-weight: 600; }

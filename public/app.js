@@ -438,25 +438,31 @@ function thinPoints(mid, n) {
 // parameter was being dropped). Up to 10 places per link. Apple (iOS 18.4+): repeated waypoint parameters.
 // No "avoid highways": the via points already put the drive on the scenic roads.
 const MAX_LINK_STOPS = 8;
+const LINK_PLACES = MAX_LINK_STOPS + 2;
+// Google and Apple links for places given as "lat,lng" strings, in order.
+function mapLinksFor(lls) {
+  const ap = new URLSearchParams({ source: lls[0], destination: lls.at(-1), mode: "driving" });
+  lls.slice(1, -1).forEach((x) => ap.append("waypoint", x));
+  return { google: `https://www.google.com/maps/dir/${lls.join("/")}/data=!4m2!4m1!3e0`, apple: `https://maps.apple.com/directions?${ap}` };
+}
+// More places than one link carries: parts of about equal size that meet at a shared place (the end of one is the
+// start of the next), so every scenic via point reaches the phone instead of being thinned out.
+function linkParts(items) {
+  if (items.length <= LINK_PLACES) return [items];
+  const n = Math.ceil((items.length - 1) / (LINK_PLACES - 1));
+  const per = (items.length - 1) / n;
+  return Array.from({ length: n }, (_, k) => items.slice(Math.round(k * per), Math.round((k + 1) * per) + 1));
+}
 function dayLinks(groups, gi) {
   let pts = [...groups[gi].items];
   if (gi > 0) pts.unshift(groups[gi - 1].items.at(-1));
   if (selected === "fastest") pts = pts.filter((i, k) => k === 0 || k === pts.length - 1 || !isVia(stops[i]));
   if (pts.length < 2) return null;
   const ll = (i) => `${stops[i].lat.toFixed(5)},${stops[i].lng.toFixed(5)}`;
-  const origin = pts[0];
-  const dest = pts[pts.length - 1];
-  const mid = thinPoints(pts.slice(1, -1), MAX_LINK_STOPS);
-  const all = [origin, ...mid, dest];
-
-  const ap = new URLSearchParams({ source: ll(origin), destination: ll(dest), mode: "driving" });
-  mid.forEach((i) => ap.append("waypoint", ll(i)));
-
-  return {
-    google: `https://www.google.com/maps/dir/${all.map(ll).join("/")}/data=!4m2!4m1!3e0`,
-    apple: `https://maps.apple.com/directions?${ap}`,
-    count: all.length,
-  };
+  const all = [pts[0], ...thinPoints(pts.slice(1, -1), MAX_LINK_STOPS), pts.at(-1)];
+  // one link with the places thinned, and the day in parts when it has more places than a link carries
+  const parts = linkParts(pts).map((p) => ({ ...mapLinksFor(p.map(ll)), from: shortName(stops[p[0]].name), to: shortName(stops[p.at(-1)].name) }));
+  return { ...mapLinksFor(all.map(ll)), count: all.length, parts };
 }
 
 function toggleOvernight(i) {
@@ -527,15 +533,27 @@ function dayHeader(groups, gi, multiDay) {
   if (links) {
     const box = document.createElement("div");
     box.className = "day-links";
-    for (const [href, app] of [[links.google, "Google Maps"], [links.apple, "Apple Maps"]]) {
-      const a = document.createElement("a");
-      a.href = href;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.textContent = app.split(" ")[0];
-      a.title = `Open ${multiDay ? `day ${g.day}` : "the trip"} in ${app}`;
-      a.setAttribute("aria-label", a.title);
-      box.appendChild(a);
+    const what = multiDay ? `day ${g.day}` : "the trip";
+    for (const app of ["Google Maps", "Apple Maps"]) {
+      const key = app.startsWith("G") ? "google" : "apple";
+      // a long day in parts: "Google 1 2", each part its own link
+      const parts = links.parts.length > 1 ? links.parts : [links];
+      const wrap = parts.length > 1 ? document.createElement("span") : box;
+      if (parts.length > 1) {
+        wrap.className = "day-parts";
+        wrap.textContent = app.split(" ")[0];
+        box.appendChild(wrap);
+      }
+      parts.forEach((p, k) => {
+        const a = document.createElement("a");
+        a.href = p[key];
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.textContent = parts.length > 1 ? String(k + 1) : app.split(" ")[0];
+        a.title = parts.length > 1 ? `Open part ${k + 1} of ${what} in ${app}: ${p.from} to ${p.to}` : `Open ${what} in ${app}`;
+        a.setAttribute("aria-label", a.title);
+        wrap.appendChild(a);
+      });
     }
     li.appendChild(box);
   }
