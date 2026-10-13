@@ -129,3 +129,21 @@ test("routePieces: long routes in pieces that share their ends", () => {
   pieces.slice(1).forEach((p, k) => assert.equal(p[0], pieces[k][1]));
   assert.equal(pieces.at(-1)[1], 99);
 });
+
+// matchRoad and refParts live in itinerary.js with the page code; the two functions are taken out and run alone
+const itin = fs.readFileSync(new URL("../public/itinerary.js", import.meta.url), "utf8");
+const roadCtx = {};
+vm.runInNewContext(itin.slice(itin.indexOf("function refParts"), itin.indexOf("// The days a featured road is on")) + "\nthis.matchRoad = matchRoad;", roadCtx);
+test("matchRoad: road numbers as each country's map writes them", () => {
+  const seg = (ref, name = "") => ({ refs: ref ? [ref] : [], name });
+  const hit = (s, ref, name = "x") => !!roadCtx.matchRoad(s, [{ name, ref }]);
+  assert.ok(hit(seg("Hwy 63"), "Fv63")); // Norway: OpenStreetMap's bare "63"
+  assert.ok(hit(seg("Hwy 1"), "1")); // Iceland's Ring Road
+  assert.ok(hit(seg("Hwy 35"), "F35"));
+  assert.ok(hit(seg("E 10"), "E10"));
+  assert.ok(hit(seg("Hwy 99"), "BC 99")); // Canada
+  assert.ok(hit(seg("US 89"), "US 89"));
+  assert.ok(hit(seg("", "Going-to-the-Sun Road"), "", "Going-to-the-Sun Road"));
+  assert.ok(!hit(seg("Hwy 63"), "N63")); // an Irish N road isn't a bare number
+  assert.ok(!hit(seg("US 89"), "US 191"));
+});

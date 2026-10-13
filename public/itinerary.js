@@ -209,7 +209,7 @@ function refParts(str) {
   if (nor.length) return [...out, ...nor];
   // letter-number routes: Australia and the UK (B100, A82, M6), Austria and Germany (B107, L188), France (D902, N85),
   // Europe (E10), Ireland (R559), Iceland (F35), Spain (A-372)
-  for (const m of String(str || "").matchAll(/\b([MABCDLNERF])-?(\d{1,4})\b|\b(I|US|[A-Z]{2,3})[ -]?(\d+)\b/gi)) {
+  for (const m of String(str || "").matchAll(/\b([MABCDLNERF])[- ]?(\d{1,4})\b|\b(I|US|[A-Z]{2,3})[ -]?(\d+)\b/gi)) {
     if (m[1]) {
       out.push({ t: "AU", l: m[1].toUpperCase(), n: m[2] });
       continue;
@@ -221,12 +221,17 @@ function refParts(str) {
 }
 const coreName = (s) => String(s || "").replace(/\(.*?\)/g, "").toLowerCase().trim();
 
+// Norway's and Iceland's maps give bare numbers ("63", read as "Hwy 63") for what the planner writes Fv63, Rv7 or F35;
+// a road written as just a number ("1", Iceland's Ring Road) is the same.
+const BARE_OK = new Set(["Fv", "Rv", "F"]);
+const sameRef = (a, b) =>
+  a.n === b.n && ((a.t === b.t && (a.l || "") === (b.l || "")) || (a.t === "ST" && BARE_OK.has(b.l)) || (b.t === "ST" && BARE_OK.has(a.l)));
 function matchRoad(seg, roads) {
   const segRefs = seg.refs.flatMap(refParts);
   const segName = coreName(seg.name);
   for (const r of roads) {
-    const rr = refParts(r.ref).concat(refParts(r.name));
-    if (rr.some((a) => segRefs.some((b) => a.t === b.t && a.n === b.n && (a.l || "") === (b.l || "")))) return r;
+    const rr = refParts(r.ref).concat(refParts(r.name), /^\d{1,3}$/.test(String(r.ref || "").trim()) ? [{ t: "ST", n: String(r.ref).trim() }] : []);
+    if (rr.some((a) => segRefs.some((b) => sameRef(a, b)))) return r;
     const rn = coreName(r.name);
     if (segName.length >= 6 && rn.length >= 6 && (segName.includes(rn) || rn.includes(segName))) return r;
   }
