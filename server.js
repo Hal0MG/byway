@@ -1468,8 +1468,9 @@ async function countGemini(model, limited) {
 
 // GEMINI_BASE_URL: another endpoint with the same API (a proxy, or a stand-in for tests).
 const GEMINI_BASE = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/$/, "");
-// `onText` (optional) gets the answer so far as it streams; `signal` cancels.
-async function callGemini(prompt, { signal, onText } = {}) {
+// `onText` (optional) gets the answer so far as it streams; `signal` cancels; `schema` (JSON Schema) makes Gemini answer
+// in exactly that shape (Flash-Lite without it sometimes wrote broken JSON, which cost a fallback to the next model).
+async function callGemini(prompt, { signal, onText, schema } = {}) {
   const errors = [];
   for (const model of GEMINI_MODELS) {
     if (signal?.aborted) throw new Error("Cancelled.");
@@ -1479,7 +1480,7 @@ async function callGemini(prompt, { signal, onText } = {}) {
         headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" },
+          generationConfig: { responseMimeType: "application/json", ...(schema && { responseJsonSchema: schema }) },
         }),
         // a stalled stream moves on to the next model
         signal: signal ? AbortSignal.any([AbortSignal.timeout(240000), signal]) : AbortSignal.timeout(240000),
@@ -1617,7 +1618,7 @@ async function callAI({ system, user, searches = 0, schema, signal, region, onEv
       onEvent?.({ type: "partial", data });
     }
   });
-  const { text, model } = await callGemini(`${system}\n\n${user}\n\nReturn JSON only.`, { signal, onText: partialOut });
+  const { text, model } = await callGemini(`${system}\n\n${user}\n\nReturn JSON only.`, { signal, onText: partialOut, schema });
   return { data: JSON.parse(text), model, sources: [] };
 }
 
