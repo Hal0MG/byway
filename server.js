@@ -1467,6 +1467,48 @@ app.post("/api/ask", async (req, res) => {
   }
 });
 
+// POST /api/road-reviews { name, region } -> { points, sources, at }: what drivers say about a road, from one web
+// search (Tavily) summed up by the planner AI. Only when the traveler asks (a button on the road card), and cached 30
+// days per road, so it costs one search and one short AI answer per road a month at most. Without a search key it
+// answers { error: "no-search" } and the card offers links to search instead.
+const reviewCache = diskCache("road-reviews-cache.json", 30, 500);
+app.post("/api/road-reviews", async (req, res) => {
+  const name = String(req.body?.name || "").trim().slice(0, 120);
+  const region = String(req.body?.region || "").trim().slice(0, 80);
+  if (!name) return res.status(400).json({ error: "Which road?" });
+  const key = `${name}|${region}`.toLowerCase();
+  const hit = await reviewCache.get(key);
+  if (hit) return res.json(hit);
+  if (!TAVILY_KEY) return res.json({ error: "no-search" });
+  if (noAI()) return res.status(500).json({ error: NO_AI });
+  try {
+    const results = await webSearch(`${name} ${region} driving experience tips reviews`);
+    if (!results.length) return res.json({ points: [], sources: [], at: new Date().toISOString().slice(0, 10) });
+    const { data } = await callAI({
+      system: "You sum up what drivers say about a road, from web search results, plainly and briefly.",
+      user:
+        `Road: ${name}${region ? ` (${region})` : ""}.\n\nSearch results:\n` +
+        results.map((r, i) => `[${i + 1}] ${r.title}\n${r.snippet}`).join("\n\n") +
+        "\n\nIn 3 to 5 short points, say what drivers say about driving this road: what it's like, the best time to go, " +
+        "traffic, hazards and tips. Use only what the results say, and skip what they don't cover. Each point at most " +
+        '25 words, no lead-in like "Drivers say". Return JSON with "points" (a list of strings).',
+      searches: 0,
+      schema: obj({ points: { type: "array", items: str } }),
+      signal: clientGone(res),
+      writing: "Summing up",
+    });
+    const out = {
+      points: (data.points || []).map((x) => String(x).trim()).filter(Boolean).slice(0, 5),
+      sources: results.slice(0, 5).map(({ url, title }) => ({ url, title })),
+      at: new Date().toISOString().slice(0, 10),
+    };
+    reviewCache.set(key, out);
+    res.json(out);
+  } catch (e) {
+    res.status(500).json({ error: e.message || String(e) });
+  }
+});
+
 // The PC's addresses on the local network, for share links a phone on the same Wi-Fi can open.
 app.get("/api/lan", async (req, res) => {
   const { networkInterfaces } = await import("node:os");

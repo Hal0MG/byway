@@ -2492,3 +2492,170 @@ for (const ev of ["touchend", "touchmove", "touchcancel", "movestart"]) map.on(e
 if ("serviceWorker" in navigator && isSecureContext) {
   addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
 }
+
+// ---------- roads near me ----------
+// A home base and the great roads within a few hours of it, from public/road-points.json (a point per byway and
+// hand-picked drive, built once by tools/build-road-points.mjs): plain distance arithmetic, nothing asked of a service
+// until a weekend loop is planned. Drive time is a straight-line estimate (x1.3 for the roads, 80 km/h).
+const nearState = { roads: null, home: null, hours: 5, busy: "", error: "" };
+try {
+  nearState.home = JSON.parse(store.get("homeBase") || "null");
+} catch {}
+const nearHours = (km) => (km * 1.3) / 80 + 0.25;
+async function loadNearRoads() {
+  nearState.roads ||= await fetch("road-points.json").then((r) => r.json()).then((d) => d.roads || []).catch(() => []);
+  return nearState.roads;
+}
+function nearList() {
+  const home = nearState.home;
+  if (!home || !nearState.roads) return [];
+  return nearState.roads
+    .map((r) => ({ r, km: haversine(home.at, r.at) / 1000 }))
+    .map((x) => ({ ...x, h: nearHours(x.km) }))
+    .filter((x) => x.h <= nearState.hours)
+    .sort((a, b) => a.h - b.h);
+}
+// Weekend loops: the nearest roads alone (one night), and pairs of roads close to each other (two nights).
+function nearLoops(list) {
+  const out = [];
+  const town = shortName(nearState.home.name);
+  for (const a of list.slice(0, 6)) {
+    const b = list.find((x) => x !== a && haversine(a.r.at, x.r.at) < 160000 && !out.some((o) => o.roads.includes(x.r.name) && o.roads.includes(a.r.name)));
+    // two roads close to home fit one night; farther out, two
+    const nights = Math.max(a.h, b?.h || 0) > 3 ? 2 : 1;
+    if (b && out.length < 2) out.push({ roads: [a.r.name, b.r.name], nights, prompt: `A weekend loop from ${town}: drive ${a.r.name} and ${b.r.name}, ${nights + 1} days, back to ${town}` });
+  }
+  for (const a of list.slice(0, 3)) {
+    if (out.length >= 4) break;
+    if (!out.some((o) => o.roads.length === 1 && o.roads[0] === a.r.name)) out.push({ roads: [a.r.name], nights: 1, prompt: `A one-night loop from ${town} to drive ${a.r.name}, 2 days, back to ${town}` });
+  }
+  return out;
+}
+function nearHtml() {
+  const s = nearState;
+  const home = s.home;
+  const list = nearList();
+  const loops = home && list.length ? nearLoops(list) : [];
+  const fmtH = (h) => (h < 1 ? "under an hour" : `about ${h < 2 ? Math.round(h * 2) / 2 : Math.round(h)} h`);
+  // lengths in the home base's units (miles in the US and UK)
+  const miles = home && ["US", "GB"].includes(countryOf({ lng: home.at[0], lat: home.at[1] }) || "US");
+  const len = (km) => (miles ? `${Math.round(km / 1.609)} mi` : `${Math.round(km)} km`);
+  return `${sheetHead("Great roads near you")}
+    <form class="near-home" id="near-form">
+      <label class="field grow"><span>${icon("pin", 14)} Home base</span><input name="home" type="text" autocomplete="off" placeholder="Your town or city" value="${esc(home?.name || "")}"></label>
+      <button class="btn blue" type="submit">${s.busy === "find" ? `<span class="spinner"></span>` : ""} Find roads</button>
+      ${navigator.geolocation && isSecureContext ? `<button class="btn ghost" type="button" data-near-loc>${s.busy === "loc" ? `<span class="spinner"></span>` : icon("pin", 16)} Use my location</button>` : ""}
+    </form>
+    ${s.error ? `<p class="near-error">${esc(s.error)}</p>` : ""}
+    ${home ? `<div class="near-reach" role="group" aria-label="How far">
+      <span>Within</span>${[2, 3, 5, 8].map((h) => `<button class="chip ${s.hours === h ? "on" : ""}" data-near-h="${h}">${h} hours</button>`).join("")}
+    </div>` : `<p class="fine">Type a town (or use your location) to see the scenic byways and famous drives within a few hours, and weekend loops to plan in one tap.</p>`}
+    ${home && !list.length ? `<p class="fine">No roads from the app's list within ${s.hours} hours of ${esc(shortName(home.name))}. Try a longer reach; the list covers the US, Canada, Australia, New Zealand, the UK and the Alps.</p>` : ""}
+    ${loops.length ? `<h3 class="near-h">${icon("route", 16)} Weekend loops</h3><div class="near-loops">
+      ${loops.map((l) => `<div class="near-loop"><span><b>${esc(l.roads.join(" + "))}</b><small>${l.nights === 1 ? "1 night" : "2 nights"} from ${esc(shortName(home.name))}</small></span>
+        <button class="btn blue small" data-near-plan="${esc(l.prompt)}">${icon("sparkle", 14)} Plan it</button></div>`).join("")}
+    </div>` : ""}
+    ${list.length ? `<h3 class="near-h">${icon("road", 16)} ${list.length} road${list.length === 1 ? "" : "s"} within ${s.hours} hours</h3>
+    <ul class="near-list">
+      ${list.slice(0, 40).map((x) => `<li>
+        <span class="near-img">${x.r.image ? `<img src="${esc(x.r.image)}" alt="" loading="lazy" onerror="this.remove()">` : icon("road", 18)}</span>
+        <span class="near-text"><b>${esc(x.r.name)}</b><small>${esc(x.r.type)} · ${esc(x.r.state || "")}${x.r.km ? ` · ${len(x.r.km)} long` : ""} · ${fmtH(x.h)} away</small>
+          ${x.r.about ? `<span class="near-about">${esc(x.r.about)}</span>` : ""}</span>
+        <span class="near-acts">
+          <button class="link-btn" data-near-map="${esc(x.r.name)}">${icon("map", 13)} Map</button>
+          <button class="link-btn" data-near-plan="${esc(`A one-night loop from ${shortName(home.name)} to drive ${x.r.name}, 2 days, back to ${shortName(home.name)}`)}">${icon("sparkle", 13)} Plan a loop</button>
+        </span>
+      </li>`).join("")}
+    </ul>
+    <p class="fine">Times are straight-line estimates; the plan measures the real drive.</p>` : ""}`;
+}
+let nearEl = null;
+async function openNear() {
+  await loadNearRoads();
+  nearEl = openSheet(nearHtml(), "wide near-sheet");
+  nearEl.addEventListener("submit", nearSubmit);
+  nearEl.addEventListener("click", nearClick);
+}
+const redrawNear = () => nearEl?.isConnected && (nearEl.querySelector(".sheet").innerHTML = nearHtml());
+async function setNearHome(name, at) {
+  nearState.home = { name, at };
+  store.set("homeBase", JSON.stringify(nearState.home));
+}
+async function nearSubmit(e) {
+  if (e.target.id !== "near-form") return;
+  e.preventDefault();
+  const q = e.target.querySelector("[name=home]").value.trim();
+  if (!q) return;
+  Object.assign(nearState, { busy: "find", error: "" });
+  redrawNear();
+  const g = await fetch(`/api/geocode?towns=1&q=${encodeURIComponent(q)}`).then((r) => r.json()).catch(() => ({}));
+  const h = g.hits?.[0] || (await fetch(`/api/geocode?q=${encodeURIComponent(q)}`).then((r) => r.json()).catch(() => ({}))).hits?.[0];
+  nearState.busy = "";
+  if (h) await setNearHome(q, [h.lng, h.lat]);
+  else nearState.error = `Couldn't find “${q}”. Try the town with its state or country.`;
+  redrawNear();
+}
+function nearClick(e) {
+  const h = e.target.closest("[data-near-h]");
+  if (h) {
+    nearState.hours = Number(h.dataset.nearH);
+    redrawNear();
+  }
+  if (e.target.closest("[data-near-loc]")) {
+    Object.assign(nearState, { busy: "loc", error: "" });
+    redrawNear();
+    navigator.geolocation.getCurrentPosition(
+      async (p) => {
+        const at = [p.coords.longitude, p.coords.latitude];
+        const d = await fetch(`/api/place-name?lat=${at[1]}&lng=${at[0]}`).then((r) => r.json()).catch(() => ({}));
+        nearState.busy = "";
+        await setNearHome(d.name || "My location", at);
+        redrawNear();
+      },
+      () => {
+        Object.assign(nearState, { busy: "", error: "Location isn't available. Type your town instead." });
+        redrawNear();
+      },
+      { timeout: 15000, maximumAge: 600000 }
+    );
+  }
+  const m = e.target.closest("[data-near-map]");
+  if (m) showNearOnMap(m.dataset.nearMap);
+  const p = e.target.closest("[data-near-plan]");
+  if (p) {
+    closeOverlay();
+    planTrip(p.dataset.nearPlan, { ...DEFAULT_SETTINGS, ...rememberedSettings(), loop: true });
+  }
+}
+// The road and the home base as pins on the map; they go when the map is left.
+const nearPins = [];
+function showNearOnMap(name) {
+  const r = nearState.roads?.find((x) => x.name === name);
+  if (!r) return;
+  closeOverlay();
+  nearPins.forEach((m) => m.remove());
+  nearPins.length = 0;
+  const pin = (cls, at, title) => {
+    const el = document.createElement("div");
+    el.className = "near-mark";
+    el.innerHTML = `<i class="${cls}"></i><span>${esc(title)}</span>`;
+    nearPins.push(new maplibregl.Marker({ element: el, anchor: "left", offset: [-8, 0] }).setLngLat(at).addTo(map));
+  };
+  if (nearState.home) pin("near-pin home", nearState.home.at, shortName(nearState.home.name));
+  pin("near-pin", r.at, r.name);
+  setView("map");
+  const b = new maplibregl.LngLatBounds();
+  b.extend(r.at);
+  if (nearState.home) b.extend(nearState.home.at);
+  try {
+    map.fitBounds(b, { padding: pad(), maxZoom: 9, duration: 800 });
+  } catch {
+    map.flyTo({ center: r.at, zoom: 8 });
+  }
+}
+new MutationObserver(() => {
+  if (document.body.dataset.view !== "map" && nearPins.length) {
+    nearPins.forEach((m) => m.remove());
+    nearPins.length = 0;
+  }
+}).observe(document.body, { attributes: true, attributeFilter: ["data-view"] });

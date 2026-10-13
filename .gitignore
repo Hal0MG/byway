@@ -14,6 +14,7 @@ data/weather-cache.json
 data/along-cache.json
 data/along-tiles.json
 data/geocode-cache.json
+data/road-reviews-cache.json
 data/route-cache/
 
 node_modules/

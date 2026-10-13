@@ -111,6 +111,7 @@ function renderHome() {
       <div class="home-actions">
         <button class="chip" data-home="plan">${icon("book", 14)} Plan with options</button>
         <button class="chip" data-home="map">${icon("map", 14)} Explore the map</button>
+        <button class="chip" data-home="near">${icon("road", 14)} Roads near me</button>
         <button class="chip" data-home="trips">${icon("list", 14)} Your trips (${s.trips.length})</button>
         <button class="chip ${satelliteOn ? "on" : ""}" data-home="sat" aria-pressed="${satelliteOn}">${icon("photo", 14)} Satellite</button>
         <span class="sep"></span>
@@ -366,6 +367,7 @@ HOME.addEventListener("click", async (e) => {
     setView("itinerary");
   } else if (act === "plan") setView("itinerary");
   else if (act === "map") setView("map");
+  else if (act === "near") openNear();
   else if (act === "trips") $("trips-btn").click();
   else if (act === "sat") {
     setSatellite(!satelliteOn);

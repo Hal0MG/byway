@@ -106,7 +106,10 @@ function libraryHtml() {
         <h1>Your trips and ready-made ones</h1>
         <p class="lede">${libState.mine.length} of yours and ${libState.ready.length} ready to go. Open one as it is, or start from it and make it yours.</p>
       </div>
-      <button class="btn blue" data-lib="new">${icon("plus", 18)} New trip</button>
+      <div class="lib-head-acts">
+        <button class="btn ghost" data-lib="near">${icon("road", 18)} Roads near me</button>
+        <button class="btn blue" data-lib="new">${icon("plus", 18)} New trip</button>
+      </div>
     </header>
     <div class="lib-tools">
       <label class="lib-search">${icon("sparkle", 16)}<input id="lib-q" type="search" placeholder="Search trips, roads, towns" value="${esc(libState.q)}" aria-label="Search trips"></label>
@@ -213,6 +216,7 @@ $("library").addEventListener("click", async (e) => {
     libState[act] = b.dataset.v;
     renderLibrary();
   } else if (act === "new") goHome();
+  else if (act === "near") openNear();
   else if (act === "go") {
     await openTrip(id);
     setView("itinerary");

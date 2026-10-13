@@ -811,7 +811,9 @@ function renderDay(g, gi, groups, segs) {
           ${r.why ? `<p>${esc(r.why)}</p>` : ""}
           ${r.drive || r.tips ? `<dl>${r.drive ? `<dt>Driving it</dt><dd>${esc(r.drive)}</dd>` : ""}${r.tips ? `<dt>Tips</dt><dd>${esc(r.tips)}</dd>` : ""}</dl>` : ""}
           ${o ? `<p class="official">${icon("book", 14)} <span><b>Official:</b> ${esc(o.description)}${o.miles ? ` (${fmtMiles(o.miles)})` : ""}</span></p>` : ""}
+          ${reviewsHtml(r)}
           <div class="links">
+            ${READONLY || reviewState.has(r.name) ? "" : `<button class="link-btn" data-act="road-reviews" data-name="${esc(r.name)}">${icon("sparkle", 13)} What drivers say</button>`}
             ${onRoute >= 8047 ? `<button class="link-btn" data-act="fly" data-name="${esc(r.name)}">${icon("mountain", 13)} Fly it in 3D</button>` : ""}
             ${READONLY ? "" : `<button class="link-btn" data-act="road-swap" data-name="${esc(r.name)}">${icon("refresh", 13)} Swap for another road</button>`}
             ${r.info?.url ? `<a href="${esc(r.info.url)}" target="_blank" rel="noopener">Wikipedia ${icon("external", 13)}</a>` : ""}
@@ -987,6 +989,47 @@ IT.addEventListener("keydown", (e) => {
   }
 });
 
+// What drivers say about a road: one web search summed up by the AI (/api/road-reviews, cached there 30 days), asked
+// for from the road card; kept here for the session. Without a search key, links to search instead.
+const reviewState = new Map();
+const hostOf = (u) => {
+  try {
+    return new URL(u).hostname.replace(/^www\./, "");
+  } catch {
+    return u;
+  }
+};
+function roadRegion(r) {
+  const s = roadStops(r)[0];
+  return s ? s.name.split(",").slice(1).join(",").trim() : "";
+}
+function reviewsHtml(r) {
+  const st = reviewState.get(r.name);
+  if (!st) return "";
+  const q = encodeURIComponent(`${r.name} ${roadRegion(r)} driving`);
+  const links = `<a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Google</a> · <a href="https://www.reddit.com/search/?q=${q}" target="_blank" rel="noopener">Reddit</a>`;
+  if (st.loading) return `<div class="road-reviews"><p><span class="spinner"></span> Reading what drivers say...</p></div>`;
+  if (st.error === "no-search") return `<div class="road-reviews"><p>Web search isn't set up (a free Tavily key in Setup), so look it up: ${links}</p></div>`;
+  if (st.error) return `<div class="road-reviews"><p class="warn">${esc(st.error)}</p><p>Look it up: ${links}</p></div>`;
+  if (!st.points?.length) return `<div class="road-reviews"><p>The search found nothing useful about this road. Look it up: ${links}</p></div>`;
+  return `<div class="road-reviews"><h5>${icon("sparkle", 14)} What drivers say</h5>
+    <ul>${st.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
+    <p class="fine">Summed up by AI from ${st.sources.map((x) => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(hostOf(x.url))}</a>`).join(", ")}${st.at ? ` (${esc(st.at)})` : ""}. More: ${links}</p></div>`;
+}
+async function loadRoadReviews(name) {
+  const r = (plan?.roads || []).find((x) => x.name === name);
+  if (!r) return;
+  reviewState.set(name, { loading: true });
+  renderItinerary();
+  try {
+    const d = await fetch("/api/road-reviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, region: roadRegion(r) }) }).then((x) => x.json());
+    reviewState.set(name, d.error ? { error: d.error } : d);
+  } catch {
+    reviewState.set(name, { error: "Couldn't reach the app." });
+  }
+  renderItinerary();
+}
+
 // Light the rail's number for the day being read.
 function spyDays() {
   let cur = null;
@@ -1060,6 +1103,7 @@ IT.addEventListener("click", (e) => {
   else if (act === "new") goHome();
   else if (act === "day-map") showDayOnMap(Number(t.dataset.day));
   else if (act === "day-phone") openPhoneSheet(Number(t.dataset.day));
+  else if (act === "road-reviews") loadRoadReviews(t.dataset.name);
   else if (act === "spot") showSpotOnMap(Number(t.dataset.i));
   else if (act === "jump") {
     e.preventDefault();
