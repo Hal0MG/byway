@@ -31,3 +31,4 @@ dist/
 # personal working notes for Claude (kept on this computer only)
 CLAUDE.md
 .DS_Store
+.claude/
