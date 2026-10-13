@@ -1672,7 +1672,7 @@ app.post("/api/ask", async (req, res) => {
         "like a local driver. Use the trip's own days, times and places. When something can change (opening hours, " +
         "prices, closures, permits), say to check it. If the question asks to change the trip (add, skip, swap, move, " +
         'shorten), also write the change as one short instruction in "change", like "Skip Winnipeg and stay in Kenora ' +
-        'instead"; otherwise "change" is "". Return JSON with "answer" and "change".',
+        'instead"; otherwise "change" is "". Return JSON with "answer" and "change".' + langText(req.body?.lang),
       searches: 0,
       schema: obj({ answer: str, change: str }),
       signal,
@@ -1693,7 +1693,8 @@ app.post("/api/road-reviews", async (req, res) => {
   const name = String(req.body?.name || "").trim().slice(0, 120);
   const region = String(req.body?.region || "").trim().slice(0, 80);
   if (!name) return res.status(400).json({ error: "Which road?" });
-  const key = `${name}|${region}`.toLowerCase();
+  const lang = LANG_NAMES[req.body?.lang] ? req.body.lang : "en";
+  const key = `${name}|${region}${lang === "en" ? "" : `|${lang}`}`.toLowerCase();
   const hit = await reviewCache.get(key);
   if (hit) return res.json(hit);
   if (!TAVILY_KEY) return res.json({ error: "no-search" });
@@ -1708,7 +1709,7 @@ app.post("/api/road-reviews", async (req, res) => {
         results.map((r, i) => `[${i + 1}] ${r.title}\n${r.snippet}`).join("\n\n") +
         "\n\nIn 3 to 5 short points, say what drivers say about driving this road: what it's like, the best time to go, " +
         "traffic, hazards and tips. Use only what the results say, and skip what they don't cover. Each point at most " +
-        '25 words, no lead-in like "Drivers say". Return JSON with "points" (a list of strings).',
+        '25 words, no lead-in like "Drivers say". Return JSON with "points" (a list of strings).' + langText(req.body?.lang),
       searches: 0,
       schema: obj({ points: { type: "array", items: str } }),
       signal: clientGone(res),
@@ -2687,6 +2688,18 @@ just to avoid a freeway.`;
 
 const asArray = (v) => (Array.isArray(v) ? v : []);
 
+// The traveler's language (the app's language menu) for what the AI writes. Names stay as maps know them: the app looks
+// every point, road and spot up by name.
+const LANG_NAMES = { fr: "French (français)", zh: "Simplified Chinese (简体中文)", bn: "Bangla (বাংলা)" };
+function langText(lang) {
+  const name = LANG_NAMES[lang];
+  return name
+    ? `\n\nLanguage: write every title, summary, note, description, tip and answer in ${name}. Keep the names of places, ` +
+      "points, roads and spots exactly as a map or Wikipedia knows them (usually English or the local name), because the " +
+      "app looks them up by name, and keep route numbers, JSON keys and the type values as they are."
+    : "";
+}
+
 // ---------- seasonal roads (public/seasonal-roads.json, shared with the app) ----------
 
 let seasonal = null;
@@ -2995,7 +3008,7 @@ Rules:
 - No backtracking. Before answering, check the order and estimate each day's driving time.
 ${await settingsText(settings, stateList)}
 
-Request: ${prompt}`;
+Request: ${prompt}${langText(req.body.lang)}`;
 
     const revising = !!current;
     const adds = asArray(roadEdits?.add).filter((r) => r?.name);
@@ -3111,7 +3124,7 @@ Roads already in the plan: ${asArray(have).join("; ") || "none"}.
 
 Suggest up to 8 more roads in or near those states that driving enthusiasts, motorcyclists and road trippers love and that
 fit this trip: twisty mountain roads, passes, switchbacks, scenic parkways, famous drives. Not interstates, not roads already
-in the plan. For each: the common name, route number, state, one line on why drivers love it, and about how long it is.`;
+in the plan. For each: the common name, route number, state, one line on why drivers love it, and about how long it is.${langText(req.body?.lang)}`;
     const { data, sources } = await callAI({
       system: PLANNER_INTRO,
       user,
@@ -3305,7 +3318,7 @@ Rules:
 - Only give a wiki title when you are confident the English Wikipedia article exists.
 ${await settingsText(settings, states)}
 
-The traveler's request: ${prompt || ""}`;
+The traveler's request: ${prompt || ""}${langText(req.body.lang)}`;
 
     const { data: d, model, sources } = await callAI({
       system: PLANNER_INTRO,

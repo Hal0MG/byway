@@ -103,6 +103,8 @@ body[data-view="about"] #map-profile { display: none; }
 [data-theme="dark"] .maplibregl-ctrl-group .maplibregl-ctrl-icon, [data-theme="dark"] .maplibregl-ctrl-attrib-button { filter: invert(1); }
 [data-theme="dark"] .maplibregl-ctrl.maplibregl-ctrl-attrib { background: rgba(20, 20, 22, 0.75); color: #b5b5ba; }
 [data-theme="dark"] .maplibregl-ctrl-attrib a { color: #d5d5da; }
+/* the credits stay in English and in the Latin font: a Bangla or Chinese font's taller lines pushed them under the dock */
+.maplibregl-ctrl-attrib { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif; line-height: 1.35; }
 
 /* ---------- Top bar ---------- */
 #topbar {
@@ -141,7 +143,25 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
 .seg-ico .ico { width: 18px; height: 18px; }
 .seg-ico { display: grid; }
-.top-actions { display: flex; gap: 6px; }
+.top-actions { position: relative; display: flex; gap: 6px; }
+/* language: the flag next to the light/dark switch, and its menu */
+.flag { display: inline-flex; flex: none; }
+.flag svg { width: 22px; height: 15px; display: block; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18); }
+.icon-btn.lang-btn { width: auto; padding: 0 7px; gap: 3px; }
+.lang-btn .ico:last-child { transform: rotate(90deg); color: var(--muted); }
+.lang-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; min-width: 190px; padding: 4px;
+  border-radius: 10px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+.lang-menu button {
+  display: flex; align-items: center; gap: 11px; width: 100%; padding: 9px 10px; border: 0; border-radius: 6px;
+  background: none; color: var(--text); font: inherit; font-size: 15px; text-align: left; cursor: pointer;
+}
+.lang-menu button:hover, .lang-menu button:focus-visible { background: var(--card-strong); outline: none; }
+.lang-menu button .ico { margin-left: auto; color: var(--blue); }
+/* scripts the system font doesn't cover well: Bangla and Chinese get the system's own fonts for them */
+html:lang(bn) body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Kohinoor Bangla", "Bangla Sangam MN", "Nirmala UI", "Noto Sans Bengali", system-ui, sans-serif; }
+html:lang(zh-Hans) body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", "Noto Sans SC", system-ui, sans-serif; }
 .icon-btn {
   width: 36px; height: 36px; border-radius: 6px;
   background: var(--card); display: grid; place-items: center;
@@ -857,7 +877,7 @@ body[data-view="home"] #map {
 .home-legend .k-mine { background: var(--gold); }
 .home-legend .k-idea { background: var(--blue); }
 .home-dock {
-  position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(820px, calc(100vw - 32px));
+  position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); width: min(820px, calc(100vw - 32px)); /* above the map credits */
   padding: 16px 18px 14px; border-radius: 12px; pointer-events: auto; color: #fff;
   background: rgba(16, 18, 26, 0.78); border: 1px solid rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(24px) saturate(1.3); -webkit-backdrop-filter: blur(24px) saturate(1.3); box-shadow: 0 16px 60px rgba(0, 0, 0, 0.6);
@@ -929,6 +949,18 @@ body[data-view="home"] #map {
 .sheet.setup { max-width: 760px; }
 .su-lede { margin: 0; color: var(--muted); font-size: 14px; }
 .su-step { padding: 14px 16px; border-radius: 8px; background: var(--card); }
+.su-pref { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 6px 0; }
+.su-switch { display: flex; align-items: center; gap: 10px; min-width: 210px; font-size: 15px; cursor: pointer; }
+.su-switch input { width: 18px; height: 18px; accent-color: var(--blue-fill); }
+.su-pref input[type="range"] { flex: 1 1 160px; max-width: 280px; accent-color: var(--blue-fill); }
+.su-pref input[type="range"]:disabled { opacity: 0.4; }
+.su-langs { gap: 6px; }
+.su-langs button {
+  display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--line);
+  background: none; color: var(--text); font: inherit; font-size: 14px; cursor: pointer;
+}
+.su-langs button.on { border-color: var(--blue); background: var(--card-strong); }
+.su-prefs > .btn { margin-top: 6px; }
 .su-step h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font-size: 17px; }
 .su-step h3 em { font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .su-step > p { margin: 0 0 10px; font-size: 14px; line-height: 1.5; color: var(--muted); }
@@ -1733,3 +1765,83 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
 .more-list b { display: block; font-size: 14px; font-weight: 600; }
 .more-list small { display: block; font-size: 12px; color: var(--muted); }
 
+
+/* ---------- Welcome (first run) ---------- */
+.welcome {
+  position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; overflow-y: auto;
+  padding: 40px 20px; background: var(--bg); color: var(--text); animation: wl-in 0.5s ease-out;
+}
+.welcome.leaving { animation: wl-out 0.45s ease-in forwards; }
+@keyframes wl-in { from { opacity: 0; } }
+@keyframes wl-out { to { opacity: 0; transform: scale(1.03); } }
+.wl-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.wl-sky i { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; filter: blur(80px); opacity: 0.32; animation: wl-drift 26s ease-in-out infinite alternate; }
+.wl-sky i:nth-child(1) { background: #0a84ff; left: -20vmax; top: -25vmax; }
+.wl-sky i:nth-child(2) { background: #30d1c6; right: -25vmax; top: 10vmax; animation-delay: -9s; }
+.wl-sky i:nth-child(3) { background: #bf5af2; left: 10vmax; bottom: -35vmax; animation-delay: -17s; opacity: 0.2; }
+@keyframes wl-drift { to { transform: translate(8vmax, 6vmax) scale(1.15); } }
+.wl-skip { position: absolute; top: 18px; right: 22px; z-index: 1; color: var(--muted); }
+.wl-step { position: relative; width: min(640px, 100%); animation: wl-step 0.4s ease-out; }
+@keyframes wl-step { from { opacity: 0; transform: translateY(12px); } }
+.wl-step h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 10px; font-size: clamp(26px, 4vw, 36px); letter-spacing: -0.02em; }
+.wl-step h2 .ico { color: var(--teal); flex: none; }
+.wl-sub { margin: 0 0 22px; font-size: 17px; line-height: 1.55; color: var(--muted); }
+.wl-hello { text-align: center; }
+.wl-word {
+  margin: 0; font-size: clamp(64px, 14vw, 132px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.1;
+  background: linear-gradient(100deg, var(--blue), var(--teal)); -webkit-background-clip: text; background-clip: text; color: transparent;
+  transition: opacity 0.45s, filter 0.45s, transform 0.45s;
+}
+.wl-word.out { opacity: 0; filter: blur(8px); transform: translateY(-6px); }
+.wl-hello .wl-sub { margin-top: 12px; }
+.wl-hello h2 { justify-content: center; }
+.wl-start { margin-top: 8px; padding: 12px 26px; font-size: 17px; }
+.wl-done { margin: 0 0 6px; color: var(--green); }
+.wl-done .ico { width: 64px; height: 64px; }
+.wl-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.wl-options.two { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.wl-option {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px; border-radius: 10px;
+  border: 2px solid var(--line); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.wl-option:hover { transform: translateY(-2px); }
+.wl-option.on { border-color: var(--blue); }
+.wl-option b { font-size: 17px; }
+.wl-option small { color: var(--muted); font-size: 14px; }
+.wl-option > .ico { color: var(--teal); }
+.flag.big svg { width: 36px; height: 24px; }
+.wl-preview { display: grid; grid-template-columns: 1fr 2fr; gap: 6px; width: 100%; height: 90px; padding: 8px; border-radius: 6px; }
+.wl-preview i { border-radius: 4px; }
+.wl-preview i:first-child { grid-row: span 2; }
+.wl-preview.light { background: #f2f2f7; }
+.wl-preview.light i { background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+.wl-preview.dark { background: #0a0a0c; }
+.wl-preview.dark i { background: #1c1c1e; }
+.wl-preview i:nth-child(2) { background: #0a84ff; opacity: 0.85; }
+.wl-card { padding: 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); margin-bottom: 12px; }
+.wl-card b { font-size: 17px; }
+.wl-card p { margin: 6px 0 12px; color: var(--muted); line-height: 1.5; }
+.wl-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.wl-row input {
+  flex: 1 1 240px; min-width: 0; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text); font: inherit; font-size: 16px;
+}
+.wl-row input:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+.wl-ok { display: flex; align-items: center; gap: 8px; color: var(--green); font-weight: 600; }
+.wl-bad { color: var(--red); }
+.wl-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 28px; }
+.wl-go { display: flex; gap: 8px; }
+.wl-dots { display: flex; gap: 6px; }
+.wl-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); transition: background 0.2s, width 0.2s; }
+.wl-dots i.past { background: var(--muted); }
+.wl-dots i.on { width: 20px; border-radius: 4px; background: var(--blue); }
+@media (prefers-reduced-motion: reduce) {
+  .welcome, .welcome.leaving, .wl-step, .wl-sky i { animation: none; }
+  .wl-word { transition: none; }
+}
+@media (max-width: 560px) {
+  .wl-nav { flex-wrap: wrap; }
+  .wl-dots { order: -1; width: 100%; justify-content: center; }
+  .wl-go { margin-left: auto; }
+}

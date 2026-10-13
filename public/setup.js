@@ -25,9 +25,43 @@ function keyField(id, label, info, placeholder, link, linkText) {
     ${msg ? `<small class="${msg.ok ? "su-ok" : "su-bad"}">${esc(msg.text)}</small>` : ""}</label>`;
 }
 
+// Sound and language: per device, so they're here on every device (keys only on the computer running the app).
+function prefsHtml() {
+  const p = soundPrefs;
+  const vol = (key, on, label) => `<input type="range" min="0" max="1" step="0.05" value="${p[key]}" data-pref="${key}" aria-label="${label}" ${on ? "" : "disabled"}>`;
+  return `<section class="su-step su-prefs">
+      <h3>${icon("sound", 16)} Sound and language</h3>
+      <div class="su-pref">
+        <label class="su-switch"><input type="checkbox" data-pref="fx" ${p.fx ? "checked" : ""}><span>Interface sounds</span></label>
+        ${vol("fxVol", p.fx, "Interface sound volume")}
+      </div>
+      <div class="su-pref">
+        <label class="su-switch"><input type="checkbox" data-pref="music" ${p.music ? "checked" : ""}><span>Music on the globe</span></label>
+        ${vol("musicVol", p.music, "Music volume")}
+      </div>
+      <div class="su-pref su-langs" role="radiogroup" aria-label="Language">
+        ${LANGS.map((l) => `<button role="radio" aria-checked="${l.code === LANG}" class="${l.code === LANG ? "on" : ""}" data-su="lang" data-v="${l.code}" data-no-i18n>
+          <span class="flag">${FLAGS[l.code]}</span>${esc(l.name)}</button>`).join("")}
+      </div>
+      <button class="btn ghost small" data-su="welcome">${icon("sparkle", 14)} Show the welcome screen again</button>
+    </section>`;
+}
+function prefInput(e) {
+  const el = e.target.closest("[data-pref]");
+  if (!el) return;
+  const k = el.dataset.pref;
+  setSoundPrefs({ [k]: el.type === "checkbox" ? el.checked : Number(el.value) });
+  if (k === "fx" || k === "music") {
+    el.closest(".su-pref").querySelector("input[type=range]").disabled = !el.checked;
+    if (k === "fx" && el.checked) sfx("toggle");
+  }
+  // a quick sample so the new level can be heard
+  if (k === "fxVol" && e.type === "change") sfx("click");
+}
+
 function setupHtml() {
   const s = setupState.info;
-  if (!s) return `${sheetHead("Setup")}<p>Setup only works on the PC that runs the app.</p>`;
+  if (!s) return `${sheetHead("Settings")}${prefsHtml()}<p class="fine">Keys and the AI planner are set up on the computer that runs the app.</p>`;
   const provider = setupState.provider || s.provider;
   const L = s.local;
   const job = L.job && !L.job.done ? L.job : null;
@@ -50,6 +84,7 @@ function setupHtml() {
   ];
   return `${sheetHead("Setup")}
     <p class="su-lede">Everything here is free and optional. Keys stay on this computer, in the app's .env file.</p>
+    ${prefsHtml()}
 
     <section class="su-step">
       <h3>${tick(provider === "gemini" ? s.gemini.set : L.loaded)} 1. The trip planner AI <em>to plan new trips</em></h3>
@@ -166,6 +201,8 @@ async function openSetup() {
   setupState.provider = null;
   setupEl = openSheet(setupHtml(), "wide setup");
   setupEl.addEventListener("click", setupClick);
+  setupEl.addEventListener("input", prefInput);
+  setupEl.addEventListener("change", prefInput);
   pollSetup();
   loadPhone();
 }
@@ -200,6 +237,11 @@ async function setupClick(e) {
   const b = e.target.closest("[data-su]");
   if (!b) return;
   const act = b.dataset.su;
+  if (act === "lang") return setLang(b.dataset.v);
+  if (act === "welcome") {
+    closeOverlay(true);
+    return openWelcome();
+  }
   if (act === "provider") {
     setupState.provider = b.dataset.v;
     redrawSetup();
@@ -260,7 +302,9 @@ addEventListener("DOMContentLoaded", async () => {
   if (READONLY) return;
   const s = await loadSetup();
   if (!s) {
-    $("setup-btn")?.remove(); // another device: nothing to set up from here
+    // another device: no keys to set here, only sound and language
+    $("setup-btn")?.setAttribute("aria-label", "Settings");
+    $("setup-btn")?.setAttribute("title", "Settings");
     return;
   }
   updateSetupBadge();

@@ -26,21 +26,40 @@ const browser = await puppeteer.launch({
 });
 const copies = [];
 try {
-  for (const [size, theme] of [["desktop", "dark"], ["phone", "light"]]) {
+  // the third pass is in Bangla: the translator runs on every screen (a looping translation once froze the trip page)
+  for (const [size, theme, lang] of [["desktop", "dark", "en"], ["phone", "light", "en"], ["desktop", "light", "bn"]]) {
     const page = await browser.newPage();
     const where = { step: "load" };
-    page.on("pageerror", (e) => problems.push(`${size}/${theme} ${where.step}: page error: ${e.message}`));
+    page.on("pageerror", (e) => problems.push(`${size}/${theme}/${lang} ${where.step}: page error: ${e.message}`));
     page.on("console", (m) => {
       // map tiles and photos can fail on a flaky network; those aren't the app's errors
-      if (m.type() === "error" && !/Failed to load resource|tile|ERR_|net::/i.test(m.text())) problems.push(`${size}/${theme} ${where.step}: ${m.text()}`);
+      if (m.type() === "error" && !/Failed to load resource|tile|ERR_|net::/i.test(m.text())) problems.push(`${size}/${theme}/${lang} ${where.step}: ${m.text()}`);
     });
     await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: theme }]);
     await page.setViewport(size === "phone" ? { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true } : { width: 1440, height: 900 });
     await page.goto(APP, { waitUntil: "load" });
-    await page.evaluate((t) => localStorage.setItem("theme", t), theme);
+    await page.evaluate((t, l) => {
+      localStorage.setItem("theme", t);
+      localStorage.setItem("lang", l);
+    }, theme, lang);
     await page.goto(APP, { waitUntil: "load" });
     await sleep(4000);
     const js = (f, ...a) => page.evaluate(f, ...a);
+    // the welcome screen shows on a first visit: go through every step with the main button, then it must be gone
+    if (size === "desktop" && lang === "en") {
+      where.step = "welcome";
+      if (!(await js(() => !!document.getElementById("welcome")))) problems.push(`${size}/${theme}/${lang} welcome: didn't open on the first visit`);
+      for (let i = 0; i < 12 && (await js(() => !!document.getElementById("welcome"))); i++) {
+        await js(() => document.querySelector("#welcome [data-primary]")?.click());
+        await sleep(700);
+      }
+      if (await js(() => !!document.getElementById("welcome"))) problems.push(`${size}/${theme}/${lang} welcome: still open after every step`);
+    }
+    await js(() => localStorage.setItem("welcomed", "1"));
+    if (await js(() => !!document.getElementById("welcome"))) {
+      await page.goto(APP, { waitUntil: "load" });
+      await sleep(4000);
+    }
     const step = async (name, fn, wait = 1500) => {
       where.step = name;
       try {
@@ -56,7 +75,7 @@ try {
             .map((el) => `${el.id || el.className || el.tagName} is ${el.scrollWidth} px wide in ${el.clientWidth}`)
             .join("; ");
         });
-        if (wide && size === "phone") problems.push(`${size}/${theme} ${name}: wider than the screen: ${wide}`);
+        if (wide && size === "phone") problems.push(`${size}/${theme}/${lang} ${name}: wider than the screen: ${wide}`);
         // the map credits (OpenStreetMap and the tile providers) must stay visible wherever the map shows
         const hidden = await js(() => {
           if (!["home", "map"].includes(document.body.dataset.view) || document.querySelector(".overlay")) return "";
@@ -65,9 +84,9 @@ try {
           const top = document.elementFromPoint(a.left + 8, a.top + a.height / 2);
           return top?.closest(".maplibregl-ctrl-attrib") ? "" : `covered by ${top?.id || top?.className || top?.tagName}`;
         });
-        if (hidden) problems.push(`${size}/${theme} ${name}: map credits ${hidden}`);
+        if (hidden) problems.push(`${size}/${theme}/${lang} ${name}: map credits ${hidden}`);
       } catch (e) {
-        problems.push(`${size}/${theme} ${name}: ${e.message}`);
+        problems.push(`${size}/${theme}/${lang} ${name}: ${e.message}`);
       }
     };
     await step("home", async () => js(() => setView("home")), 3000);
@@ -113,4 +132,4 @@ if (problems.length) {
   console.log(`${problems.length} problem(s):\n${problems.join("\n")}`);
   process.exit(1);
 }
-console.log("All views opened without errors (desktop dark, phone light).");
+console.log("All views opened without errors (desktop dark, phone light, desktop light in Bangla), and the welcome screen went through.");

@@ -33,7 +33,8 @@ function tripChanged() {
   closeOverlay();
 }
 function openSheet(html, cls = "") {
-  closeOverlay();
+  closeOverlay(true);
+  sfx("open");
   const el = document.createElement("div");
   el.className = "sheet-backdrop overlay";
   el.innerHTML = `<section class="sheet ${cls}" role="dialog" aria-modal="true" aria-labelledby="sheet-title">${html}</section>`;
@@ -44,8 +45,10 @@ function openSheet(html, cls = "") {
   el.querySelector("button, input, textarea, select, a")?.focus();
   return el;
 }
-function closeOverlay() {
-  document.querySelectorAll(".overlay").forEach((el) => el.remove());
+function closeOverlay(quiet = false) {
+  const open = document.querySelectorAll(".overlay");
+  if (open.length && !quiet) sfx("close");
+  open.forEach((el) => el.remove());
 }
 addEventListener("keydown", (e) => {
   if (e.key === "Escape" && document.querySelector(".overlay") && !document.querySelector(".lightbox")) closeOverlay();

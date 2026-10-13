@@ -714,8 +714,9 @@ $("search").addEventListener("keydown", (e) => e.key === "Enter" && $("add-btn")
 // 3. place the points (Nominatim), 4. measure the drive (ORS); if a day is too long, revise once with the real times
 // 5. merge the details, 6. /api/enrich: Wikipedia photos, articles and coordinates
 
+// Every request carries the app's language (i18n.js): the AI endpoints write in it, the others ignore it.
 async function api(path, body, signal) {
-  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal });
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lang: LANG, ...body }), signal });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || `Request failed (${r.status})`);
   return data;
@@ -724,7 +725,7 @@ async function api(path, body, signal) {
 // An AI endpoint with { stream: true }: newline-separated JSON events while the AI works (status lines, its notes, the
 // finished part of the answer), then { type: "done" } with the answer. Shown live under that step of the planning screen.
 async function aiStream(path, body, step, signal) {
-  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, stream: true }), signal });
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lang: LANG, ...body, stream: true }), signal });
   if (!r.ok) {
     const data = await r.json().catch(() => ({}));
     throw new Error(data.error || `Request failed (${r.status})`);
@@ -2015,7 +2016,7 @@ function fmtWhen(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   const days = Math.floor((Date.now() - d) / 86400000);
-  if (days < 1) return `today at ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+  if (days < 1) return `today at ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`; // i18n-strings.js translates these
   if (days < 2) return "yesterday";
   if (days < 7) return `${days} days ago`;
   return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });

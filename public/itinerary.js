@@ -1042,7 +1042,7 @@ async function loadRoadReviews(name) {
   reviewState.set(name, { loading: true });
   renderItinerary();
   try {
-    const d = await fetch("/api/road-reviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, region: roadRegion(r) }) }).then((x) => x.json());
+    const d = await fetch("/api/road-reviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, region: roadRegion(r), lang: LANG }) }).then((x) => x.json());
     reviewState.set(name, d.error ? { error: d.error } : d);
   } catch {
     reviewState.set(name, { error: "Couldn't reach the app." });
