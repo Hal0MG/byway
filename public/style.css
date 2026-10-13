@@ -367,6 +367,7 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
   font-size: 14px; font-weight: 600; text-decoration: none;
 }
 .app-link:hover { background: var(--blue-fill); color: #fff; }
+.app-link .short { display: none; }
 /* a long day's parts: one pill per app, a link per part */
 .app-link.app-parts { padding: 4px 4px 4px 12px; }
 .app-link.app-parts:hover { background: var(--card-strong); color: inherit; }
@@ -1272,6 +1273,12 @@ button.spot-img { display: block; width: 100%; padding: 0; text-align: left; }
   .hero-actions::-webkit-scrollbar { display: none; }
   .hero-actions .btn { flex: none; padding: 8px 12px; font-size: 13px; }
   .day-summary { font-size: 15px; line-height: 1.6; }
+  /* the day's numbers and map buttons: small, so they fit a row or two */
+  .day-stats { gap: 6px; }
+  .day-stats > span:not(.grow), .day-stats .app-link { padding: 6px 9px; font-size: 13px; gap: 5px; }
+  .day-stats .ico { width: 14px; height: 14px; }
+  .day-stats .long { display: none; }
+  .day-stats .short { display: inline; }
   .dc-key { display: none !important; }
   .tl-text b { font-size: 14px; }
   .stats { grid-template-columns: repeat(2, 1fr); }
