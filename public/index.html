@@ -29,6 +29,7 @@
       <button data-view="home" aria-pressed="true"><span class="seg-ico" data-icon="globe"></span><span>Home</span></button>
       <button data-view="itinerary" aria-pressed="false"><span class="seg-ico" data-icon="book"></span><span>Itinerary</span></button>
       <button data-view="map" aria-pressed="false"><span class="seg-ico" data-icon="map"></span><span>Map</span></button>
+      <button data-view="about" aria-pressed="false" title="How it works"><span class="seg-ico" data-icon="sparkle"></span><span>How it works</span></button>
     </nav>
     <div class="top-actions">
       <button id="trips-btn" class="icon-btn" aria-label="Your trips" data-icon="list"></button>
@@ -39,6 +40,9 @@
 
   <!-- Itinerary: photos, day write-ups, roads and spots (filled by itinerary.js) -->
   <main id="itinerary" tabindex="-1"></main>
+
+  <!-- How it works: a short tour of the app (about.js) -->
+  <main id="about" tabindex="-1" aria-label="How it works"></main>
 
   <!-- Map view panel -->
   <aside id="panel">
@@ -111,5 +115,6 @@
   <script src="features.js"></script>
   <script src="home.js"></script>
   <script src="setup.js"></script>
+  <script src="about.js"></script>
 </body>
 </html>

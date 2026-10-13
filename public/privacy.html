@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy · Roadtrip Planner</title>
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="legal.css" />
+</head>
+<body>
+<main class="legal">
+  <p class="kicker">Roadtrip Planner</p>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Effective October 12, 2026</p>
+
+  <p class="lead">Roadtrip Planner runs on your own computer. There are no accounts, no analytics, no ads and no tracking. The people who make the app don't receive your trips, your keys or anything you type. To plan and map a trip, the app does contact some outside services, and this page says which ones and what they get.</p>
+
+  <h2>What stays on your computer</h2>
+  <ul>
+    <li><b>Your trips</b>, with their notes, versions and questions, in the app's <code>data</code> folder.</li>
+    <li><b>Your keys and contact</b> (the ones you enter in Setup), in the app's <code>.env</code> file.</li>
+    <li><b>Caches</b> of routes, places, weather, photos and searches, in the <code>data</code> folder, so the same lookups aren't repeated.</li>
+    <li><b>Preferences</b> in your browser's local storage: theme, last view, remembered trip options, map layers.</li>
+  </ul>
+  <p>Deleting a trip removes it from the trips file. Deleting the app folder removes everything above.</p>
+
+  <h2>Services the app contacts</h2>
+  <p>Each service gets only what it needs for its job, and is covered by its own privacy policy.</p>
+  <table>
+    <thead><tr><th>Service</th><th>What for</th><th>What it receives</th></tr></thead>
+    <tbody>
+      <tr><td>The planner AI: Google Gemini, or a model in LM Studio, or Anthropic Claude, depending on Setup</td><td>Planning, day guides, changes, answering questions</td><td>Your trip request, the trip's days, places and roads, and your questions. With LM Studio this stays on your computer (or on the computer you connect with LM Link). Google's free Gemini tier may use what it receives to improve its products; see Google's terms.</td></tr>
+      <tr><td>Tavily (optional)</td><td>Web search while planning</td><td>Search phrases about the route and region.</td></tr>
+      <tr><td>OpenRouteService, OSRM</td><td>Measuring routes</td><td>The coordinates of the trip's stops.</td></tr>
+      <tr><td>OpenStreetMap (Nominatim, Overpass)</td><td>Finding places, fuel, chargers, sights, stays and food</td><td>Place names and areas around the route, with the contact you set in Setup.</td></tr>
+      <tr><td>Wikipedia and Wikimedia Commons</td><td>Photos and articles</td><td>Place names and locations, with the contact you set in Setup.</td></tr>
+      <tr><td>Open-Meteo</td><td>Weather</td><td>Locations and dates of the trip's days.</td></tr>
+      <tr><td>Map tiles: CARTO, OpenFreeMap, EOX, USGS, Mapzen terrain on AWS</td><td>Drawing the map</td><td>Your browser loads the map for the area on screen, like any web map.</td></tr>
+      <tr><td>Google Maps, Apple Maps, Booking.com, Airbnb</td><td>Links you choose to open</td><td>Nothing, until you tap a link. Then that site gets what's in the link (the day's stops, or a town and dates).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Your location</h2>
+  <p>The Today screen can use your device's location to show what's next. It's used in your browser only, isn't saved and isn't sent to the app's server. If you open a day in Google Maps or Apple Maps from Today, your current position is the starting point in that link.</p>
+
+  <h2>Sharing</h2>
+  <p>A read-only link from "Export and share" lets anyone on the same network who has the link view that trip while the app is running. Exported files (GPX, PDF, the trip page) go wherever you send them.</p>
+
+  <h2>Children</h2>
+  <p>The app isn't directed at children and doesn't knowingly collect anything about anyone.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes, the new version comes with the app and the date at the top changes with it.</p>
+
+  <h2>Questions</h2>
+  <p>Open an issue in the app's repository.</p>
+
+  <p class="back"><a href="/">Back to Roadtrip Planner</a> · <a href="terms.html">Terms of use</a></p>
+</main>
+</body>
+</html>

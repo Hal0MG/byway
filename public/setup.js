@@ -106,6 +106,8 @@ function setupHtml() {
       <div id="su-phone">${phoneHtml()}</div>
     </section>
 
+    <p class="fine su-legal"><a href="privacy.html" target="_blank" rel="noopener">Privacy policy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms of use</a></p>
+
     <div class="sheet-actions su-actions">
       <span class="su-status">${s.ready ? `${icon("check", 16)} Ready to plan trips` : "Not ready yet"}</span>
       <button class="btn ghost" data-su="check">${icon("refresh", 16)} Check again</button>
