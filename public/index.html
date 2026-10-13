@@ -47,8 +47,23 @@
   <!-- How it works: a short tour of the app (about.js) -->
   <main id="about" tabindex="-1" aria-label="How it works"></main>
 
-  <!-- Map view panel -->
-  <aside id="panel">
+  <!-- Map view panel (a sheet on phones: the grip shows and hides the list) -->
+  <aside id="panel" class="collapsed">
+    <button id="panel-grip" class="panel-grip" type="button" aria-expanded="false" aria-controls="scroll"><span></span><b>Stops and days</b></button>
+    <div id="options" hidden>
+      <button class="option selected" id="opt-scenic" data-mode="scenic">
+        <span class="swatch scenic"></span>
+        <span class="label">Scenic</span>
+        <span class="time"></span>
+        <span class="meta"></span>
+      </button>
+      <button class="option" id="opt-fastest" data-mode="fastest">
+        <span class="swatch fastest"></span>
+        <span class="label">Fastest</span>
+        <span class="time"></span>
+        <span class="meta"></span>
+      </button>
+    </div>
     <div class="search">
       <span data-icon="plus"></span>
       <input id="search" type="text" placeholder="Add a stop" autocomplete="off" aria-label="Add a stop" />
@@ -66,27 +81,13 @@
     </div>
 
     <footer id="routes-card">
-      <div id="options" hidden>
-        <button class="option selected" id="opt-scenic" data-mode="scenic">
-          <span class="swatch scenic"></span>
-          <span class="label">Scenic</span>
-          <span class="time"></span>
-          <span class="meta"></span>
-        </button>
-        <button class="option" id="opt-fastest" data-mode="fastest">
-          <span class="swatch fastest"></span>
-          <span class="label">Fastest</span>
-          <span class="time"></span>
-          <span class="meta"></span>
-        </button>
-      </div>
       <button id="fix-btn" class="btn soft" hidden>Fix long days with AI</button>
       <div class="btn-row">
-        <button id="route-btn" class="btn blue">Find routes</button>
-        <button id="gpx-btn" class="btn green" hidden>Export GPX</button>
+        <button id="route-btn" class="btn ghost">Find routes</button>
+        <button id="gpx-btn" class="btn ghost" hidden>Export GPX</button>
       </div>
       <p id="status" role="status"></p>
-      <p class="credit">Routes and elevation by OpenRouteService. Map data from OpenStreetMap. Photos and articles from Wikipedia and Wikimedia Commons.</p>
+      <p class="credit">Routes: OpenRouteService, OSRM. Map data: OpenStreetMap. Photos and articles: Wikipedia, Wikimedia Commons.</p>
     </footer>
   </aside>
 

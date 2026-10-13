@@ -10,10 +10,11 @@ const DEFAULT_NAME = "New trip";
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const isMobile = () => matchMedia("(max-width: 760px)").matches;
+// Room the map leaves for the top bar and the stops panel (on phones the sheet at the bottom, as tall as it is now).
 const pad = () =>
   isMobile()
-    ? { top: 90, left: 40, right: 40, bottom: Math.round(innerHeight * 0.58) }
-    : { top: 110, bottom: 70, right: 70, left: 460 };
+    ? { top: 84, left: 36, right: 56, bottom: (document.getElementById("panel")?.offsetHeight || 190) + 24 }
+    : { top: 100, bottom: 60, right: 70, left: 400 };
 
 function fmtDur(s) {
   const m = Math.max(1, Math.round(s / 60));
@@ -267,18 +268,6 @@ function photosFor(s) {
   })();
   return s.photosP;
 }
-async function fillGallery(s, el) {
-  const photos = await photosFor(s);
-  photos.slice(0, 3).forEach((u) => {
-    const img = new Image();
-    img.src = u;
-    img.alt = s.name;
-    img.loading = "lazy";
-    img.onerror = () => img.remove();
-    el.appendChild(img);
-  });
-}
-
 // ---------- days, via points and map app links ----------
 
 const isVia = (s) => s.kind === "via";
@@ -499,7 +488,7 @@ function renderStops() {
       if (l) {
         const leg = document.createElement("li");
         leg.className = "leg";
-        leg.textContent = `${fmtDur(l.duration_s)}, ${fmtMi(l.distance_m)}`;
+        leg.textContent = `${fmtShort(l.duration_s)} · ${fmtMi(l.distance_m)}`;
         ol.appendChild(leg);
       }
       if (isVia(s)) ol.appendChild(viaRow(s, i));
@@ -519,9 +508,9 @@ function dayHeader(groups, gi, multiDay) {
   b.textContent = multiDay ? `Day ${g.day}` : "Directions";
   const small = document.createElement("small");
   const st = dayStats(g);
-  small.textContent = st ? `${fmtDur(st.dur)}, ${fmtMi(st.dist)}` : "";
+  small.textContent = st ? `${fmtShort(st.dur)} · ${fmtMi(st.dist)}` : "";
   if (st && multiDay && st.dur > longDayS()) {
-    small.textContent += ". Long day";
+    small.textContent += " · long day";
     small.classList.add("warn");
   }
   label.append(b, small);
@@ -536,8 +525,9 @@ function dayHeader(groups, gi, multiDay) {
       a.href = href;
       a.target = "_blank";
       a.rel = "noopener";
-      a.textContent = app;
-      a.setAttribute("aria-label", `Open ${multiDay ? `day ${g.day}` : "the trip"} in ${app}`);
+      a.textContent = app.split(" ")[0];
+      a.title = `Open ${multiDay ? `day ${g.day}` : "the trip"} in ${app}`;
+      a.setAttribute("aria-label", a.title);
       box.appendChild(a);
     }
     li.appendChild(box);
@@ -587,11 +577,6 @@ function stopRow(s, i, num) {
   const li = document.createElement("li");
   li.className = "stop";
 
-  const gallery = document.createElement("div");
-  gallery.className = "gallery";
-  li.appendChild(gallery);
-  fillGallery(s, gallery);
-
   const body = document.createElement("div");
   body.className = "stop-body";
   body.onclick = () => flyTo(s);
@@ -602,8 +587,9 @@ function stopRow(s, i, num) {
 
   const title = document.createElement("div");
   title.className = "title";
+  title.title = s.name;
   const b = document.createElement("b");
-  b.textContent = s.name;
+  b.textContent = shortName(s.name);
   title.appendChild(b);
   const sub = [s.road, s.note].filter(Boolean).join(". ");
   if (sub) {
@@ -1808,6 +1794,12 @@ async function findRoutes({ fit = true } = {}) {
   }
 }
 $("route-btn").onclick = () => findRoutes();
+// Phones: the panel is a sheet showing the routes and search; the grip opens the stops and days.
+$("panel-grip").onclick = () => {
+  const open = $("panel").classList.toggle("collapsed") === false;
+  $("panel-grip").setAttribute("aria-expanded", String(open));
+  $("panel-grip").querySelector("b").textContent = open ? "Hide the list" : "Stops and days";
+};
 
 // A point 1, 2, 4 or 8 km from `p` toward `from` that the router can reach from `from`, or null.
 async function reachableNear(p, from) {
