@@ -81,7 +81,7 @@ function setupHtml() {
              <small>${esc(job.out.split(/\r|\n/).filter(Boolean).pop() || "")}</small></p>` : ""}
            ${L.job?.done && !L.job.ok ? `<p class="su-bad">That didn't work: ${esc(L.job.out.split(/\r|\n/).filter(Boolean).slice(-2).join(" "))}</p>` : ""}
            ${L.loaded ? "" : `<p class="fine">After a restart of the PC, the model needs loading again: press "Load it" here, or run start-ai.cmd.</p>`}`
-        : keyField("gemini", "Gemini key", s.gemini, "Paste your key", "https://aistudio.google.com/apikey", "Get a free key")}
+        : keyField("gemini", "Gemini key", s.gemini, "Paste your key", "https://aistudio.google.com/apikey", "Get a free key") + geminiToday(s.gemini)}
     </section>
 
     <section class="su-step">
@@ -143,6 +143,17 @@ async function loadPhone() {
   await lib;
   const box = setupEl?.querySelector("#su-phone");
   if (box) box.innerHTML = phoneHtml();
+}
+
+// Requests to Gemini today, per model, and any that reached their free daily limit.
+function geminiToday(g) {
+  const t = g?.today;
+  if (!t) return "";
+  const models = Object.entries(t.models || {});
+  const total = models.reduce((n, [, c]) => n + c, 0);
+  return `<p class="su-gpu">${icon("gauge", 14)} Today: ${total} request${total === 1 ? "" : "s"} to Gemini${models.length ? ` (${models.map(([m, c]) => `${esc(m)} ${c}`).join(", ")})` : ""}.
+    The free limits reset at midnight Pacific time.</p>
+    ${t.limited?.length ? `<p class="su-bad">Reached today's limit: ${esc(t.limited.join(", "))}. The app uses the next model until it resets.</p>` : ""}`;
 }
 
 let setupEl = null;

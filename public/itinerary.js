@@ -775,7 +775,7 @@ function renderDay(g, gi, groups, segs) {
       const o = r.official;
       const season = seasonal.find((x) => (x.r.match || []).some((m) => `${r.name} ${r.ref || ""}`.toLowerCase().includes(m)));
       return `<article class="road-card">
-        ${r.info?.image ? `<button class="road-img-btn" data-act="gallery" data-q="${esc(r.name)}" data-first="${esc(r.info.image)}" aria-label="Photos of ${esc(r.name)}">
+        ${r.info?.image ? `<button class="road-img-btn" data-act="gallery" data-q="${esc(r.name)}" data-near="${esc(roadNear(r).map((p) => p.map((x) => x.toFixed(3)).join(",")).join(";"))}" data-ctx="${esc(placesText(roadStops(r)))}" data-first="${esc(r.info.image)}" aria-label="Photos of ${esc(r.name)}">
           <img class="road-img" src="${esc(r.info.image)}" alt="" loading="lazy" onerror="this.remove()"><span class="gal-hint">${icon("photo", 14)} Photos</span></button>` : ""}
         <div class="road-body">
           <div class="road-head">${shield(r.ref, r.name)}<h4>${esc(r.name)}</h4>
@@ -807,7 +807,7 @@ function renderDay(g, gi, groups, segs) {
       const t = spotType(s.type);
       const where = !pos ? "" : pos.offKm > 5 ? `${fmtMi(pos.offKm * 1000)} off route` : "On the route";
       return `<article class="spot-card">
-        <button class="spot-img" data-act="gallery" data-q="${esc(s.name)}" data-first="${esc(s.info?.image || "")}" aria-label="Photos of ${esc(s.name)}">${s.info?.image ? `<img src="${esc(s.info.image)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
+        <button class="spot-img" data-act="gallery" data-q="${esc(s.name)}" data-at="${s.info?.lat != null ? `${s.info.lat},${s.info.lng}` : ""}" data-ctx="${esc(placesText(stops.filter((x) => Math.abs(x.day - s.day) <= 1)))}" data-first="${esc(s.info?.image || "")}" aria-label="Photos of ${esc(s.name)}">${s.info?.image ? `<img src="${esc(s.info.image)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
           <span class="spot-type t-${esc(s.type)}">${icon(t.icon, 14)} ${esc(t.label)}</span></button>
         <div class="spot-body">
           <h4>${esc(s.name)}</h4>
@@ -1018,7 +1018,7 @@ IT.addEventListener("click", (e) => {
   else if (act === "fly") {
     const r = (plan?.roads || []).find((x) => x.name === t.dataset.name);
     if (r) flyRoad(r);
-  } else if (act === "gallery") openGallery(t.dataset.q, t.dataset.q, t.dataset.first || "");
+  } else if (act === "gallery") openGallery(t.dataset.q, t.dataset.q, t.dataset.first || "", { at: t.dataset.at, near: t.dataset.near, ctx: t.dataset.ctx });
   else if (act === "suggest-items") {
     const items = suggestedItems();
     notesOf().items.push(...items.map((text) => ({ text, done: false })));

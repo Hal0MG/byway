@@ -1100,7 +1100,7 @@ addEventListener("keydown", (e) => e.key === "Escape" && stopFlight());
 
 // ---------- photo galleries ----------
 
-async function openGallery(title, query, first) {
+async function openGallery(title, query, first, where = {}) {
   const box = document.createElement("div");
   box.className = "lightbox overlay";
   box.setAttribute("role", "dialog");
@@ -1144,7 +1144,9 @@ async function openGallery(title, query, first) {
   box.addEventListener("click", (e) => e.target === box && close());
   if (photos.length) show();
   try {
-    const d = await (await fetch(`/api/gallery?q=${encodeURIComponent(query)}`)).json();
+    const loc = (where.at ? `&at=${encodeURIComponent(where.at)}` : "") + (where.near ? `&near=${encodeURIComponent(where.near)}` : "") +
+      (where.ctx ? `&ctx=${encodeURIComponent(where.ctx)}` : "");
+    const d = await (await fetch(`/api/gallery?q=${encodeURIComponent(query)}${loc}`)).json();
     const more = (d.photos || []).filter((p) => !first || !p.src.split("/").pop().includes(first.split("/").pop().replace(/^\d+px-/, "")));
     photos = [...photos, ...more];
   } catch {

@@ -197,9 +197,11 @@ async function geocode(q) {
 
 // ---------- photos ----------
 
-async function fetchPhotos(q) {
+// `s`: the stop, so the photos are from there and not from a place with the same name elsewhere
+async function fetchPhotos(q, s) {
   try {
-    const r = await fetch(`/api/photos?q=${encodeURIComponent(q)}`);
+    const at = s?.lat != null ? `&at=${s.lat},${s.lng}` : "";
+    const r = await fetch(`/api/photos?q=${encodeURIComponent(q)}${at}`);
     return (await r.json()).photos || [];
   } catch {
     return [];
@@ -209,8 +211,8 @@ async function fetchPhotos(q) {
 function photosFor(s) {
   if (Array.isArray(s.photos) && s.photos.length) return Promise.resolve(s.photos);
   s.photosP ||= (async () => {
-    let photos = s.photoQuery ? await fetchPhotos(s.photoQuery) : [];
-    if (!photos.length) photos = await fetchPhotos(s.name);
+    let photos = s.photoQuery ? await fetchPhotos(s.photoQuery, s) : [];
+    if (!photos.length) photos = await fetchPhotos(s.name, s);
     if (photos.length) {
       s.photos = photos;
       scheduleSave();
@@ -929,18 +931,29 @@ function mergeDetails(d) {
   plan.spots = (d.spots || []).map((s) => ({ ...s, day: Number(s.day) || 1, info: null }));
 }
 
+// The stops on a road's days, as [[lng, lat], ...] (photos of the road must be from around there), and their names
+// as context for photos without a location.
+const roadStops = (r) => {
+  const days = new Set((r.days || []).map(Number));
+  return stops.filter((s) => !days.size || days.has(s.day)).slice(0, 40);
+};
+const roadNear = (r) => roadStops(r).map((s) => [s.lng, s.lat]);
+const placesText = (list) => [...new Set(list.map((s) => s.name))].join("; ").slice(0, 500);
+
 // Wikipedia articles and photos for roads and spots, and coordinates for the spots.
 async function enrichPlan() {
   if (!plan) return;
-  const near = (day) =>
-    stops.filter((s) => s.day === day || s.day === day - 1 || s.day === day + 1).map((s) => [s.lng, s.lat]);
+  const around = (day) => stops.filter((s) => s.day === day || s.day === day - 1 || s.day === day + 1);
+  const near = (day) => around(day).map((s) => [s.lng, s.lat]);
   const roads = plan.roads.map((r, i) => ({
     key: `r${i}`,
     name: r.ref ? `${r.name} ${r.ref}` : r.name,
     photo: r.name, // Commons photo search works better with the plain name
     wiki: r.wiki || r.official?.wiki || "",
+    near: roadNear(r),
+    ctx: placesText(roadStops(r)),
   }));
-  const spots = plan.spots.map((s, i) => ({ key: `s${i}`, name: s.name, wiki: s.wiki || "", near: near(s.day) }));
+  const spots = plan.spots.map((s, i) => ({ key: `s${i}`, name: s.name, wiki: s.wiki || "", near: near(s.day), ctx: placesText(around(s.day)) }));
   const out = await api("/api/enrich", { roads, spots });
   // Keep what an earlier lookup found when this one came back empty (Wikimedia may be rate limiting).
   const merge = (old, next) => {

@@ -3,6 +3,7 @@
 data/trips.json
 data/trips.json.*.tmp
 data/search-usage.json
+data/gemini-usage.json
 
 # caches the app rebuilds by itself
 data/wikimedia-cache.json

@@ -673,40 +673,58 @@ app.delete("/api/trips/:id", async (req, res) => {
 
 const photoCache = new Map();
 const NOT_A_PHOTO = /\b(map|logo|flag|seal|diagram|locator|coat of arms|icon|sign|plaque)\b/i;
-async function commonsPhotos(q, width = 640) {
-  const key = `${width}:${q}`;
+// Commons photos of a place: [{ src, page, title }]. Names repeat across the world ("Tunnel View" is in Yosemite and
+// in Grand Teton), so where the place is known the photos must be from there:
+//   at:   { lat, lng } of the place: photos taken within 3 km, ones naming the place first, then the nearest.
+//   near: [[lng, lat], ...] (the day's stops, or a road's): a name search, dropping photos located over 150 km away.
+//   ctx:  names around it ("Jackson, Wyoming; West Yellowstone, Montana"): a photo with no location must also name
+//         one of them, or "Tunnel view at Yosemite" passes for Grand Teton's Tunnel View.
+async function commonsSearch(q, { width = 640, limit = 4, at = null, near = null, ctx = "" } = {}) {
+  const key = JSON.stringify([width, limit, q, at && [at.lat.toFixed(3), at.lng.toFixed(3)], near?.length ? near[0] : null, ctx]);
   if (photoCache.has(key)) return photoCache.get(key);
+  const url = new URL("https://commons.wikimedia.org/w/api.php");
+  const common = { action: "query", format: "json", prop: "imageinfo|coordinates", iiprop: "url|mime|size", iiurlwidth: String(width) };
+  url.search = new URLSearchParams(at
+    ? { ...common, generator: "geosearch", ggscoord: `${at.lat}|${at.lng}`, ggsradius: "3000", ggsnamespace: "6", ggslimit: "50" }
+    : { ...common, generator: "search", gsrsearch: `${q.replace(/,/g, " ")} filetype:bitmap`, gsrnamespace: "6", gsrlimit: "30" });
   try {
-    const url = new URL("https://commons.wikimedia.org/w/api.php");
-    url.search = new URLSearchParams({
-      action: "query",
-      format: "json",
-      generator: "search",
-      gsrsearch: `${q.replace(/,/g, " ")} filetype:bitmap`,
-      gsrnamespace: "6",
-      gsrlimit: "20",
-      prop: "imageinfo",
-      iiprop: "url|mime|size",
-      iiurlwidth: String(width),
-    });
     const data = await wmFetch(url);
-    const pages = Object.values(data?.query?.pages || {}).sort((a, b) => a.index - b.index);
-    const photos = pages
+    let pages = Object.values(data?.query?.pages || {}).filter((p) => !NOT_A_PHOTO.test(p.title || ""));
+    if (at) {
+      const dist = (p) => (p.coordinates?.[0] ? haversine([at.lng, at.lat], [p.coordinates[0].lon, p.coordinates[0].lat]) : 1e9);
+      pages.sort((a, b) => (sharesWord(q, b.title) - sharesWord(q, a.title)) || dist(a) - dist(b));
+    } else {
+      pages.sort((a, b) => a.index - b.index);
       // the file name must mention the place, so a loose search match doesn't bring in an unrelated photo
-      .filter((p) => !NOT_A_PHOTO.test(p.title || "") && (!words(q).length || sharesWord(q, p.title)))
-      .map((p) => p.imageinfo?.[0])
-      .filter((i) => i && i.mime === "image/jpeg" && i.width >= 800 && i.width >= i.height && i.thumburl)
-      .slice(0, 4)
-      .map((i) => i.thumburl);
+      pages = pages.filter((p) => !words(q).length || sharesWord(q, p.title));
+      // and a photo with a location must be near the trip
+      if (near?.length) pages = pages.filter((p) => !p.coordinates?.[0] || nearEnough(near, p.coordinates[0].lat, p.coordinates[0].lon, 150));
+      if (ctx) pages = pages.filter((p) => p.coordinates?.[0] || sharesWord(ctx, p.title));
+    }
+    const photos = pages
+      .map((p) => ({ i: p.imageinfo?.[0], title: String(p.title || "").replace(/^File:/, "").replace(/\.[a-z]+$/i, "") }))
+      .filter(({ i }) => i && i.mime === "image/jpeg" && i.width >= 800 && i.width >= i.height && i.thumburl)
+      .slice(0, limit)
+      .map(({ i, title }) => ({ src: i.thumburl, page: i.descriptionurl, title }));
+    // nothing taken right there: photos named after the place, from around it
+    if (at && !photos.length && data) return commonsSearch(q, { width, limit, near: [[at.lng, at.lat]], ctx });
     if (data) photoCache.set(key, photos); // nothing cached while Wikimedia is throttling
     return photos;
   } catch {
     return [];
   }
 }
+const commonsPhotos = async (q, width = 640, where = {}) => (await commonsSearch(q, { width, ...where })).map((p) => p.src);
+// "lat,lng" and "lng,lat;lng,lat" from query strings
+const parseAt = (v) => {
+  const [lat, lng] = String(v || "").split(",").map(Number);
+  return isFinite(lat) && isFinite(lng) && v ? { lat, lng } : null;
+};
+const parseNear = (v) => String(v || "").split(";").map((x) => x.split(",").map(Number)).filter((p) => p.length === 2 && p.every(isFinite)).slice(0, 40);
+
 app.get("/api/photos", async (req, res) => {
   const q = String(req.query.q || "").trim();
-  res.json({ photos: q ? await commonsPhotos(q) : [] });
+  res.json({ photos: q ? await commonsPhotos(q, 640, { at: parseAt(req.query.at), near: parseNear(req.query.near) }) : [] });
 });
 
 // Lead photos of Wikipedia articles, for the home screen's trip cards. POST { titles: [...] } -> { images: { title: url } }
@@ -741,25 +759,9 @@ app.post("/api/wiki-images", async (req, res) => {
 app.get("/api/gallery", async (req, res) => {
   const q = String(req.query.q || "").trim();
   if (!q) return res.json({ photos: [] });
-  try {
-    const url = new URL("https://commons.wikimedia.org/w/api.php");
-    url.search = new URLSearchParams({
-      action: "query", format: "json", generator: "search", gsrsearch: `${q.replace(/,/g, " ")} filetype:bitmap`,
-      gsrnamespace: "6", gsrlimit: "30", prop: "imageinfo", iiprop: "url|mime|size", iiurlwidth: "1280",
-    });
-    const data = await wmFetch(url);
-    const pages = Object.values(data?.query?.pages || {}).sort((a, b) => a.index - b.index);
-    const photos = pages
-      .filter((p) => !NOT_A_PHOTO.test(p.title || "") && (!words(q).length || sharesWord(q, p.title)))
-      .map((p) => ({ i: p.imageinfo?.[0], title: String(p.title || "").replace(/^File:/, "").replace(/\.[a-z]+$/i, "") }))
-      .filter(({ i }) => i && i.mime === "image/jpeg" && i.width >= 800 && i.thumburl)
-      .slice(0, 8)
-      .map(({ i, title }) => ({ src: i.thumburl, page: i.descriptionurl, title }));
-    res.json({ photos });
-  } catch {
-    res.json({ photos: [] });
-  }
+  res.json({ photos: await commonsSearch(q, { width: 1280, limit: 8, at: parseAt(req.query.at), near: parseNear(req.query.near), ctx: String(req.query.ctx || "").slice(0, 500) }) });
 });
+
 
 // ---------- weather and daylight (Open-Meteo: free, no key, non-commercial) ----------
 
@@ -1360,7 +1362,8 @@ app.post("/api/enrich", async (req, res) => {
     }
     for (const s of spots) {
       if (out.spots[s.key]) continue;
-      const p = await wikiSearch(s.name, fitsNear(s.near));
+      // a different place nearby isn't it ("Bernie's Diner" found the Northern Hotel's article)
+      const p = await wikiSearch(s.name, (pg) => fitsNear(s.near)(pg) && sharesWord(s.name, pg.title));
       if (p) out.spots[s.key] = pageInfo(p);
     }
     // 3. Coordinates from Nominatim for spots without an article location.
@@ -1373,11 +1376,14 @@ app.post("/api/enrich", async (req, res) => {
     // 4. A Commons photo where Wikipedia had none.
     for (const s of spots) {
       const w = out.spots[s.key];
-      if (!w.image) w.image = (await commonsPhotos(s.name, 1280))[0] || "";
+      if (!w.image) {
+        const where = w.lat != null ? { at: { lat: w.lat, lng: w.lng }, ctx: s.ctx } : { near: s.near, ctx: s.ctx };
+        w.image = (await commonsPhotos(s.name, 1280, where))[0] || "";
+      }
     }
     for (const r of roads) {
       const w = (out.roads[r.key] ||= {});
-      if (!w.image) w.image = (await commonsPhotos(r.photo || r.name, 1280))[0] || "";
+      if (!w.image) w.image = (await commonsPhotos(r.photo || r.name, 1280, { near: r.near, ctx: r.ctx }))[0] || "";
     }
     res.json(out);
   } catch (e) {
@@ -1430,6 +1436,31 @@ const SEARCHES_DETAILS = Number(process.env.CLAUDE_SEARCHES_DETAILS ?? 5);
 // Free-tier Gemini models are often overloaded (503), rate limited (429) or drop long answers part way,
 // and non-streamed requests get cut off around 60 s. So: stream the answer, and move to the next model on any failure.
 const GEMINI_MODELS = [GEMINI_MODEL, ...GEMINI_FALLBACKS].filter((m, i, a) => m && a.indexOf(m) === i);
+// Gemini's free limits are per model per day and reset at midnight Pacific time, so requests are counted that way
+// (data/gemini-usage.json) and shown in Setup, with the models that answered "limit reached" (429) today.
+const GEMINI_USAGE_FILE = path.resolve("data", "gemini-usage.json");
+const pacificDay = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+let geminiUsage = null;
+async function geminiUsageToday() {
+  if (!geminiUsage) {
+    try {
+      geminiUsage = JSON.parse(await fs.readFile(GEMINI_USAGE_FILE, "utf8"));
+    } catch {
+      geminiUsage = null;
+    }
+  }
+  if (geminiUsage?.day !== pacificDay()) geminiUsage = { day: pacificDay(), models: {}, limited: [] };
+  return geminiUsage;
+}
+async function countGemini(model, limited) {
+  const u = await geminiUsageToday();
+  u.models[model] = (u.models[model] || 0) + 1;
+  if (limited && !u.limited.includes(model)) u.limited.push(model);
+  fs.mkdir(path.dirname(GEMINI_USAGE_FILE), { recursive: true })
+    .then(() => fs.writeFile(GEMINI_USAGE_FILE, JSON.stringify(u)))
+    .catch(() => {});
+}
+
 // GEMINI_BASE_URL: another endpoint with the same API (a proxy, or a stand-in for tests).
 const GEMINI_BASE = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/$/, "");
 // `onText` (optional) gets the answer so far as it streams; `signal` cancels.
@@ -1448,6 +1479,8 @@ async function callGemini(prompt, { signal, onText } = {}) {
         // a stalled stream moves on to the next model
         signal: signal ? AbortSignal.any([AbortSignal.timeout(240000), signal]) : AbortSignal.timeout(240000),
       });
+      // busy answers (503) don't use the quota; answers and "limit reached" (429) do
+      if (r.ok || r.status === 429) countGemini(model, r.status === 429);
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
         throw new Error(d?.error?.message || `HTTP ${r.status}`);
@@ -2764,7 +2797,7 @@ app.get("/api/setup", localOnly, async (req, res) => {
   res.json({
     ors: { set: !!ORS_KEY, hint: mask(ORS_KEY) },
     tavily: { set: !!TAVILY_KEY, hint: mask(TAVILY_KEY) },
-    gemini: { set: !!GEMINI_KEY, hint: mask(GEMINI_KEY) },
+    gemini: { set: !!GEMINI_KEY, hint: mask(GEMINI_KEY), model: GEMINI_MODEL, today: GEMINI_KEY ? await geminiUsageToday() : null },
     contact: CONTACT,
     provider: AI_PROVIDER,
     local: { ...local, model: LOCAL_MODEL, lms: await lmsInstalled(), link, job: lmsJob && { ...lmsJob, out: lmsJob.out.slice(-400) } },
