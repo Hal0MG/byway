@@ -1,5 +1,6 @@
 // "How it works": a short, friendly tour of what the app does, for the view of the same name. It covers the idea and
-// the main features, not every detail (Setup and the README have those).
+// the main features, not every detail (Setup and the README have those). "In depth" swaps it for the technical version
+// (about-deep.js): the pipeline, the algorithms and their numbers, the caches and how it's tested.
 
 const ABOUT_STEPS = [
   ["sparkle", "Say where you want to go", "“Toronto to Vancouver in 7 days”, a loop through the parks, or one of the ready-made trips. Set your dates, how long you like to drive each day and the kind of roads you're after."],
@@ -20,8 +21,22 @@ const ABOUT_TILES = [
   ["globe", "Free to run", "Free data and free tiers, or an AI model on your own computer. No accounts, no ads."],
 ];
 
+// Overview or in depth, remembered per browser
+let aboutDepth = (() => {
+  try {
+    return localStorage.getItem("aboutDepth") === "deep";
+  } catch {
+    return false;
+  }
+})();
+const aboutModeHtml = () => `<div class="ab-mode" role="group" aria-label="How much detail">
+    <button data-about="simple" aria-pressed="${!aboutDepth}">Overview</button>
+    <button data-about="deep" aria-pressed="${aboutDepth}">${icon("gauge", 15)} In depth</button>
+  </div>`;
+
 function aboutHtml() {
   return `<div class="ab">
+    ${aboutModeHtml()}
     <section class="ab-hero">
       ${artSvg()}
       <div class="ab-hero-text">
@@ -55,6 +70,7 @@ function aboutHtml() {
 
     <div class="ab-cta">
       <button class="btn blue" data-about="plan">${icon("sparkle", 18)} Plan a trip</button>
+      <button class="btn" data-about="deep">${icon("gauge", 18)} How it works, in depth</button>
     </div>
   </div>`;
 }
@@ -63,7 +79,11 @@ let aboutObserver = null;
 function renderAbout() {
   const el = $("about");
   if (!el) return;
-  if (!el.firstChild) el.innerHTML = aboutHtml();
+  const mode = aboutDepth ? "deep" : "simple";
+  if (el.dataset.mode !== mode) {
+    el.innerHTML = aboutDepth ? aboutDeepHtml() : aboutHtml();
+    el.dataset.mode = mode;
+  }
   // sections fade up as they scroll into view (not with reduced motion: they're just there)
   if (matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
     el.querySelectorAll(".ab-in").forEach((x) => x.classList.add("shown"));
@@ -78,7 +98,18 @@ function renderAbout() {
   el.querySelectorAll(".ab-in:not(.shown)").forEach((x) => aboutObserver.observe(x));
 }
 $("about")?.addEventListener("click", (e) => {
-  if (e.target.closest('[data-about="plan"]')) setView("home");
+  const b = e.target.closest("[data-about]");
+  if (!b) return;
+  if (b.dataset.about === "plan") return setView("home");
+  if (b.dataset.about === "simple" || b.dataset.about === "deep") {
+    aboutDepth = b.dataset.about === "deep";
+    try {
+      localStorage.setItem("aboutDepth", aboutDepth ? "deep" : "simple");
+    } catch {}
+    renderAbout();
+    $("about").scrollTop = 0;
+    $("about").querySelector(`.ab-mode [data-about="${b.dataset.about}"]`)?.focus();
+  }
 });
 // render when the view opens (app.js's setView calls onViewChange, which home.js owns, so watch the attribute)
 new MutationObserver(() => document.body.dataset.view === "about" && renderAbout()).observe(document.body, { attributes: true, attributeFilter: ["data-view"] });

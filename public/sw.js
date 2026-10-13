@@ -1,9 +1,9 @@
 // Service worker: makes the app installable and lets saved trips open without a connection.
 // App files and opened trips: from the network (so updates show at once), falling back to the last copy when offline.
 // Everything else (planning, routing, map tiles) always goes to the network.
-const CACHE = "byway-1.47";
+const CACHE = "byway-1.48";
 const SHELL = [
-  "/", "/index.html", "/style.css", "/icons.js", "/logic.js", "/app.js", "/itinerary.js", "/features.js", "/home.js", "/setup.js", "/about.js", "/library.js",
+  "/", "/index.html", "/style.css", "/icons.js", "/logic.js", "/app.js", "/itinerary.js", "/features.js", "/home.js", "/setup.js", "/about.js", "/about-deep.js", "/library.js",
   "/privacy.html", "/terms.html", "/legal.css",
   "/coverage.json", "/seasonal-roads.json", "/trip-ideas.json", "/manifest.webmanifest", "/icons/icon.svg",
   "https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js", "https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css",
