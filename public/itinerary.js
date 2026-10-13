@@ -598,16 +598,16 @@ function roadsPanel() {
       </div>
     </header>
 
-    <h4>On this trip</h4>
+    <h3>On this trip</h3>
     <ul class="rp-list">${current.join("") || `<li class="rp-empty">No featured roads yet. Add some below.</li>`}</ul>
 
-    <h4>Scenic byways along the way${states.length ? ` <small>${esc(states.join(", "))}</small>` : ""}</h4>
+    <h3>Scenic byways along the way${states.length ? ` <small>${esc(states.join(", "))}</small>` : ""}</h3>
     ${bywayList.loading && !bywayList.items
       ? `<p class="rp-empty">Loading...</p>`
       : `<ul class="rp-list">${bywayRows.join("") || `<li class="rp-empty">No other designated byways in these states.</li>`}</ul>
          ${sorted.length > 6 ? `<button class="rp-more" data-act="byways-all">${bywayList.showAll ? "Show fewer" : `Show all ${sorted.length}`}</button>` : ""}`}
 
-    <h4>More roads drivers love</h4>
+    <h3>More roads drivers love</h3>
     ${ideaRows.length ? `<ul class="rp-list">${ideaRows.join("")}</ul>` : ""}
     <button class="btn ghost rp-find" data-act="road-ideas" ${ideasLoading ? "disabled" : ""}>
       ${ideasLoading ? `<span class="spinner"></span> Searching for roads...` : `${icon("sparkle", 18)} ${ideaRows.length ? "Find more" : "Find roads with AI"}`}

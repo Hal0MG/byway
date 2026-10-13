@@ -508,10 +508,10 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
 .roads-panel { position: relative; padding: 22px; }
 .rp-head h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 24px; letter-spacing: -0.02em; }
 .rp-head p { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
-.roads-panel h4 {
+.roads-panel h3 {
   margin: 22px 0 10px; font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
 }
-.roads-panel h4 small { margin-left: 8px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.roads-panel h3 small { margin-left: 8px; font-weight: 600; letter-spacing: 0; text-transform: none; }
 .rp-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 8px; }
 .rp-row {
   display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px;
@@ -778,7 +778,7 @@ body[data-view="home"] #save-state, body[data-view="trips"] #save-state, body[da
   display: flex; flex-direction: column; gap: 14px; padding: 18px;
   background: var(--surface); border-radius: 12px; box-shadow: var(--shadow);
 }
-.sheet header { display: flex; align-items: center; }
+.sheet .sheet-head { display: flex; align-items: center; }
 .sheet h2 { flex: 1; margin: 0; font-size: 26px; letter-spacing: -0.02em; }
 
 #toast {

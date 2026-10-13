@@ -36,7 +36,7 @@ function openSheet(html, cls = "") {
   closeOverlay();
   const el = document.createElement("div");
   el.className = "sheet-backdrop overlay";
-  el.innerHTML = `<section class="sheet ${cls}" role="dialog" aria-modal="true">${html}</section>`;
+  el.innerHTML = `<section class="sheet ${cls}" role="dialog" aria-modal="true" aria-labelledby="sheet-title">${html}</section>`;
   el.addEventListener("click", (e) => {
     if (e.target === el || e.target.closest("[data-close]")) closeOverlay();
   });
@@ -50,7 +50,8 @@ function closeOverlay() {
 addEventListener("keydown", (e) => {
   if (e.key === "Escape" && document.querySelector(".overlay") && !document.querySelector(".lightbox")) closeOverlay();
 });
-const sheetHead = (title) => `<header><h2>${esc(title)}</h2><button class="icon-btn" data-close aria-label="Close">${icon("close", 20)}</button></header>`;
+// (a div, not a header: inside a dialog a <header> counts as a second page banner for screen readers)
+const sheetHead = (title) => `<div class="sheet-head"><h2 id="sheet-title">${esc(title)}</h2><button class="icon-btn" data-close aria-label="Close">${icon("close", 20)}</button></div>`;
 
 // ---------- trip options ----------
 
@@ -2310,8 +2311,8 @@ function todayHtml() {
         : card("fuel", "Fuel", "Not looked up yet", "“Along the route” finds fuel and chargers")}
       ${sunset != null && arrive > sunset + 10 ? card("sunset", "Heads up", "You'd arrive after dark", "Skip a stop or leave earlier") : ""}
     </div>
-    ${roads.length ? `<h4 class="td-h">${icon("road", 16)} Roads today</h4><p class="td-list">${roads.map(esc).join(" · ")}</p>` : ""}
-    ${spots.length ? `<h4 class="td-h">${icon("viewpoint", 16)} Still ahead</h4><ol class="td-spots">${spots.slice(0, 6).map((y) => `<li><b>${esc(y.x.name)}</b><span>${fmtMi(y.a - along)}${y.x.minutes ? ` · ${y.x.minutes} min stop` : ""}</span></li>`).join("")}</ol>` : ""}
+    ${roads.length ? `<h3 class="td-h">${icon("road", 16)} Roads today</h3><p class="td-list">${roads.map(esc).join(" · ")}</p>` : ""}
+    ${spots.length ? `<h3 class="td-h">${icon("viewpoint", 16)} Still ahead</h3><ol class="td-spots">${spots.slice(0, 6).map((y) => `<li><b>${esc(y.x.name)}</b><span>${fmtMi(y.a - along)}${y.x.minutes ? ` · ${y.x.minutes} min stop` : ""}</span></li>`).join("")}</ol>` : ""}
     ${parts.length > 1 ? `<p class="td-parts">${icon("route", 14)} <span>Today's route has more places than one map link carries, so it goes in
       ${parts.length} parts. Open the next part when you reach ${esc(parts[0].to)}:
       ${parts.slice(1).map((p, k) => `<span class="td-part">Part ${k + 2} from ${esc(p.from)}: <a href="${esc(p.google)}" target="_blank" rel="noopener">Google</a> · <a href="${esc(p.apple)}" target="_blank" rel="noopener">Apple</a></span>`).join("")}</span></p>` : ""}
