@@ -75,6 +75,8 @@ top bar and only works on the computer running the app. Keep the start window op
 - **Trips**: your trips and the ready-made ones in one tab, with search, region and length filters, and a preview of
   every day, the route and the roads before you open one.
 - **Export and share**: GPX, print or PDF, a web page, or a read-only link for devices on the same network.
+- **Import a GPX file** (Trips tab): a Byway export comes back as it was; a route, waypoints or a recorded track from
+  another app becomes a trip, measured and split into days.
 - **How it works**: a short tour, in the top bar.
 
 ## Desktop app

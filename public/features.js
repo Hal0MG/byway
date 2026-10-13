@@ -2677,3 +2677,82 @@ new MutationObserver(() => {
     nearPins.length = 0;
   }
 }).observe(document.body, { attributes: true, attributeFilter: ["data-view"] });
+
+// ---------- import a GPX file as a trip ----------
+// A GPX exported from Byway comes back as it was (stops, via points and days, from its waypoints). Other files: a route's
+// points, else the waypoints, else a recorded track sampled every ~60 km (start and end as stops, the rest as via points,
+// named by OpenStreetMap). The trip is then measured and split into days by the daily limit. No AI involved.
+function parseGpx(text) {
+  const doc = new DOMParser().parseFromString(text, "application/xml");
+  if (doc.querySelector("parsererror")) throw new Error("That file isn't a GPX file the app can read.");
+  const all = (el, tag) => [...el.getElementsByTagNameNS("*", tag)];
+  const kid = (el, tag) => all(el, tag)[0]?.textContent.trim() || "";
+  const pt = (el) => ({ lng: Number(el.getAttribute("lon")), lat: Number(el.getAttribute("lat")), name: kid(el, "name"), desc: kid(el, "desc"), type: kid(el, "type") });
+  const ok = (p) => isFinite(p.lng) && isFinite(p.lat) && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180;
+  const name = kid(all(doc, "metadata")[0] || doc.createElement("x"), "name") || kid(all(doc, "trk")[0] || doc.createElement("x"), "name");
+  const wpts = all(doc, "wpt").map(pt).filter(ok);
+  // our own export: waypoints typed "stop" or "via" with "Day N" in the description (the plan's spots are typed otherwise)
+  const ours = wpts.filter((p) => (p.type === "stop" || p.type === "via") && /^Day \d+/.test(p.desc));
+  if (ours.length >= 2) {
+    return { name, byway: true, points: ours.map((p) => ({ ...p, via: p.type === "via", day: Number(p.desc.match(/^Day (\d+)/)[1]), note: p.desc.replace(/^Day \d+\.?\s*/, "") })) };
+  }
+  const rte = all(doc, "rtept").map(pt).filter(ok);
+  if (rte.length >= 2) return { name, points: rte };
+  if (wpts.length >= 2) return { name, points: wpts };
+  const track = all(doc, "trkpt").map(pt).filter(ok);
+  if (track.length < 2) throw new Error("The file has no route, waypoints or track to make a trip from.");
+  // sample the track by distance: ends kept, a point every ~60 km between (at most 14 in all)
+  const cum = [0];
+  for (let i = 1; i < track.length; i++) cum.push(cum[i - 1] + haversine([track[i - 1].lng, track[i - 1].lat], [track[i].lng, track[i].lat]));
+  const total = cum.at(-1);
+  const n = Math.max(2, Math.min(14, Math.round(total / 60000) + 1));
+  const pts = Array.from({ length: n }, (_, k) => {
+    const target = (k / (n - 1)) * total;
+    const i = Math.max(0, cum.findIndex((c) => c >= target));
+    return { ...track[i], name: "", via: k > 0 && k < n - 1 };
+  });
+  return { name, points: pts, track: true };
+}
+async function importGpx(file) {
+  if (READONLY || !file) return;
+  try {
+    if (file.size > 30e6) throw new Error("That file is too big (over 30 MB).");
+    const g = parseGpx(await file.text());
+    await newTrip();
+    setView("itinerary");
+    // places without names get one from OpenStreetMap (one at a time; the server caches them)
+    for (const [k, p] of g.points.entries()) {
+      if (p.name) continue;
+      setStatus(`Naming the places on the route (${k + 1} of ${g.points.length})...`);
+      const d = await fetch(`/api/place-name?lat=${p.lat}&lng=${p.lng}`).then((r) => r.json()).catch(() => ({}));
+      p.name = d.name || `${p.lat.toFixed(3)}, ${p.lng.toFixed(3)}`;
+    }
+    for (const p of g.points) {
+      stops.push({ name: p.name, lng: p.lng, lat: p.lat, note: p.note || "", kind: p.via ? "via" : "stop", day: p.day || 1, road: "" });
+    }
+    normalizeDays();
+    trip.name = g.name || `${shortName(stops[0].name)} to ${shortName(stops.at(-1).name)}`;
+    trip.customName = !!g.name;
+    trip.edits = [{ at: new Date().toISOString(), text: `Imported from ${file.name}` }];
+    renderStops();
+    fitStops();
+    scheduleSave();
+    renderItinerary();
+    if (await findRoutes()) {
+      // one long day: split it by the daily limit (a Byway file keeps its own days)
+      if (!g.byway && dayGroups().length === 1) {
+        const total = stops.reduce((a, _, i) => a + (legsByEnd(routes.scenic).get(i)?.duration_s || 0), 0);
+        if (balanceDays(Math.max(1, Math.ceil(total / longDayS())))) {
+          renderStops();
+          renderPills();
+        }
+      }
+      scheduleSave();
+      renderItinerary();
+      setStatus(`Imported ${stops.length} places from ${file.name}.`);
+    }
+  } catch (e) {
+    setStatus(e.message || String(e));
+  }
+}
+

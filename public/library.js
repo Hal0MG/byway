@@ -108,6 +108,7 @@ function libraryHtml() {
       </div>
       <div class="lib-head-acts">
         <button class="btn ghost" data-lib="near">${icon("road", 18)} Roads near me</button>
+        <label class="btn ghost" title="A GPX file from Byway, a GPS or another app">${icon("download", 18)} Import GPX<input type="file" id="gpx-file" accept=".gpx,application/gpx+xml" hidden></label>
         <button class="btn blue" data-lib="new">${icon("plus", 18)} New trip</button>
       </div>
     </header>
@@ -195,6 +196,12 @@ function libOpen(id) {
 }
 
 $("library").innerHTML = `<div class="lib-main"></div><aside class="lib-preview" hidden aria-label="Trip preview"></aside>`;
+$("library").addEventListener("change", (e) => {
+  if (e.target.id !== "gpx-file") return;
+  const f = e.target.files?.[0];
+  e.target.value = "";
+  importGpx(f);
+});
 $("library").addEventListener("input", (e) => {
   if (e.target.id !== "lib-q") return;
   libState.q = e.target.value;

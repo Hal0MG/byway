@@ -380,7 +380,8 @@ function bestSplit(L, via, D) {
   return { ends, worst };
 }
 
-function balanceDays() {
+// from: the fewest days to try (an imported route all on one day starts from its hours / the daily limit)
+function balanceDays(from) {
   const r = routes.scenic;
   if (!r || stops.length < 3) return false;
   const groups = dayGroups();
@@ -391,7 +392,8 @@ function balanceDays() {
   const n = stops.length;
   const limit = longDayS();
   const asked = askedDays(trip.prompt);
-  const counts = asked ? [groups.length] : [groups.length, groups.length + 1, groups.length + 2];
+  const base = from || groups.length;
+  const counts = asked ? [base] : [base, base + 1, base + 2];
   for (const D of counts) {
     if (D > n - 1) break;
     const split = bestSplit(L, via, D);
