@@ -411,7 +411,8 @@ function renderTrip() {
           </div>`
         : ""
     }
-    ${stops.length ? settingsStrip() : ""}`;
+    ${stops.length ? settingsStrip() : ""}
+    ${costCard()}`;
 
   const index = `
     <nav class="day-index" aria-label="Days">

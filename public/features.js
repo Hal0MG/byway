@@ -127,6 +127,102 @@ function settingsStrip() {
     ${READONLY ? "" : `<button class="btn ghost small" data-act="opts">Edit</button>`}
   </section>`;
 }
+// ---------- trip cost ----------
+// A rough cost from plain arithmetic, no service: fuel (or charging) from each day's distance and the car's economy,
+// lodging from each night's price level ($ to $$$$ from the planner), tolls and ferries flagged but not priced.
+// Prices are typical 2026 pump and charger prices; the traveler can change both numbers (saved in trip.settings.cost).
+const COST_REGION = {
+  US: { cur: "USD", fuel: 3.5, kwh: 0.4, stay: 1 },
+  CA: { cur: "CAD", fuel: 1.6, kwh: 0.45, stay: 1.35 },
+  AU: { cur: "AUD", fuel: 2.0, kwh: 0.55, stay: 1.5 },
+  NZ: { cur: "NZD", fuel: 2.8, kwh: 0.65, stay: 1.65 },
+  GB: { cur: "GBP", fuel: 1.45, kwh: 0.7, stay: 0.8 },
+  CH: { cur: "CHF", fuel: 1.85, kwh: 0.7, stay: 0.95 },
+  EU: { cur: "EUR", fuel: 1.75, kwh: 0.6, stay: 0.92 },
+};
+// a night for two in a typical room, in US dollars, by price level (scaled by the region's `stay`)
+const STAY_USD = { $: [70, 120], $$: [120, 190], $$$: [190, 320], $$$$: [320, 550] };
+function costSetup() {
+  const c = stops.length ? countryOf(stops[0]) || "US" : "US";
+  const reg = COST_REGION[c] || (c === "LI" ? COST_REGION.CH : ["AT", "IT", "FR", "DE"].includes(c) ? COST_REGION.EU : COST_REGION.US);
+  const ev = !!tripSettings().ev;
+  const miles = c === "US" || c === "GB";
+  const econ = ev
+    ? { unit: miles ? "kWh/100 mi" : "kWh/100 km", def: miles ? 30 : 18, step: 1 }
+    : c === "US" ? { unit: "mpg", def: 25, step: 1 } : c === "GB" ? { unit: "mpg (UK)", def: 40, step: 1 } : { unit: "L/100 km", def: 8, step: 0.1 };
+  const price = ev ? { unit: "kWh", def: reg.kwh } : { unit: c === "US" ? "gallon" : "litre", def: reg.fuel };
+  const saved = tripSettings().cost || {};
+  // saved numbers only count in the units they were typed in (an EV switch or another country starts fresh)
+  const same = saved.econUnit === econ.unit && saved.priceUnit === price.unit && saved.cur === reg.cur;
+  return { c, reg, ev, econ, price, e: same && saved.econ > 0 ? saved.econ : econ.def, p: same && saved.price > 0 ? saved.price : price.def };
+}
+function energyCost(distM, k) {
+  const km = distM / 1000;
+  const mi = distM / 1609.34;
+  if (k.ev) return ((k.econ.unit.endsWith("mi") ? mi : km) / 100) * k.e * k.p;
+  if (k.econ.unit === "mpg") return (mi / k.e) * k.p;
+  if (k.econ.unit === "mpg (UK)") return (mi / k.e) * 4.54609 * k.p; // imperial gallons, priced by the litre
+  return (km / 100) * k.e * k.p;
+}
+let costOpen = false;
+function costCard() {
+  if (!routes.scenic) return "";
+  const k = costSetup();
+  const money = (n) => new Intl.NumberFormat(undefined, { style: "currency", currency: k.reg.cur, maximumFractionDigits: 0 }).format(n);
+  const groups = dayGroups();
+  let fuel = 0, lo = 0, hi = 0, toll = 0, ferry = 0, guessed = 0;
+  const rows = groups.map((g, gi) => {
+    const st = dayStats(g, "scenic");
+    const segs = daySegments(g);
+    toll += segs.reduce((a, s) => a + (s.toll_m || 0), 0);
+    ferry += segs.reduce((a, s) => a + (s.ferry_m || 0), 0);
+    const f = st ? energyCost(st.dist, k) : 0;
+    fuel += f;
+    // every day but the last ends with a night away
+    const level = gi < groups.length - 1 ? plan?.days?.find((d) => Number(d.day) === g.day)?.price || "" : null;
+    if (level === "") guessed++;
+    const [a, b] = level == null ? [0, 0] : (STAY_USD[level] || STAY_USD.$$).map((x) => x * k.reg.stay);
+    lo += a;
+    hi += b;
+    return `<tr><td>Day ${g.day}</td><td>${st ? fmtMi(st.dist) : ""}</td><td>${money(f)}</td>
+      <td>${level == null ? `<span class="fine">last day</span>` : `${esc(level || "$$")}${level ? "" : "?"} · ${money(a)} to ${money(b)}`}</td></tr>`;
+  });
+  const nights = groups.length - 1;
+  const what = k.ev ? "Charging" : "Fuel";
+  const dis = READONLY ? "disabled" : "";
+  return `<details class="cost-card" ${costOpen ? "open" : ""}>
+    <summary>${icon("wallet", 16)} <b>Trip cost</b> <span>about ${money(fuel + lo)} to ${money(fuel + hi)}</span>
+      <small>${what.toLowerCase()} ${money(fuel)}${nights ? ` · ${nights} night${nights === 1 ? "" : "s"} ${money(lo)} to ${money(hi)}` : ""}</small>
+      ${icon("chevron", 14, "cost-chev")}</summary>
+    <div class="cost-body">
+      <form class="cost-inputs" id="cost-form">
+        <label class="field inline"><span>${k.ev ? "Uses" : "Economy"}</span><input type="number" name="econ" min="0.1" step="${k.econ.step}" value="${k.e}" ${dis}> ${esc(k.econ.unit)}</label>
+        <label class="field inline"><span>${k.ev ? "Charging" : "Fuel"} price</span><input type="number" name="price" min="0.01" step="0.01" value="${k.p}" ${dis}> ${esc(k.reg.cur)} a ${esc(k.price.unit)}</label>
+      </form>
+      <table class="cost-table">
+        <thead><tr><th>Day</th><th>Drive</th><th>${what}</th><th>Night</th></tr></thead>
+        <tbody>${rows.join("")}</tbody>
+        <tfoot><tr><td>Total</td><td>${fmtMi(groups.reduce((a, g) => a + (dayStats(g, "scenic")?.dist || 0), 0))}</td><td>${money(fuel)}</td><td>${nights ? `${money(lo)} to ${money(hi)}` : ""}</td></tr></tfoot>
+      </table>
+      <p class="fine">A rough guide for planning, not a quote. Lodging is a typical room for two at each night's price level ($ to $$$$, from the planner)${guessed ? ` (“?”: no level from the planner, $$ assumed)` : ""}.
+        ${toll > 1000 ? `Tolls or park fees on ${fmtMi(toll)} of the route are not included.` : ""}
+        ${ferry > 500 ? `Ferry fares (${fmtMi(ferry)} by ferry) are not included.` : ""} Food and park passes aren't counted.</p>
+    </div>
+  </details>`;
+}
+document.addEventListener("toggle", (e) => {
+  if (e.target.classList?.contains("cost-card")) costOpen = e.target.open;
+}, true);
+document.addEventListener("change", (e) => {
+  const form = e.target.closest?.("#cost-form");
+  if (!form || READONLY) return;
+  const k = costSetup();
+  const num = (n) => Number(form.querySelector(`[name="${n}"]`).value);
+  trip.settings = { ...trip.settings, cost: { econ: num("econ") > 0 ? num("econ") : k.econ.def, econUnit: k.econ.unit, price: num("price") > 0 ? num("price") : k.price.def, priceUnit: k.price.unit, cur: k.reg.cur } };
+  scheduleSave();
+  renderItinerary();
+});
+
 function openOptions() {
   const before = tripSettings();
   const el = openSheet(`${sheetHead("Trip options")}
@@ -139,7 +235,7 @@ function openOptions() {
   el.querySelector("#opts-form").onsubmit = (e) => {
     e.preventDefault();
     const next = readOptions(e.target);
-    trip.settings = next;
+    trip.settings = { ...trip.settings, ...next }; // keeps what the form doesn't hold (the cost numbers)
     rememberSettings(next);
     closeOverlay();
     scheduleSave();
