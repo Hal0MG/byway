@@ -36,7 +36,8 @@ in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own co
 2. Mac: double-click `start.command` (the first time, macOS may refuse it as coming from an unidentified developer:
    right-click it, choose Open, then Open). Windows: double-click `start.cmd`. Linux, or a Mac from Terminal: `sh start.sh`.
    The first time it installs what the app needs (about a minute), then opens the app in your browser.
-3. The Setup screen opens and walks you through the rest, all free:
+3. That's enough to open the 35 ready-made trips, browse them and change them on the map. To plan your own, open
+   Setup (the gear button, or "add a free AI planner" on the home screen); it walks you through the rest, all free:
    - an [OpenRouteService](https://openrouteservice.org/dev/#/signup) key for measuring routes (recommended, no card;
      without it, or when its daily allowance runs out, routes come from OpenStreetMap's public OSRM servers, with
      heights from Open-Meteo),
@@ -44,7 +45,8 @@ in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own co
      seconds, no graphics card needed), or a model on your own computer with [LM Studio](https://lmstudio.ai)
      (unlimited and private, needs about 8 GB of graphics memory or an Apple Silicon Mac; Setup can start it, download
      the model and load it, and pick another computer on LM Link to run it),
-   - a [Tavily](https://app.tavily.com) key for web search while planning with the local model (optional),
+   - a [Tavily](https://app.tavily.com) key for web search while planning, and for "What drivers say" on road cards
+     (optional),
    - your email or website, so Wikipedia and OpenStreetMap don't slow down lookups (recommended).
 
 Setup checks each key with its service before saving it to `.env` (see `.env.example`). It's the gear button in the
