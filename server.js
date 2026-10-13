@@ -15,6 +15,7 @@ import { Agent, fetch as undiciFetch } from "undici";
 // data folder for the desktop app (desktop/main.cjs).
 const APP_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const appFile = (...parts) => path.join(APP_ROOT, ...parts);
+const VERSION = JSON.parse(await fs.readFile(appFile("package.json"), "utf8")).version;
 
 const app = express();
 app.use(express.json({ limit: "15mb" }));
@@ -85,7 +86,7 @@ const USE_GH = /^(1|true|yes)$/i.test(process.env.USE_GRAPHHOPPER || "");
 // Without CONTACT in .env, Wikimedia throttles photo lookups hard ("You are making too many requests").
 let CONTACT = (process.env.CONTACT || "").trim();
 const userAgent = () =>
-  process.env.USER_AGENT || `Byway/1.14 (personal non-commercial road trip planner${CONTACT ? `; ${CONTACT}` : ""})`;
+  process.env.USER_AGENT || `Byway/${VERSION} (personal non-commercial road trip planner${CONTACT ? `; ${CONTACT}` : ""})`;
 let UA = userAgent();
 if (!CONTACT && !process.env.USER_AGENT) {
   console.log("Tip: add your email or a website in Setup (the gear button) so Wikipedia doesn't throttle photo lookups.");
@@ -853,6 +854,7 @@ app.post("/api/heights", async (req, res) => {
 app.get("/api/status", async (req, res) => {
   const gh = await getGhInfo();
   res.json({
+    version: VERSION,
     graphhopper: !!gh?.scenic, bbox: gh?.bbox || null, ors: !!ORS_KEY, useGraphhopper: USE_GH,
     ai: AI_PROVIDER === "local"
       ? { provider: "local", model: LOCAL_MODEL, webSearch: searchAvailable() && LOCAL_SEARCHES_PLAN + LOCAL_SEARCHES_DETAILS > 0, ...(await localStatus()) }

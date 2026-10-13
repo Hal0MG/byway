@@ -142,7 +142,7 @@ function setupHtml() {
       <div id="su-phone">${phoneHtml()}</div>
     </section>
 
-    <p class="fine su-legal"><a href="privacy.html" target="_blank" rel="noopener">Privacy policy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms of use</a></p>
+    <p class="fine su-legal">Byway ${esc(appVersion)} · <a href="privacy.html" target="_blank" rel="noopener">Privacy policy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms of use</a></p>
 
     <div class="sheet-actions su-actions">
       <span class="su-status">${s.ready ? `${icon("check", 16)} Ready to plan trips` : "Add a planner to plan new trips"}</span>

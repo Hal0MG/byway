@@ -1041,9 +1041,13 @@ function dropDetours(points) {
 
 // Which AI plans trips (from /api/status), for the progress text.
 let aiInfo = null;
+let appVersion = ""; // shown in Setup
 fetch("/api/status")
   .then((r) => r.json())
-  .then((s) => (aiInfo = s.ai))
+  .then((s) => {
+    aiInfo = s.ai;
+    appVersion = s.version || "";
+  })
   .catch(() => {});
 // How long a plan takes, by planner: a cloud model answers in seconds, a local model in minutes.
 const planTime = () => (aiInfo?.provider === "local" ? "Planning takes a few minutes on this computer." : "Planning takes about a minute.");

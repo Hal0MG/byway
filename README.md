@@ -32,6 +32,12 @@ in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own co
 
 ## Getting started
 
+**The desktop app** is the easiest way: download it from the [Releases](../../releases) page (Mac: the `.dmg`, Apple
+Silicon; Windows: `Byway Setup`), open it, and the welcome screen walks you through the rest. The apps aren't signed:
+on a Mac, right-click the app and choose Open the first time; on Windows, "More info", then "Run anyway".
+
+**Or run it from the source code:**
+
 1. Install [Node.js](https://nodejs.org/en/download) (free, the LTS version).
 2. Mac: double-click `start.command` (the first time, macOS may refuse it as coming from an unidentified developer:
    right-click it, choose Open, then Open). Windows: double-click `start.cmd`. Linux, or a Mac from Terminal: `sh start.sh`.
@@ -79,7 +85,14 @@ top bar and only works on the computer running the app. Keep the start window op
 - **Export and share**: GPX, print or PDF, a web page, or a read-only link for devices on the same network.
 - **Import a GPX file** (Trips tab): a Byway export comes back as it was; a route, waypoints or a recorded track from
   another app becomes a trip, measured and split into days.
-- **How it works**: a short tour, in the top bar.
+- **How it works**: a short tour in the top bar, with an "In depth" version on the methods behind each step.
+- **Welcome screen**: the first time it opens, a few skippable steps (language, light or dark, sound, the AI planner,
+  your home town). Setup can show it again.
+- **Languages**: English, French, Chinese (simplified) and Bangla, from the flag next to the light/dark switch. The
+  AI writes plans and guides in the chosen language; place and road names stay as maps know them. Most screens are
+  translated; less-used sheets are still in English.
+- **Sound**: soft interface sounds and ambient music on the globe, made in the browser (no audio files), each with an
+  on/off switch and volume in Settings.
 
 ## Desktop app
 
@@ -105,9 +118,16 @@ on a Mac; "More info", "Run anyway" on Windows.
 - `public/seasonal-roads.json`: roads that close for winter or need chains. `node tools/check-seasonal.mjs` checks the
   coordinates against OpenStreetMap.
 - `public/coverage.json`: covered regions and the grey mask (`node tools/build-coverage.mjs`, needs `@turf/turf`).
+- `public/i18n-strings.js`: the translations (English text to French, Chinese and Bangla). A line per piece of text;
+  anything without one stays in English.
 - `data/presets.json`: the ready-made trips. Build them with batch mode (`http://localhost:3000/?batch=1`, trips
   already built are skipped), then `node tools/export-presets.mjs`.
 - `node tools/package.mjs` builds a zip like a GitHub download.
+- `npm test`: unit tests for the trip logic. `npm run smoke` (needs `CHROME_PATH`): every view and sheet in headless
+  Chrome, the welcome screen and a pass in Bangla. `node tools/audit-trips.mjs`: checks every ready-made trip.
+- `npm run eval`: the planner eval, 30 trip requests through each AI model and the app's pipeline, with a
+  stage-by-stage report (`eval/README.md`).
+- Saved trips store their route lines as encoded polylines (about 1 m precision) to keep files small.
 - Your trips (`data/trips.json`), keys (`.env`) and caches (routes, places, weather, photos, searches) stay on your
   computer and out of git.
 
