@@ -1612,9 +1612,8 @@ app.get("/api/geocode", async (req, res) => {
   const key = `${limit}|${towns ? "t" : ""}|${q.toLowerCase()}`;
   const hit = await geocodeCache.get(key);
   if (hit) return res.json({ hits: hit });
-  const d = await nominatimJson(`https://nominatim.openstreetmap.org/search?format=json&limit=${limit}${towns ? "&featureType=settlement" : ""}&q=${encodeURIComponent(q)}`);
-  if (!Array.isArray(d)) return res.status(502).json({ error: "Place search is busy, try again in a moment." });
-  const hits = d.map((x) => ({ lng: +x.lon, lat: +x.lat, cls: x.class }));
+  const hits = await geoSearch(q, limit, towns);
+  if (!Array.isArray(hits)) return res.status(502).json({ error: "Place search is busy, try again in a moment." });
   geocodeCache.set(key, hits);
   res.json({ hits });
 });
@@ -1894,11 +1893,43 @@ function nominatimJson(url) {
   geoChain = job.catch(() => {});
   return job;
 }
+
+// Photon (photon.komoot.io, OpenStreetMap data, no key): the fallback when Nominatim won't answer. Nominatim limits by
+// network address, and a shared host (the demo site on Render's free plan) often gets refused outright.
+let photonChain = Promise.resolve();
+function photonSearch(q, limit, towns) {
+  const job = photonChain.then(async () => {
+    await new Promise((ok) => setTimeout(ok, 250));
+    try {
+      const url = `https://photon.komoot.io/api/?lang=en&limit=${limit}${towns ? "&osm_tag=place" : ""}&q=${encodeURIComponent(q)}`;
+      const d = await (await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(12000) })).json();
+      if (!Array.isArray(d?.features)) return null;
+      // osm_key is the same "class" Nominatim reports (place, boundary, tourism, natural, waterway...)
+      return d.features.map((f) => ({ lng: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], cls: f.properties?.osm_key || "" }));
+    } catch {
+      return null;
+    }
+  });
+  photonChain = job.catch(() => {});
+  return job;
+}
+// Search for a place: [{ lng, lat, cls }], [] when nothing matches, or null when no service answered. A Nominatim
+// that fails rests for a minute, so the next lookups go straight to Photon instead of each waiting out a timeout.
+let nominatimRestUntil = 0;
+async function geoSearch(q, limit = 1, towns = false) {
+  if (Date.now() >= nominatimRestUntil) {
+    const d = await nominatimJson(`https://nominatim.openstreetmap.org/search?format=json&limit=${limit}${towns ? "&featureType=settlement" : ""}&q=${encodeURIComponent(q)}`);
+    if (Array.isArray(d)) return d.map((x) => ({ lng: +x.lon, lat: +x.lat, cls: x.class }));
+    nominatimRestUntil = Date.now() + 60000;
+    console.log("Nominatim didn't answer, using Photon for a minute");
+  }
+  return photonSearch(q, limit, towns);
+}
 async function geocodeServer(q) {
   if (geoCache.has(q)) return geoCache.get(q);
-  const d = await nominatimJson(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`);
+  const d = await geoSearch(q, 1);
   if (!d) return null;
-  const hit = d[0] ? { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) } : null;
+  const hit = d[0] ? { lat: d[0].lat, lng: d[0].lng } : null;
   geoCache.set(q, hit);
   return hit;
 }
