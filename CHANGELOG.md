@@ -2,29 +2,51 @@
 
 ## 1.1.0 (2026-10-14)
 
-Plans anywhere in the world.
+Plans anywhere in the world, with 74 ready-made trips and a public demo mode. Changes since 1.0.0:
 
-- **Whole world**: trips can start and end anywhere. Place search, routing, units and currency work in every country;
-  the hand-checked road lists (US, Canada, Australia, New Zealand, the UK and Ireland, the Alps, Norway, Iceland, Spain
-  and Portugal) are a bonus where they exist. The grey "not covered" mask is gone.
-- **74 ready-made trips**, 36 of them new, among them eight Top Gear specials (Botswana, the US, Vietnam, Bolivia,
-  India, Patagonia, the Stelvio and the Transfăgărășan), and 28 more and spread around the globe: Norway, Iceland, Ireland, Andalusia, Provence,
-  Tuscany and Amalfi, Croatia, Romania, Turkey, Georgia, Oman, Morocco, South Africa, Namibia, Ladakh, northern
-  Thailand, Taiwan, Japan, South Korea, Western Australia, Yucatán, Costa Rica, Brazil, Patagonia, Salta, Peru,
-  Bangladesh, and Singapore to Malaysia. Five older ones were measured again with OpenRouteService (real heights and
-  road ratings), and four with days far over the limit were rebuilt.
-- **Routing**: OpenRouteService through its new address (api.heigit.org), with ten times the free daily allowance.
-  Stops the router can't reach try the place search's next match or move to the nearest drivable road, and a leg with
-  no direct road (a gulf, a mountain range, a closed stretch) is pointed out.
-- **Better plans**: stops land in the town rather than a station or an outline (Tokyo was placed 45 km west), made-up
-  road names no longer match an unrelated highway, and motorways or car-free places (Kamikochi, Zermatt) aren't
-  featured anywhere in the world.
-- **Home screen**: the floating windows keep their places as the globe turns, slide instead of jumping, and sit further
-  out at the sides. The opening starts over the home town you set on the welcome screen.
-- **Removed**: the local model in LM Studio. Gemini plans every trip (Claude still works if set up).
-- **Demo site mode** (`DEMO=1`, `render.yaml`, `docs/DEMO.md`): a public site on your own keys, with no key screens,
-  each visitor's trips kept to themselves, daily caps so nobody can use up the free allowances, and trips that survive
-  the free host's sleep.
+**Anywhere in the world**
+- Trips can start and end in any country. Place search, routing, units, currency and the Trips tab work everywhere; the
+  hand-checked road lists (US, Canada, Australia, New Zealand, the UK and Ireland, the Alps, Norway, Iceland, Spain and
+  Portugal) are a bonus where they exist. The grey "not covered" mask and warning are gone.
+- **36 new ready-made trips (74 in all)**: 28 around the world (Norway, Iceland, Ireland, Andalusia, Provence, Tuscany and
+  Amalfi, Croatia, Romania, Turkey, Georgia, Oman, Morocco, South Africa, Namibia, Ladakh, northern Thailand, Taiwan,
+  Japan, South Korea, Western Australia, Yucatán, Costa Rica, Brazil, Patagonia, Salta, Peru, Bangladesh, and Singapore
+  to Malaysia) and eight Top Gear specials (Botswana, the US, Vietnam over the Hai Van Pass, Bolivia and the Yungas
+  road, India, Patagonia, the Stelvio, and the Transfăgărășan).
+- Five older trips measured again with OpenRouteService (real heights, climbs and road ratings), and Toronto to Vancouver,
+  Dallas to Teton County and Gaspé rebuilt with days within the daily limit.
+- **Trips tab and home screen**: trips outside the hand-checked countries are grouped as More of Europe, Asia, Africa
+  and the Middle East, and Latin America, and labelled by country; the globe's region buttons gained Europe, Asia,
+  Africa, the Middle East and the Americas.
+- **Trip cost** in the local currency (yen, taka, rand, and 17 more), priced by the country where most nights are.
+
+**Better plans**
+- Stops land in the town, not a station or an area outline (Tokyo had been placed 45 km west of the city).
+- A stop the router can't reach tries the place search's other matches, then the nearest drivable road; two stops it
+  can't connect do the same (Nha Trang, Angra dos Reis).
+- A leg with no direct road (a gulf, mountains, a closed stretch) is pointed out after routing.
+- Made-up road names no longer match an unrelated highway; motorways and expressways aren't featured anywhere; car-free
+  places (Kamikochi, Zermatt, Ilha Grande) aren't used as stops.
+- The start screen, planning status line, README and How it works (in all four languages) describe planning anywhere.
+
+**Routing**
+- OpenRouteService through its new address (api.heigit.org): 2,000 free routes a day instead of 200. Snapping a point to
+  a road falls back to OSRM when Overpass is busy.
+
+**Home screen**
+- The floating trip windows keep their places as the globe turns, slide instead of jumping, fade instead of sweeping
+  across the globe, and sit further out at the sides.
+- The opening starts over the home town set on the welcome screen, not San Francisco.
+
+**Demo site mode** (`DEMO=1`, `render.yaml`, `docs/DEMO.md`)
+- A public site on the owner's keys: no key screens, each visitor's trips kept to themselves, daily caps per visitor,
+  network and site so the free allowances can't be used up, and trips that survive the free host's sleep. The privacy
+  page has a section for it.
+
+**Removed**
+- The local model in LM Studio: Gemini plans every trip (Claude still works if a key is set). The `start-ai` scripts and
+  the `undici` package went with it.
+- GraphHopper (the optional self-hosted router) and its folder.
 
 ## 1.0.0 (2026-10-13)
 
