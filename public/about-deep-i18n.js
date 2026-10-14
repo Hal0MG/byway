@@ -13,7 +13,7 @@ const DEEP_I18N = {
     sections: [
       ["Le planificateur : un LLM avec un schéma et un contrôleur", `
     <p class="dp-q">Problème : les modèles de langage écrivent des plans fluides mais avec des erreurs de structure (sept jours quand on en demande six, une journée qui ne finit pas à son étape du soir, une route phare sur laquelle aucun arrêt ne se trouve).</p>
-    <p>Le modèle n'écrit jamais le plan en texte libre. Sa sortie est contrainte par un <b>JSON Schema</b> (<code>responseJsonSchema</code> chez Gemini, ou <code>response_format: json_schema</code> pour un modèle local dans LM Studio) : le décodage ne peut produire qu'un JSON valide avec les champs attendus (jours, points, routes phares). Avant cela, Flash-Lite cassait parfois son JSON ; avec le schéma, 5 plans de test sur 5 (dont les 3 qui avaient cassé) ont été lus du premier coup.</p>
+    <p>Le modèle n'écrit jamais le plan en texte libre. Sa sortie est contrainte par un <b>JSON Schema</b> (<code>responseJsonSchema</code> chez Gemini) : le décodage ne peut produire qu'un JSON valide avec les champs attendus (jours, points, routes phares). Avant cela, Flash-Lite cassait parfois son JSON ; avec le schéma, 5 plans de test sur 5 (dont les 3 qui avaient cassé) ont été lus du premier coup.</p>
     <p>Ensuite un validateur déterministe, <code>checkPlan</code>, teste le plan contre les règles que le modèle enfreint souvent :</p>
     <ul>
       <li>le nombre de jours correspond à la demande (lu dans « 7 days », « seven-day », « two weeks »)</li>
@@ -122,7 +122,7 @@ const DEEP_I18N = {
     sections: [
       ["规划器：带模式约束和检查器的 LLM", `
     <p class="dp-q">问题：语言模型写出的方案很流畅，却常有结构性错误（要 6 天却给 7 天、某天没有在当晚的过夜地结束、某条精选公路上一个站点都没有）。</p>
-    <p>模型从不以自由文本写方案。它的输出受 <b>JSON Schema</b> 约束（Gemini 的 <code>responseJsonSchema</code>，或 LM Studio 本地模型的 <code>response_format: json_schema</code>），因此解码只能生成带有预期字段的合法 JSON：天、点（站点或途经点、第几天、所在公路）、精选公路。在此之前，Flash-Lite 偶尔会写坏 JSON；加上模式后，5 个测试方案（包括之前坏掉的 3 个）全部一次解析成功。</p>
+    <p>模型从不以自由文本写方案。它的输出受 <b>JSON Schema</b> 约束（Gemini 的 <code>responseJsonSchema</code>），因此解码只能生成带有预期字段的合法 JSON：天、点（站点或途经点、第几天、所在公路）、精选公路。在此之前，Flash-Lite 偶尔会写坏 JSON；加上模式后，5 个测试方案（包括之前坏掉的 3 个）全部一次解析成功。</p>
     <p>随后，确定性的校验器 <code>checkPlan</code> 用模型常犯的规则检查方案：</p>
     <ul>
       <li>天数与需求一致（从 “7 days”“seven-day”“two weeks” 中解析）</li>
@@ -231,7 +231,7 @@ const DEEP_I18N = {
     sections: [
       ["পরিকল্পনাকারী: স্কিমা ও যাচাইকারীসহ একটি LLM", `
     <p class="dp-q">সমস্যা: ভাষা মডেল সাবলীল পরিকল্পনা লেখে, কিন্তু কাঠামোগত ভুল থাকে (ছয় দিন চাইলে সাত দিন, এমন একটি দিন যা রাত কাটানোর জায়গায় শেষ হয় না, এমন একটি বিশেষ রাস্তা যার উপর কোনো স্টপ নেই)।</p>
-    <p>মডেল কখনো পরিকল্পনা মুক্ত লেখায় লেখে না। এর আউটপুট একটি <b>JSON Schema</b>-তে বাঁধা (Gemini-এর <code>responseJsonSchema</code>, বা LM Studio-র স্থানীয় মডেলের জন্য <code>response_format: json_schema</code>), তাই ডিকোডিং কেবল প্রত্যাশিত ঘরসহ বৈধ JSON তৈরি করতে পারে: দিন, বিন্দু (স্টপ বা মধ্যবর্তী বিন্দু, কোন দিন, কোন রাস্তায়), বিশেষ রাস্তা। এর আগে Flash-Lite মাঝে মাঝে JSON ভেঙে ফেলত; স্কিমা দেওয়ার পর ৫টি পরীক্ষামূলক পরিকল্পনার ৫টিই (যে ৩টি আগে ভেঙেছিল সেগুলোসহ) প্রথমবারেই পড়া গেছে।</p>
+    <p>মডেল কখনো পরিকল্পনা মুক্ত লেখায় লেখে না। এর আউটপুট একটি <b>JSON Schema</b>-তে বাঁধা (Gemini-এর <code>responseJsonSchema</code>), তাই ডিকোডিং কেবল প্রত্যাশিত ঘরসহ বৈধ JSON তৈরি করতে পারে: দিন, বিন্দু (স্টপ বা মধ্যবর্তী বিন্দু, কোন দিন, কোন রাস্তায়), বিশেষ রাস্তা। এর আগে Flash-Lite মাঝে মাঝে JSON ভেঙে ফেলত; স্কিমা দেওয়ার পর ৫টি পরীক্ষামূলক পরিকল্পনার ৫টিই (যে ৩টি আগে ভেঙেছিল সেগুলোসহ) প্রথমবারেই পড়া গেছে।</p>
     <p>তারপর একটি নির্ধারিত যাচাইকারী, <code>checkPlan</code>, মডেল যেসব নিয়ম প্রায়ই ভাঙে সেগুলো দিয়ে পরিকল্পনা পরীক্ষা করে:</p>
     <ul>
       <li>দিনের সংখ্যা অনুরোধের সাথে মেলে (“7 days”, “seven-day”, “two weeks” থেকে পড়া)</li>

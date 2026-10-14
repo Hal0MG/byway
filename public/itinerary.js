@@ -72,8 +72,8 @@ function renderStart() {
       <div class="start-inner">
         <p class="kicker">${icon("sparkle", 16)} Scenic road trip planner</p>
         <h1>Where to?</h1>
-        <p class="lede">Describe the trip. The planner picks the best driving roads from 184 designated scenic byways and the
-          routes drivers love, plans each day, and finds the spots worth stopping for.</p>
+        <p class="lede">Describe the trip, anywhere in the world. The planner picks the best driving roads, from designated
+          scenic byways to the routes drivers love, plans each day, and finds the spots worth stopping for.</p>
         <form class="prompt-box" id="plan-form">
           <textarea id="plan-prompt" rows="3" placeholder="${esc(EXAMPLES[0])}" aria-label="Describe your trip">${esc(trip.prompt || "")}</textarea>
           ${optionsForm(s)}

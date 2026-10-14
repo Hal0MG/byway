@@ -72,7 +72,7 @@ const I18N_TABLE = {
 
   // ---- start screen and trip options ----
   "Scenic road trip planner": ["Planificateur de road trips panoramiques", "风景公路旅行规划器", "মনোরম রোড ট্রিপ পরিকল্পনাকারী"],
-  "Describe the trip. The planner picks the best driving roads from 184 designated scenic byways and the routes drivers love, plans each day, and finds the spots worth stopping for.": ["Décrivez le voyage. Le planificateur choisit les plus belles routes parmi 184 routes panoramiques officielles et les itinéraires que les conducteurs adorent, organise chaque journée et trouve les lieux où s'arrêter.", "描述您的旅行。规划器会从 184 条官方风景道和驾驶爱好者钟爱的路线中挑选最佳公路，安排每一天，并找出值得停留的地方。", "ভ্রমণের বর্ণনা দিন। পরিকল্পনাকারী ১৮৪টি স্বীকৃত মনোরম রাস্তা আর চালকদের প্রিয় পথ থেকে সেরা রাস্তা বেছে নেয়, প্রতিটি দিন সাজায় এবং থামার মতো জায়গা খুঁজে দেয়।"],
+  "Describe the trip, anywhere in the world. The planner picks the best driving roads, from designated scenic byways to the routes drivers love, plans each day, and finds the spots worth stopping for.": ["Décrivez le voyage, n'importe où dans le monde. Le planificateur choisit les plus belles routes, des routes panoramiques officielles aux itinéraires que les conducteurs adorent, organise chaque journée et trouve les lieux où s'arrêter.", "描述您的旅行，世界任何地方都可以。规划器会挑选最佳驾驶公路，从官方风景道到驾驶爱好者钟爱的路线，安排每一天，并找出值得停留的地方。", "পৃথিবীর যেকোনো জায়গার ভ্রমণের বর্ণনা দিন। পরিকল্পনাকারী স্বীকৃত মনোরম রাস্তা থেকে চালকদের প্রিয় পথ পর্যন্ত সেরা রাস্তা বেছে নেয়, প্রতিটি দিন সাজায় এবং থামার মতো জায়গা খুঁজে দেয়।"],
   "Describe your trip": ["Décrivez votre voyage", "描述您的行程", "আপনার ভ্রমণের বর্ণনা দিন"],
   "Trip style": ["Style de voyage", "旅行风格", "ভ্রমণের ধরন"],
   "Coast": ["Côte", "海岸", "উপকূল"],

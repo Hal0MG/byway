@@ -1,8 +1,8 @@
 // Setup screen: everything the app needs, filled in from the app (no editing .env by hand).
 // Opens by itself the first time (no routing key yet) and from the gear button in the top bar. Each key is checked
-// with its service before it's saved. The local AI part can start LM Studio, download the model and load it.
+// with its service before it's saved.
 
-const setupState = { info: null, busy: "", msgs: {}, poll: 0, provider: null };
+const setupState = { info: null, busy: "", msgs: {} };
 
 async function loadSetup() {
   try {
@@ -156,12 +156,10 @@ let setupEl = null;
 async function openSetup() {
   await loadSetup();
   setupState.msgs = {};
-  setupState.provider = null;
   setupEl = openSheet(setupHtml(), "wide setup");
   setupEl.addEventListener("click", setupClick);
   setupEl.addEventListener("input", prefInput);
   setupEl.addEventListener("change", prefInput);
-  pollSetup();
   loadPhone();
 }
 function redrawSetup() {
@@ -171,20 +169,6 @@ function redrawSetup() {
   setupEl.querySelectorAll("input").forEach((i) => (typed[i.id] = i.value));
   setupEl.querySelector(".sheet").innerHTML = setupHtml();
   for (const [id, v] of Object.entries(typed)) if ($(id)) $(id).value = v;
-}
-// While a download or load runs, check every few seconds.
-function pollSetup() {
-  clearTimeout(setupState.poll);
-  if (!setupEl?.isConnected) return;
-  const job = setupState.info?.local?.job;
-  if (job && !job.done) {
-    setupState.poll = setTimeout(async () => {
-      await loadSetup();
-      redrawSetup();
-      updateSetupBadge();
-      pollSetup();
-    }, 3000);
-  }
 }
 async function setupClick(e) {
   const c = e.target.closest("[data-copy]");
@@ -200,30 +184,13 @@ async function setupClick(e) {
     closeOverlay(true);
     return openWelcome();
   }
-  if (act === "provider") {
-    setupState.provider = b.dataset.v;
-    redrawSetup();
-  } else if (act === "check") {
+  if (act === "check") {
     await loadSetup();
     redrawSetup();
     updateSetupBadge();
-  } else if (act.startsWith("lms-")) {
-    b.disabled = true;
-    delete setupState.msgs.lms;
-    const r = await api("/api/setup/lms", { action: act.slice(4), device: b.dataset.v }).catch((err) => ({ error: err.message }));
-    if (r.error) setupState.msgs.lms = { ok: false, text: r.error };
-    // LM Studio's server takes a few seconds to answer after starting
-    for (let i = 0; i < (act === "lms-start" ? 10 : 1); i++) {
-      await loadSetup();
-      if (act !== "lms-start" || setupState.info?.local.running) break;
-      await sleep(1500);
-    }
-    redrawSetup();
-    pollSetup();
   } else if (act === "save") {
     const val = (id) => $(`su-${id}`)?.value ?? null;
     const body = { ors: val("ors"), tavily: val("tavily"), gemini: val("gemini"), contact: val("contact") };
-    if (setupState.provider) body.provider = setupState.provider;
     setupState.busy = "Checking the keys";
     redrawSetup();
     try {
@@ -238,7 +205,6 @@ async function setupClick(e) {
       setupState.msgs.ors = { ok: false, text: err.message };
     }
     setupState.busy = "";
-    setupState.provider = null;
     await loadSetup();
     redrawSetup();
     updateSetupBadge();

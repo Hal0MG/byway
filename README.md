@@ -1,6 +1,7 @@
 # Byway
 
-Road trips built around the drive itself. A road trip planner built around scenic driving roads, for the US, Canada, Australia, New Zealand, the UK and Ireland, the Alps, Norway, Iceland, Spain and Portugal.
+Road trips built around the drive itself. A road trip planner built around scenic driving roads, anywhere in the world, with hand-checked road lists for the US,
+Canada, Australia, New Zealand, the UK and Ireland, the Alps, Norway, Iceland, Spain and Portugal.
 Describe a trip and an AI plans it over the roads worth driving (designated scenic byways and hand-picked famous drives),
 the app measures every day's drive, writes a day-by-day guide with the stops worth pulling over for, and opens each day
 in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own computer, with free services.
@@ -9,7 +10,7 @@ in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own co
 
 ![The Trips tab: ready-made trips filtered to the United States, one open in the preview](docs/screenshots/trips.jpg)
 
-**Trips**: your own and the 38 ready-made ones, with search and filters, and a preview of every day before you open one.
+**Trips**: your own and the 66 ready-made ones, with search and filters, and a preview of every day before you open one.
 
 | | |
 |---|---|
@@ -42,7 +43,7 @@ on a Mac, right-click the app and choose Open the first time; on Windows, "More 
 2. Mac: double-click `start.command` (the first time, macOS may refuse it as coming from an unidentified developer:
    right-click it, choose Open, then Open). Windows: double-click `start.cmd`. Linux, or a Mac from Terminal: `sh start.sh`.
    The first time it installs what the app needs (about a minute), then opens the app in your browser.
-3. That's enough to open the 38 ready-made trips, browse them and change them on the map. To plan your own, open
+3. That's enough to open the 66 ready-made trips, browse them and change them on the map. To plan your own, open
    Setup (the gear button, or "add a free AI planner" on the home screen); it walks you through the rest, all free:
    - an [OpenRouteService](https://openrouteservice.org/dev/#/signup) key for measuring routes (recommended, no card;
      without it, or when its daily allowance runs out, routes come from OpenStreetMap's public OSRM servers, with
@@ -59,7 +60,7 @@ top bar and only works on the computer running the app. Keep the start window op
 ## What it does
 
 - **Plan**: describe the trip, or pick a style (coast, mountains, twisty roads...), dates, when you leave, the longest
-  day you want, a loop, no night driving, an electric car. Or open one of the 38 ready-made trips instantly. The plan
+  day you want, a loop, no night driving, an electric car. Or open one of the 66 ready-made trips instantly. The plan
   fills in on screen as the AI writes it, and the app checks it (days, overnights, featured roads on the route) and
   sends problems back once.
 - **Every day**: driving time and distance, weather, sunset, a timeline with the roads and stops, a drive chart (climbs,
@@ -116,7 +117,8 @@ on a Mac; "More info", "Run anyway" on Windows.
   `node tools/check-drives.mjs` checks every Wikipedia title.
 - `public/seasonal-roads.json`: roads that close for winter or need chains. `node tools/check-seasonal.mjs` checks the
   coordinates against OpenStreetMap.
-- `public/coverage.json`: covered regions and the grey mask (`node tools/build-coverage.mjs`, needs `@turf/turf`).
+- `public/coverage.json`: the regions with hand-checked road lists (`node tools/build-coverage.mjs`, needs `@turf/turf`).
+- `public/countries.json`: every country's outline, for units, currency and regions anywhere (`node tools/build-countries.mjs`).
 - `public/i18n-strings.js`: the translations (English text to French, Chinese and Bangla). A line per piece of text;
   anything without one stays in English.
 - `data/presets.json`: the ready-made trips. Build them with batch mode (`http://localhost:3000/?batch=1`, trips

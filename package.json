@@ -1,6 +1,6 @@
 {
   "name": "byway",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "main": "desktop/main.cjs",
@@ -19,8 +19,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "undici": "^6.29.0"
+    "express": "^4.19.2"
   },
   "engines": {
     "node": ">=18"

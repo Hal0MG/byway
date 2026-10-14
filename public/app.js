@@ -1054,15 +1054,9 @@ fetch("/api/status")
     appVersion = s.version || "";
   })
   .catch(() => {});
-// How long a plan takes, by planner: a cloud model answers in seconds, a local model in minutes.
-const planTime = () => (aiInfo?.provider === "local" ? "Planning takes a few minutes on this computer." : "Planning takes about a minute.");
+// How long a plan takes (Gemini answers in seconds; measuring and the day guides take the rest).
+const planTime = () => "Planning takes about a minute.";
 function aiLabel() {
-  if (aiInfo?.provider === "local") {
-    const name = /qwen/i.test(aiInfo.model) ? "Qwen3" : "The local model";
-    return aiInfo.webSearch
-      ? `${name} on your GPU is searching road trip forums and picking scenic byways`
-      : `${name} on your GPU is picking scenic byways`;
-  }
   if (aiInfo?.provider === "claude") {
     const name = /haiku/.test(aiInfo.model) ? "Claude Haiku" : /sonnet/.test(aiInfo.model) ? "Claude Sonnet" : "Claude";
     return aiInfo.webSearch
@@ -1777,6 +1771,22 @@ function clearRoutes() {
   $("fix-btn").hidden = true;
 }
 
+// Legs with no direct road (mountains, a gulf, or a stretch the map has closed: Demre to Kaş went 458 km round for 30 km),
+// so the traveler hears about it instead of finding a 13-hour day.
+function detours() {
+  const r = routes.scenic;
+  if (!r?.legs || !r.idx) return [];
+  const out = [];
+  r.legs.forEach((leg, i) => {
+    const a = stops[r.idx[i]];
+    const b = stops[r.idx[i + 1]];
+    if (!a || !b) return;
+    const line = haversine([a.lng, a.lat], [b.lng, b.lat]);
+    if (leg.distance_m > 4 * line && leg.distance_m - line > 80000)
+      out.push(`The map has no direct road from ${shortName(a.name)} to ${shortName(b.name)}, the drive is ${fmtMi(leg.distance_m)} for ${fmtMi(line)} as the crow flies (a long way round, or a stretch the map has closed).`);
+  });
+  return out;
+}
 async function findRoutes({ fit = true } = {}) {
   if (stops.length < 2) {
     setStatus("Add at least two stops to find routes.");
@@ -1857,6 +1867,7 @@ async function findRoutes({ fit = true } = {}) {
       stops.splice(i, 1);
     }
     if (dropped.length) notes.add(`Skipped ${dropped.join(", ")}: no drivable road there.`);
+    for (const d of detours()) notes.add(d);
     selected = "scenic";
     if (plan?.syncRoads) syncRoadDays();
     showRoutes();

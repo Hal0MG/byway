@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.1.0 (2026-10-14)
+
+Plans anywhere in the world.
+
+- **Whole world**: trips can start and end anywhere. Place search, routing, units and currency work in every country;
+  the hand-checked road lists (US, Canada, Australia, New Zealand, the UK and Ireland, the Alps, Norway, Iceland, Spain
+  and Portugal) are a bonus where they exist. The grey "not covered" mask is gone.
+- **66 ready-made trips**, 28 of them new and spread around the globe: Norway, Iceland, Ireland, Andalusia, Provence,
+  Tuscany and Amalfi, Croatia, Romania, Turkey, Georgia, Oman, Morocco, South Africa, Namibia, Ladakh, northern
+  Thailand, Taiwan, Japan, South Korea, Western Australia, Yucatán, Costa Rica, Brazil, Patagonia, Salta, Peru,
+  Bangladesh, and Singapore to Malaysia. Five older ones were measured again with OpenRouteService (real heights and
+  road ratings), and four with days far over the limit were rebuilt.
+- **Routing**: OpenRouteService through its new address (api.heigit.org), with ten times the free daily allowance.
+  Stops the router can't reach try the place search's next match or move to the nearest drivable road, and a leg with
+  no direct road (a gulf, a mountain range, a closed stretch) is pointed out.
+- **Better plans**: stops land in the town rather than a station or an outline (Tokyo was placed 45 km west), made-up
+  road names no longer match an unrelated highway, and motorways or car-free places (Kamikochi, Zermatt) aren't
+  featured anywhere in the world.
+- **Home screen**: the floating windows keep their places as the globe turns, slide instead of jumping, and sit further
+  out at the sides. The opening starts over the home town you set on the welcome screen.
+- **Removed**: the local model in LM Studio. Gemini plans every trip (Claude still works if set up).
+
 ## 1.0.0 (2026-10-13)
 
 The first release, with the desktop app for Mac and Windows.

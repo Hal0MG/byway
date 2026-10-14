@@ -20,7 +20,7 @@ const DEEP_FLOW = [
 const DEEP_SECTIONS = [
   ["llm", "The planner: an LLM with a schema and a checker", `
     <p class="dp-q">Problem: language models write fluent plans with structural mistakes (seven days when you asked for six, a day that ends somewhere other than its overnight, a featured road no stop is on).</p>
-    <p>The model never writes free text for the plan. Its output is bound to a <b>JSON Schema</b> (Gemini's <code>responseJsonSchema</code>, or <code>response_format: json_schema</code> for a local model in LM Studio), so decoding can only produce valid JSON with the expected fields: days, points (stop or via, day number, the road it's on), featured roads. Before this, Flash-Lite sometimes broke its JSON; with the schema, 5 of 5 test plans (including the 3 that had broken) parsed on the first try.</p>
+    <p>The model never writes free text for the plan. Its output is bound to a <b>JSON Schema</b> (Gemini's <code>responseJsonSchema</code>), so decoding can only produce valid JSON with the expected fields: days, points (stop or via, day number, the road it's on), featured roads. Before this, Flash-Lite sometimes broke its JSON; with the schema, 5 of 5 test plans (including the 3 that had broken) parsed on the first try.</p>
     <p>Then a deterministic validator, <code>checkPlan</code>, tests the plan against rules the model is known to break:</p>
     <ul>
       <li>the day count matches what the prompt asked for (parsed from "7 days", "seven-day", "two weeks")</li>

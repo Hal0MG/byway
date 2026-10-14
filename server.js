@@ -1,14 +1,13 @@
 import "dotenv/config";
 import express from "express";
 import Anthropic from "@anthropic-ai/sdk";
-import { promises as fs, existsSync } from "node:fs";
+import { promises as fs } from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { execFile, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
-import { Agent, fetch as undiciFetch } from "undici";
 
 // The app's own files (the pages in public/, the road lists and ready-made trips in data/) sit next to this file. What
 // the app writes (trips, caches, .env) goes in the folder it runs from: the same folder for start.sh, the user's app
@@ -870,9 +869,7 @@ app.get("/api/status", async (req, res) => {
   res.json({
     version: VERSION,
     graphhopper: !!gh?.scenic, bbox: gh?.bbox || null, ors: !!ORS_KEY, useGraphhopper: USE_GH,
-    ai: AI_PROVIDER === "local"
-      ? { provider: "local", model: LOCAL_MODEL, webSearch: searchAvailable() && LOCAL_SEARCHES_PLAN + LOCAL_SEARCHES_DETAILS > 0, ...(await localStatus()) }
-      : AI_PROVIDER === "claude" && anthropic
+    ai: AI_PROVIDER === "claude" && anthropic
         ? { provider: "claude", model: CLAUDE_MODEL, webSearch: SEARCHES_PLAN + SEARCHES_DETAILS > 0 }
         : { provider: "gemini", model: GEMINI_MODEL, webSearch: false },
   });
@@ -1990,23 +1987,10 @@ app.post("/api/enrich", async (req, res) => {
 // trip forums and driving sites say about the route. Without a key it uses Gemini's free tier (no web search).
 // AI_PROVIDER=claude or gemini in .env picks one explicitly. If Claude fails and a Gemini key exists, Gemini takes over.
 const anthropic = ANTHROPIC_KEY ? new Anthropic() : null; // reads ANTHROPIC_API_KEY from the environment
-// The local model (LM Studio) is switched off: the planner is Gemini unless AI_PROVIDER=claude. An old AI_PROVIDER=local
-// in .env counts as Gemini, and nothing here starts or talks to LM Studio any more.
+// The planner is Gemini unless AI_PROVIDER=claude. (Until 1.1 it could also be a local model in LM Studio; an old
+// AI_PROVIDER=local in .env counts as Gemini.)
 const pickProvider = (v) => ((v || "").toLowerCase() === "claude" ? "claude" : "gemini");
 let AI_PROVIDER = pickProvider(process.env.AI_PROVIDER);
-const LOCAL_URL = (process.env.LOCAL_AI_URL || "http://localhost:1234/v1").replace(/\/$/, "");
-const LOCAL_MODEL = process.env.LOCAL_MODEL || "qwen/qwen3.5-9b";
-// How long one answer from the local model may take. A laptop GPU (an M3 MacBook) writes several times slower than a
-// desktop card, and the longest answer (the day guides) can take many minutes there.
-const LOCAL_TIMEOUT = Number(process.env.LOCAL_TIMEOUT_S || (process.platform === "darwin" ? 900 : 290)) * 1000;
-const LOCAL_SEARCHES_PLAN = Number(process.env.LOCAL_SEARCHES_PLAN ?? 4);
-const LOCAL_SEARCHES_DETAILS = Number(process.env.LOCAL_SEARCHES_DETAILS ?? 6);
-// Qwen3.5 thinks for thousands of tokens per research turn. Fine on a desktop GPU, but an M3 writes ~17 tokens/s,
-// so one turn could think for 6 minutes: on a Mac it doesn't think. LOCAL_THINK=1 or 0 forces it.
-async function localThink() {
-  if (process.env.LOCAL_THINK != null) return process.env.LOCAL_THINK !== "0";
-  return process.platform !== "darwin";
-}
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 const CLAUDE_EFFORT = process.env.CLAUDE_EFFORT || "medium"; // low | medium | high
 // Web searches allowed per call ($10 per 1,000 searches). 0 turns search off.
@@ -2163,8 +2147,6 @@ function extractJson(text) {
 // signal: stop when the app stops waiting (local model only). region: a key for reusing research notes.
 // `model`: a Gemini model to use alone, no fallbacks (the planner eval).
 async function callAI({ system, user, searches = 0, schema, signal, region, onEvent, writing, model: only }) {
-  // Local model: no fallback, so a stopped LM Studio shows its own clear error instead of a Gemini quota message.
-  if (AI_PROVIDER === "local" && !only) return callLocal({ system, user, searches, schema, signal, region, onEvent, writing });
   if (AI_PROVIDER === "claude" && anthropic && !only) {
     try {
       const ending = searches > 0
@@ -2215,16 +2197,7 @@ async function callAI({ system, user, searches = 0, schema, signal, region, onEv
   return { data: JSON.parse(text), model, sources: [] };
 }
 
-// ---------- local model (LM Studio) with web search ----------
-
-const BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
-const htmlText = (s) =>
-  String(s)
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&amp;/g, "&").replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
-    .replace(/&[a-z]+;/gi, " ") // any other named entity (&nbsp;, &middot;...)
-    .replace(/\s+/g, " ").trim();
+// ---------- web search (Tavily) ----------
 
 // Web search through Tavily's API (free plan: 1,000 searches a month, no card). Each search costs 1 credit
 // (search_depth "basic"). A monthly count is kept in data/search-usage.json and searching stops at
@@ -2246,7 +2219,6 @@ const searchAvailable = () => !!TAVILY_KEY;
 // Searches, pages and research notes are kept on disk for 30 days, so planning the same region again is quicker
 // and doesn't spend the monthly searches twice.
 const searchCache = diskCache("search-cache.json", 30, 1500);
-const pageCache = diskCache("page-cache.json", 30, 400);
 const notesCache = diskCache("region-notes.json", 30, 200);
 // Key for a region: its states, sorted ("colorado|utah").
 const regionKey = (states) => [...new Set(asArray(states).map(placeKey).filter(Boolean))].sort().join("|");
@@ -2286,132 +2258,14 @@ async function webSearch(query) {
   return job;
 }
 
-// The readable text of a web page, trimmed so it fits in a small model's context.
-async function readPage(url) {
-  const hit = await pageCache.get(url);
-  if (hit) return hit;
-  const r = await fetch(url, { headers: { "User-Agent": BROWSER_UA }, signal: AbortSignal.timeout(12000), redirect: "follow" });
-  if (!r.ok) throw new Error(`the page returned ${r.status}`);
-  const html = await r.text();
-  const body = html
-    .replace(/<(script|style|noscript|svg|nav|footer|header|form)[\s\S]*?<\/\1>/gi, " ")
-    .replace(/<!--[\s\S]*?-->/g, " ");
-  const text = htmlText(body).slice(0, 4000);
-  pageCache.set(url, text);
-  return text;
-}
-
-const LOCAL_TOOLS = [
-  {
-    type: "function",
-    function: {
-      name: "web_search",
-      description:
-        "Search the web. Returns titles, links and short snippets. Add 'reddit' or 'forum' to a query to find " +
-        "what drivers and road trippers say.",
-      parameters: {
-        type: "object",
-        properties: { query: { type: "string", description: "What to search for" } },
-        required: ["query"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "read_page",
-      description: "Read the main text of a web page from a search result (first ~4000 characters). Reddit pages can't be opened.",
-      parameters: {
-        type: "object",
-        properties: { url: { type: "string", description: "The page's full URL" } },
-        required: ["url"],
-      },
-    },
-  },
-];
-
-// Qwen3 and similar models write their reasoning in <think> tags. Keep it out of the conversation history.
-const stripThink = (s) => String(s || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-
 // An AbortSignal that fires when the app stops waiting for this request (it replaced the request with a newer one,
-// or the tab closed), so the GPU doesn't keep writing an answer nobody will read.
+// or the tab closed), so the AI doesn't keep writing an answer nobody will read.
 function clientGone(res) {
   const c = new AbortController();
   res.on("close", () => {
     if (!res.writableEnded) c.abort();
   });
   return c.signal;
-}
-
-// Answers are streamed, so the app can show the plan while it's written (`onText` gets the answer so far). A plain
-// request also failed on the Mac: LM Studio sends nothing until the answer is done, and Node's fetch gives up after
-// 300 s without response headers. The agent keeps undici's own timeouts out of it; LOCAL_TIMEOUT is the only limit.
-const LM_AGENT = new Agent({ headersTimeout: 0, bodyTimeout: 0 });
-
-async function lmChat(body, signal, onText) {
-  const failed = (e) => {
-    if (signal?.aborted) return new Error("Cancelled.");
-    if (e.name === "TimeoutError") return new Error("The local model took too long to answer.");
-    console.log(`LM Studio request failed: ${e.message}${e.cause ? ` (${e.cause.code || e.cause.message})` : ""}`);
-    return new Error("LM Studio isn't running. Open Setup (the gear button) to start it.");
-  };
-  let r;
-  try {
-    r = await undiciFetch(`${LOCAL_URL}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // low temperature: steadier routes from a small model
-      body: JSON.stringify({ model: LOCAL_MODEL, temperature: 0.3, ...body, stream: true }),
-      signal: signal ? AbortSignal.any([AbortSignal.timeout(LOCAL_TIMEOUT), signal]) : AbortSignal.timeout(LOCAL_TIMEOUT),
-      dispatcher: LM_AGENT,
-    });
-  } catch (e) {
-    throw failed(e);
-  }
-  if (!r.ok) {
-    const d = await r.json().catch(() => ({}));
-    throw new Error(`LM Studio: ${d?.error?.message || d?.error || `HTTP ${r.status}`}`);
-  }
-  // Server-sent events: content and reasoning arrive in pieces, tool calls as pieces keyed by index.
-  let content = "";
-  let reasoning = "";
-  let finish = null;
-  const calls = [];
-  let buf = "";
-  const dec = new TextDecoder();
-  try {
-    for await (const chunk of r.body) {
-      buf += dec.decode(chunk, { stream: true });
-      let i;
-      while ((i = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, i).trim();
-        buf = buf.slice(i + 1);
-        if (!line.startsWith("data:") || line === "data: [DONE]") continue;
-        const d = JSON.parse(line.slice(5));
-        if (d.error) throw new Error(`LM Studio: ${d.error.message || d.error}`);
-        const c = d.choices?.[0];
-        if (!c) continue;
-        const delta = c.delta || {};
-        if (delta.reasoning_content || delta.reasoning) reasoning += delta.reasoning_content || delta.reasoning;
-        if (delta.content) {
-          content += delta.content;
-          onText?.(content);
-        }
-        for (const t of delta.tool_calls || []) {
-          const call = (calls[t.index ?? calls.length] ||= { id: "", type: "function", function: { name: "", arguments: "" } });
-          if (t.id) call.id = t.id;
-          if (t.function?.name) call.function.name += t.function.name;
-          if (t.function?.arguments) call.function.arguments += t.function.arguments;
-        }
-        if (c.finish_reason) finish = c.finish_reason;
-      }
-    }
-  } catch (e) {
-    if (e.message.startsWith("LM Studio:")) throw e;
-    throw failed(e);
-  }
-  const tool_calls = calls.filter(Boolean);
-  return { role: "assistant", content, reasoning_content: reasoning, ...(tool_calls.length && { tool_calls }), finish };
 }
 
 // Calls fn(x) at most every `ms` milliseconds; the calls in between are dropped (the next one carries the newer state).
@@ -2455,154 +2309,7 @@ function partialJson(text) {
   }
 }
 
-// Turns off Qwen3.5's thinking on LM Studio's OpenAI-compatible endpoint. Only this works there: "reasoning": "off",
-// "reasoning_effort": "low", /no_think and enable_thinking:false were all ignored (tested 2026-10-12).
-const NO_THINK = { reasoning_effort: "none" };
-
-// One planning answer from the local model.
-// 1. Research: the model may call web_search / read_page (up to `searches` calls), then writes its plan as notes.
-// 2. Answer: a second request turns the notes into JSON, with LM Studio constraining the output to the schema,
-//    so a small model can't produce broken JSON.
-// `onEvent` (optional) hears the progress: { type: "status", text }, { type: "notes", text } with the notes so far,
-// and { type: "partial", data } with the finished part of the JSON answer.
-async function callLocal({ system, user, searches = 0, schema, signal, region, onEvent, writing = "Writing the plan" }) {
-  const notesOut = every(500, (text) => onEvent?.({ type: "notes", text: stripThink(text) }));
-  let lastPartial = "";
-  const partialOut = every(400, (text) => {
-    const data = partialJson(stripThink(text));
-    const key = data ? JSON.stringify(data) : "";
-    if (key.length > lastPartial.length) {
-      lastPartial = key;
-      onEvent?.({ type: "partial", data });
-    }
-  });
-  if (!searchAvailable()) searches = 0; // no TAVILY_API_KEY: plan from the model's own knowledge
-  const sources = new Map();
-  const messages = [{ role: "system", content: system }];
-  let used = 0;
-  const think = searches > 0 && (await localThink());
-
-  // Research notes from an earlier trip in the same region (kept 30 days) go in as background, with fewer searches.
-  const earlier = region ? await regionNotes(region) : null;
-  if (earlier && searches > 0) searches = Math.max(1, Math.floor(searches / 2));
-
-  if (searches > 0) {
-    messages.push({
-      role: "user",
-      content:
-        `${user}\n\n${earlier ? `Notes from earlier research on this region (still useful background):\n${earlier}\n\n` : ""}` +
-        `First research with the tools (at most ${searches} tool calls): check what road trip and driving ` +
-        "communities (Reddit, forums, travel writers) recommend for this route and region, and any current road closures. " +
-        "Then write your answer as concise notes (at most about 500 words: the days, overnight towns, roads and spots) " +
-        "covering everything the JSON needs. Don't write the JSON yet.",
-    });
-    for (let turn = 0; turn < searches + 3; turn++) {
-      if (signal?.aborted) throw new Error("Cancelled.");
-      const allowTools = used < searches;
-      const turnBody = {
-        messages,
-        // Without thinking the model reasons in its notes instead, and once filled all 6,000 tokens (8 minutes on an M3).
-        max_tokens: think ? 6000 : 2000,
-        ...(!think && NO_THINK),
-        ...(allowTools && { tools: LOCAL_TOOLS, tool_choice: "auto" }),
-      };
-      let m = await lmChat(turnBody, signal, notesOut);
-      // Qwen3.5 sometimes thinks until it runs out of tokens and says nothing. Redo that turn without thinking.
-      if (m.finish === "length" && !stripThink(m.content) && !m.tool_calls?.length) {
-        console.log("  thinking ran away, redoing the turn without it");
-        m = await lmChat({ ...turnBody, ...NO_THINK }, signal);
-      }
-      // a turn can ask for several searches at once; keep only what's left of the budget
-      const calls = allowTools ? (m.tool_calls || []).slice(0, searches - used) : [];
-      messages.push({ role: "assistant", content: stripThink(m.content), ...(calls.length && { tool_calls: calls }) });
-      if (!calls.length) break;
-      for (const c of calls) {
-        let result;
-        try {
-          const args = JSON.parse(c.function?.arguments || "{}");
-          if (c.function?.name === "web_search") {
-            onEvent?.({ type: "status", text: `Searching: ${args.query}` });
-            const found = await webSearch(String(args.query || ""));
-            found.forEach((x) => sources.set(x.url, x.title));
-            result = found.length
-              ? found.map((x, i) => `${i + 1}. ${x.title}\n   ${x.url}\n   ${x.snippet}`).join("\n")
-              : "No results.";
-            console.log(`  search: ${args.query} (${found.length} results)`);
-          } else if (c.function?.name === "read_page") {
-            onEvent?.({ type: "status", text: `Reading ${String(args.url || "").replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}` });
-            result = await readPage(String(args.url || ""));
-            console.log(`  read: ${args.url}`);
-          } else result = "Unknown tool.";
-        } catch (e) {
-          result = `Tool failed: ${e.message}. Continue without it.`;
-        }
-        used++;
-        messages.push({ role: "tool", tool_call_id: c.id, content: result });
-      }
-      if (used >= searches) {
-        messages.push({ role: "user", content: "That's all the research. Write your notes now, at most about 500 words." });
-        onEvent?.({ type: "status", text: "Writing notes on the route" });
-      }
-    }
-  }
-
-  // The JSON step gets only the request and the model's notes, not every search result, so a long trip
-  // (SF to Dallas: 8 days, 30 spots) has room in the 32k context for a long answer.
-  const notes = [...messages].reverse().find((x) => x.role === "assistant" && x.content)?.content || "";
-  if (region && notes && used > 0) saveRegionNotes(region, notes);
-  const ask = (extra) => [
-    messages[0],
-    {
-      role: "user",
-      content: notes
-        ? `${user}\n\nYour research notes:\n${notes}\n\nGive the final answer as the JSON object described above.${extra}`
-        : `${user}${extra}`,
-    },
-  ];
-  let data = null;
-  onEvent?.({ type: "status", text: writing });
-  for (let attempt = 0; attempt < 2 && !data; attempt++) {
-    lastPartial = "";
-    const m = await lmChat({
-      messages: ask(attempt ? "\nKeep every text field short (one sentence) so the whole answer fits." : ""),
-      max_tokens: 16000,
-      // The reasoning happened in the research notes; thinking here only burns the token budget
-      // (it once used 60,000 characters and left no answer).
-      ...NO_THINK,
-      response_format: { type: "json_schema", json_schema: { name: "answer", strict: true, schema } },
-    }, signal, partialOut);
-    try {
-      data = extractJson(stripThink(m.content));
-    } catch {
-      console.log(
-        `Local JSON attempt ${attempt + 1} failed: finish=${m.finish}, ${String(m.content || "").length} chars of answer, ` +
-          `${String(m.reasoning_content || m.reasoning || "").length} chars of reasoning`
-      );
-    }
-  }
-  if (!data) throw new Error("The local model's answer was cut off. Try again, or plan a shorter trip.");
-  console.log(`Local ${LOCAL_MODEL}: ${used} tool calls`);
-  return { data, model: LOCAL_MODEL, sources: [...sources].map(([url, title]) => ({ url, title })) };
-}
-
-// A small model plans better with a short catalog, so first ask which states the trip crosses.
-async function localStates(prompt, signal) {
-  const { data } = await callLocal({
-    system: "You know world geography and road trips.",
-    // generous on purpose: it only decides which byways the planner may consider
-    user:
-      "Which states, provinces or territories could this road trip pass through (US states, Canadian provinces like " +
-      "British Columbia and Ontario, or Australian states like New South Wales and Victoria)? For New Zealand, the " +
-      "United Kingdom, the Alps, Norway, Iceland, Ireland, Spain and Portugal, list the country names (New Zealand, United " +
-      "Kingdom, Switzerland, Austria, Italy, France, Germany, Norway, Iceland, Ireland, Spain, Portugal) and the regions. Include every one on the likely route plus neighbouring " +
-      `states it might reasonably detour into. Use full names.\n\nTrip: ${prompt}`,
-    schema: { type: "object", properties: { states: { type: "array", items: { type: "string" } } }, required: ["states"] },
-    signal,
-  });
-  return asArray(data.states).map(String);
-}
-
-// JSON shapes for the local model's answers (LM Studio constrains output to these).
+// JSON shapes for the planner's answers (Gemini is held to these).
 const str = { type: "string" };
 const int = { type: "integer" };
 const obj = (properties) => ({ type: "object", properties, required: Object.keys(properties) });
@@ -2629,20 +2336,6 @@ const DETAILS_SCHEMA = obj({
     }),
   },
 });
-
-// Whether LM Studio is up and the model is loaded (for the status line and clear errors).
-async function localStatus() {
-  // LM Studio is switched off: never probe its port.
-  return { running: false, downloaded: false, loaded: false, context: null };
-  try {
-    const r = await fetch(`${LOCAL_URL.replace(/\/v1$/, "")}/api/v0/models`, { signal: AbortSignal.timeout(2000) });
-    const d = await r.json();
-    const m = (d.data || []).find((x) => x.id === LOCAL_MODEL);
-    return { running: true, downloaded: !!m, loaded: m?.state === "loaded", context: m?.loaded_context_length || null };
-  } catch {
-    return { running: false, downloaded: false, loaded: false, context: null };
-  }
-}
 
 // The road catalog: US National Scenic Byways (data/byways.json, from tools/build-byways.mjs) plus famous
 // Australian drives (data/au-drives.json, hand-picked around Sydney, Melbourne and Canberra; each has a Wikipedia
@@ -2684,6 +2377,7 @@ async function loadByways() {
   return byways;
 }
 
+const MOTORWAY_NAME = /\b(expressway|motorway|autobahn|autoroute|autostrada|autopista|autov[ií]a|auto-?estrada|tollway|turnpike|freeway)\b/i;
 const PLANNER_INTRO = `You are an expert road trip planner for anywhere in the world, with a hand-checked list of celebrated roads
 for the United States, Canada, Australia, New Zealand, the United Kingdom, the Alps, Norway, Iceland, Ireland, Spain and
 Portugal. You know which roads driving enthusiasts, motorcyclists and
@@ -2787,14 +2481,14 @@ const maxHoursOf = (settings) => {
   return h >= 2 && h <= 14 ? h : 7.5;
 };
 // "Québec" and "quebec " are the same state for matching.
-const placeKey = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+const placeKey = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 const bywayRecord = (b) => ({
   name: b.name, type: b.type, miles: b.miles, km: b.km || (b.miles ? Math.round(b.miles * 1.609) : null),
   description: b.description, qualities: b.qualities, fhwa: b.fhwa, wiki: b.wiki, ref: b.ref || "", country: b.country,
   // the road's name in OpenStreetMap when it differs ("Furkastrasse" for the Furka Pass)
   ...(b.osm && { osm: b.osm }),
 });
-const noAI = () => AI_PROVIDER !== "local" && !anthropic && !GEMINI_KEY;
+const noAI = () => !anthropic && !GEMINI_KEY;
 // What the app says when an AI feature is used before a planner is set up. Everything else works without keys.
 const NO_AI = "Planning with AI needs a planner. Add a free Google Gemini key in Setup (the gear button, about two minutes), " +
   "Ready-made trips, the map and routes work without it.";
@@ -2802,7 +2496,7 @@ const NO_AI = "Planning with AI needs a planner. Add a free Google Gemini key in
 // Step 1: the route. Days, stops, via points and featured roads, with the byway catalog as reference.
 // With current + dayHours it revises an existing plan using drive times the app measured.
 // With `stream: true` in the body, an AI endpoint answers newline-separated JSON events (status, notes, partial; see
-// callLocal) and ends with { type: "done", ... } or { type: "error", error }. Returns emit(event) (a no-op otherwise).
+// callAI) and ends with { type: "done", ... } or { type: "error", error }. Returns emit(event) (a no-op otherwise).
 function eventStream(req, res) {
   if (!req.body?.stream) return () => {};
   res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
@@ -2945,19 +2639,8 @@ app.post("/api/plan", async (req, res) => {
 
     // The local model gets only the byways in the states the trip crosses (shorter prompt, better focus).
     // A revision already knows its states (the client sends them); a new trip asks the model first.
-    // Never send the whole catalog to the local model: with a plan attached it overflows the 32k context, LM Studio
-    // cuts off the start, and the model loses the request (it once started planning Sydney to Melbourne).
-    let list = await loadByways();
-    let stateList = asArray(req.body.states).map(String).filter(Boolean);
-    if (AI_PROVIDER === "local") {
-      if (!stateList.length) {
-        emit({ type: "status", text: "Working out which states and provinces the trip crosses" });
-        stateList = await localStates(prompt, signal);
-      }
-      const states = new Set(stateList.map(placeKey));
-      list = list.filter((b) => b.states.some((s) => states.has(placeKey(s))));
-      console.log(`Catalog for ${[...states].join(", ") || "no states"}: ${list.length} byways`);
-    }
+    const list = await loadByways();
+    const stateList = asArray(req.body.states).map(String).filter(Boolean);
     const catalog = list
       .map((b) => {
         const len = b.country === "US" ? `${b.miles ?? "?"} mi` : `${b.km ?? "?"} km`;
@@ -3008,9 +2691,11 @@ Rules:
   every 40 to 100 miles along it wherever a faster road runs nearby, so a router can't shortcut. No vias on plain transit stretches.
 - Each day has at most 9 points (Google Maps limit). At most 50 points in total.
 - point names: real towns, cities or landmarks with their state, on a drivable road, that geocode well ("Ouray, Colorado").
-  Never a lake, forest or park center.
+  Never a lake, forest or park center, and never a place private cars can't reach (car-free valleys, towns and islands
+  like Kamikochi, Zermatt or Ilha Grande: use the nearest place you can drive to).
 - roads: every featured road once, 1 to 3 per day where the route offers them. Only roads worth driving for their own
-  sake: never an ordinary interstate or highway (a famous scenic stretch like I-70 through Glenwood Canyon is fine).
+  sake: never an ordinary interstate, motorway, expressway, autobahn, autoroute or toll highway in any country (a famous
+  scenic stretch like I-70 through Glenwood Canyon is fine).
 - For a featured road with a faster road nearby or inside a national park, put at least one via ON that road (a lodge,
   pullout, junction or village on it, like "Signal Mountain Lodge, Wyoming" for Teton Park Road) so a router drives it.
 - No backtracking. Before answering, check the order and estimate each day's driving time.
@@ -3057,7 +2742,7 @@ Request: ${prompt}${langText(req.body.lang)}`;
     }
 
     // A rebalance only moves day boundaries, so it skips the web search; a comment or road change gets a little.
-    const planSearches = AI_PROVIDER === "local" ? LOCAL_SEARCHES_PLAN : SEARCHES_PLAN;
+    const planSearches = SEARCHES_PLAN;
     const searches = !revising ? planSearches : feedback || adds.length ? Math.min(2, planSearches) : 0;
     const region = !revising ? regionKey(stateList) : "";
     const { data, model, sources } = await callAI({ system, user, searches, schema: PLAN_SCHEMA, signal, region, onEvent: emit, model: evalModel });
@@ -3107,6 +2792,8 @@ Request: ${prompt}${langText(req.body.lang)}`;
         picked.has(String(r.name).toLowerCase()) ||
         !/^(I|Interstate)[ -]?\d|^M\d|^(ON )?4\d\d\b|^Highway 4\d\d\b|^(A-|Autoroute )\d/i.test(`${r.ref || ""}`.trim() || `${r.name || ""}`.trim())
     );
+    // and anywhere in the world, roads named as motorways ("Tokai-Hokuriku Expressway", "Autostrada del Sole")
+    plan.roads = plan.roads.filter((r) => r.official || picked.has(String(r.name).toLowerCase()) || !MOTORWAY_NAME.test(String(r.name || "")));
     finish(req, res, emit, { plan, model, sources, checks });
   } catch (e) {
     fail(res, emit, e);
@@ -3136,7 +2823,7 @@ in the plan. For each: the common name, route number, state, one line on why dri
     const { data, sources } = await callAI({
       system: PLANNER_INTRO,
       user,
-      searches: Math.min(2, AI_PROVIDER === "local" ? LOCAL_SEARCHES_PLAN : SEARCHES_PLAN),
+      searches: Math.min(2, SEARCHES_PLAN),
       schema: obj({ roads: { type: "array", items: obj({ name: str, ref: str, state: str, why: str, miles: int }) } }),
     });
     res.json({ roads: asArray(data.roads).slice(0, 8), sources });
@@ -3168,7 +2855,7 @@ const STATE_ABBR = {
 // unrelated highway nearby on these alone.
 const ROAD_WORDS = new Set(["road", "highway", "route", "drive", "way", "street", "the", "and", "pass", "scenic", "coast",
   "coastal", "loop", "link", "trail", "byway", "parkway", "national", "state", "approach", "mountain", "valley", "old", "new"]);
-const plainText = (t) => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const plainText = (t) => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 async function roadShape(q) {
   const u = `https://nominatim.openstreetmap.org/search?format=json&limit=40&polygon_geojson=1&polygon_threshold=0.001&q=${encodeURIComponent(q)}`;
   // the result must carry a distinctive word of the name, or the road number
@@ -3343,7 +3030,7 @@ The traveler's request: ${prompt || ""}${langText(req.body.lang)}`;
     const { data: d, model, sources } = await callAI({
       system: PLANNER_INTRO,
       user,
-      searches: AI_PROVIDER === "local" ? LOCAL_SEARCHES_DETAILS : SEARCHES_DETAILS,
+      searches: SEARCHES_DETAILS,
       schema: DETAILS_SCHEMA,
       signal,
       region: asArray(states).length ? `details:${regionKey(states)}` : "",
@@ -3359,13 +3046,12 @@ The traveler's request: ${prompt || ""}${langText(req.body.lang)}`;
 // ---------- setup: keys and the local AI, from the app instead of editing files ----------
 //
 // GET /api/setup shows what's set up (keys masked, never sent back), POST /api/setup checks each new key with its
-// service and writes it to .env, and POST /api/setup/lms starts LM Studio's server, downloads or loads the model.
+// service and writes it to .env.
 // Only from this PC: a phone opening a share link on the same Wi-Fi can't see or change any of it.
 
 const isLocalRequest = (req) => ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.socket.remoteAddress);
 const localOnly = (req, res, next) => (isLocalRequest(req) ? next() : res.status(403).json({ error: "Setup only works on the PC running the app." }));
 const ENV_FILE = path.resolve(".env");
-const LMS = process.env.LMS_PATH || path.join(os.homedir(), ".lmstudio", "bin", process.platform === "win32" ? "lms.exe" : "lms");
 
 // Pick up changed keys without a restart.
 function applyConfig() {
@@ -3395,52 +3081,18 @@ async function writeEnv(values) {
   applyConfig();
 }
 const mask = (k) => (k ? `${k.slice(0, 4)}…${k.slice(-4)}` : "");
-function run(cmd, args, ms = 120000) {
-  return new Promise((ok) => {
-    execFile(cmd, args, { timeout: ms, windowsHide: true }, (err, stdout, stderr) =>
-      ok({ ok: !err, out: `${stdout || ""}${stderr || ""}`.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "").trim() }));
-  });
-}
-// The graphics hardware, to say whether the local model will run well: an NVIDIA card's own memory, or on an Apple
-// Silicon Mac the chip and its shared memory (the model runs on the Mac's GPU from that memory).
-let gpuInfo = null;
-async function gpu() {
-  if (gpuInfo) return gpuInfo;
-  if (process.platform === "darwin" && process.arch === "arm64") {
-    const r = await run("sysctl", ["-n", "machdep.cpu.brand_string"], 5000);
-    gpuInfo = { name: r.ok ? r.out.trim() : "Apple Silicon", gb: Math.round(os.totalmem() / 2 ** 30), apple: true };
-    return gpuInfo;
-  }
-  const r = await run("nvidia-smi", ["--query-gpu=name,memory.total", "--format=csv,noheader,nounits"], 5000);
-  const [name, mb] = r.ok ? r.out.split("\n")[0].split(",").map((s) => s.trim()) : [];
-  gpuInfo = name ? { name, gb: Math.round(Number(mb) / 1024) } : { name: "", gb: null };
-  return gpuInfo;
-}
-let lmsJob = null; // { action, started, done, ok, out } for the running download or load
-async function lmsInstalled() {
-  try {
-    await fs.access(LMS);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 app.get("/api/setup", localOnly, async (req, res) => {
-  const local = await localStatus();
   res.json({
     ors: { set: !!ORS_KEY, hint: mask(ORS_KEY) },
     tavily: { set: !!TAVILY_KEY, hint: mask(TAVILY_KEY) },
     gemini: { set: !!GEMINI_KEY, hint: mask(GEMINI_KEY), model: GEMINI_MODEL, today: GEMINI_KEY ? await geminiUsageToday() : null },
     contact: CONTACT,
     provider: AI_PROVIDER,
-    local: { ...local, model: LOCAL_MODEL, lms: await lmsInstalled(), job: lmsJob && { ...lmsJob, out: lmsJob.out.slice(-400) } },
-    gpu: await gpu(),
     node: process.version,
     platform: process.platform,
-    // ready to plan: routing, and an AI that will answer
     // ready to plan with AI; routes work without an ORS key (the backup router), so it isn't required
-    ready: AI_PROVIDER === "gemini" ? !!GEMINI_KEY : AI_PROVIDER === "claude" ? !!anthropic || !!GEMINI_KEY : local.loaded,
+    ready: AI_PROVIDER === "gemini" ? !!GEMINI_KEY : !!anthropic || !!GEMINI_KEY,
   });
 });
 
@@ -3484,33 +3136,6 @@ app.post("/api/setup", localOnly, async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message || String(e) });
   }
-});
-
-// POST { action: "start" | "download" | "load" }: LM Studio's command line tool, for people who'd rather not use it.
-app.post("/api/setup/lms", localOnly, async (req, res) => {
-  return res.status(410).json({ error: "The local model (LM Studio) is switched off in this version." });
-  const action = req.body?.action;
-  if (!(await lmsInstalled())) return res.status(400).json({ error: "LM Studio isn't installed (or hasn't been opened once yet)." });
-  if (lmsJob && !lmsJob.done) return res.json({ job: lmsJob });
-  if (action === "start") {
-    const r = await run(LMS, ["server", "start"], 30000);
-    return res.json({ ok: r.ok, out: r.out.slice(-400) });
-  }
-  // downloading (about 6 GB) and loading take a while: run in the background, the app polls GET /api/setup
-  const args = action === "download" ? ["get", LOCAL_MODEL, "-y"]
-    : action === "load" ? ["load", LOCAL_MODEL, "--context-length", "32768", "--gpu", "max", "-y"]
-    : null;
-  if (!args) return res.status(400).json({ error: "Unknown action" });
-  if (action === "load") await run(LMS, ["server", "start"], 30000);
-  lmsJob = { action, started: Date.now(), done: false, ok: false, out: "" };
-  const job = lmsJob;
-  const p = spawn(LMS, args, { windowsHide: true });
-  const keep = (d) => (job.out = (job.out + d.toString()).replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "").slice(-4000));
-  p.stdout.on("data", keep);
-  p.stderr.on("data", keep);
-  p.on("close", (code) => Object.assign(job, { done: true, ok: code === 0 }));
-  p.on("error", (e) => Object.assign(job, { done: true, ok: false, out: e.message }));
-  res.json({ job });
 });
 
 const port = process.env.PORT || 3000;
