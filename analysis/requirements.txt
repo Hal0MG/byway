@@ -1,0 +1,8 @@
+pandas
+matplotlib
+seaborn
+scikit-learn
+nbformat
+nbconvert
+ipykernel
+shapely
