@@ -248,7 +248,7 @@ async function geocodeAll(q, limit = 5) {
     const hits = await nominatimAll(t, limit);
     if (!hits.length) continue;
     // "Green River, Utah" only finds the river; when nothing is a town, add the towns of that name
-    if (limit > 1 && !hits.some((h) => /^(place|boundary)$/.test(h.cls))) hits.push(...(await nominatimAll(t, 3, true).catch(() => [])));
+    if (limit > 1 && !hits.some((h) => /^(place|boundary)$/.test(h.cls))) hits.push(...(await nominatimAll(t, 3, true).catch(() => [])).map((h) => ({ ...h, late: true })));
     return hits;
   }
   throw new Error(`No match for "${q}". Try a city or landmark name.`);
@@ -795,15 +795,19 @@ const skeletonOf = () => ({
 // matches), with a penalty for rivers, lakes and the like when a town shares the name ("Green River, Utah" is also the
 // river by Flaming Gorge). Sets lng/lat and removes `cands`.
 function pickAlongRoute(points) {
-  const cost = (c) => (c.cls && !/^(place|boundary|tourism|amenity|building|historic|highway|railway|aeroway|leisure)$/.test(c.cls) ? 100000 : 0);
+  // A match that isn't a town or region (a station, a shop: "Tokyo, Tokyo" also finds a railway station and an amenity)
+  // costs 40 km, so it only wins when it is much nearer the route; later matches cost 10 km each, so the search's own
+  // best guess wins ties; the towns added when the search found no town ("Tokyo, Tokyo" also matches other wards and
+  // the prefecture's outline) cost another 60 km. Towns of the same name in different places are far further apart than that.
+  const cost = (c, i = 0) => (c.cls && !/^(place|boundary|tourism|amenity|building|historic|highway|railway|aeroway|leisure)$/.test(c.cls) ? 100000 : /^(place|boundary)$/.test(c.cls || "place") ? 0 : 40000) + i * 10000 + (c.late ? 60000 : 0);
   let prev = null; // [{ total, path }] per candidate of the previous point
   for (const p of points) {
     const cands = p.cands?.length ? p.cands : [{ lng: p.lng, lat: p.lat }];
-    prev = cands.map((c) => {
-      if (!prev) return { total: cost(c), path: [c] };
+    prev = cands.map((c, ci) => {
+      if (!prev) return { total: cost(c, ci), path: [c] };
       let best = null;
       for (const q of prev) {
-        const t = q.total + haversine([q.path.at(-1).lng, q.path.at(-1).lat], [c.lng, c.lat]) + cost(c);
+        const t = q.total + haversine([q.path.at(-1).lng, q.path.at(-1).lat], [c.lng, c.lat]) + cost(c, ci);
         if (!best || t < best.total) best = { total: t, path: [...q.path, c] };
       }
       return best;
