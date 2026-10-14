@@ -465,6 +465,8 @@ function introCity() {
 function playIntro() {
   if (intro.state !== "ready" || document.getElementById("welcome")) return;
   intro.state = "flying";
+  // the camera went to the city before the welcome screen asked for a home town: go there now
+  map.jumpTo({ center: introCity(), zoom: 10, pitch: 0, bearing: 0 });
   const fit = Math.min(innerWidth, innerHeight);
   const go = () =>
     map.flyTo({ center: [introCity()[0] + 40, 30], zoom: fit < 700 ? 0.9 : homeCamera.zoom, duration: 6500, curve: 1.4, essential: true });
