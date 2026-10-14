@@ -6,20 +6,36 @@
 const libState = { mine: null, ready: null, loading: false, q: "", show: "all", region: "", length: "", sort: "recent", open: null };
 const REGIONS = [
   ["", "Anywhere"], ["US", "United States"], ["CA", "Canada"], ["AU", "Australia"], ["NZ", "New Zealand"], ["GB", "UK"], ["IE", "Ireland"],
-  ["ALPS", "The Alps"], ["NO", "Norway"], ["IS", "Iceland"], ["ES", "Spain"], ["PT", "Portugal"], ["WORLD", "Elsewhere"],
+  ["ALPS", "The Alps"], ["NO", "Norway"], ["IS", "Iceland"], ["ES", "Spain"], ["PT", "Portugal"], ["EUROPE", "More of Europe"],
+  ["ASIA", "Asia"], ["AFME", "Africa and the Middle East"], ["LATAM", "Latin America"], ["WORLD", "Elsewhere"],
 ];
+// Everywhere without its own entry, by part of the world (ISO country codes)
+const PARTS = {
+  EUROPE: "AL AD AM AT AZ BA BE BG BY CH CY CZ DE DK EE FI FR GE GR HR HU IT LI LT LU LV MC MD ME MK MT NL PL RO RS SE SI SK SM TR UA XK",
+  ASIA: "AF BD BN BT CN HK ID IN JP KG KH KP KR KZ LA LK MM MN MO MV MY NP PH PK SG TH TJ TL TM TW UZ VN",
+  AFME: "AE AO BF BH BI BJ BW CD CF CG CI CM CV DJ DZ EG EH ER ET GA GH GM GN GQ GW IL IQ IR JO KE KM KW LB LR LS LY MA MG ML " +
+    "MR MU MW MZ NA NE NG OM PS QA RW SA SC SD SL SN SO SS ST SY SZ TD TG TN TZ UG YE ZA ZM ZW",
+  LATAM: "AR BB BO BR BS BZ CL CO CR CU DO EC GT GY HN HT JM MX NI PA PE PR PY SR SV TT UY VE",
+};
+const partOf = (c) => Object.keys(PARTS).find((k) => PARTS[k].split(" ").includes(c)) || "WORLD";
 const LENGTHS = [["", "Any length"], ["1-2", "1 to 2 days"], ["3-4", "3 to 4 days"], ["5-7", "5 to 7 days"], ["8-99", "8 days or more"]];
 const SKETCH_COLORS = ["#0a84ff", "#30d1c6", "#ff9f0a", "#bf5af2", "#30d158", "#ff375f", "#ffd60a", "#64d2ff"];
 
 // The Alps only where the covered Alpine regions are (Rome is Italy, not the Alps); countries without their own
-// entry are "Elsewhere"
+// entry go by part of the world
 const regionOf = (t) => {
   if (!t.start) return "";
   if (["CH", "AT", "IT", "FR", "DE", "LI"].includes(coverageCountry(t.start))) return "ALPS";
   const c = countryOf(t.start);
-  return !c ? "" : REGIONS.some(([k]) => k === c) ? c : "WORLD";
+  return !c ? "" : REGIONS.some(([k]) => k === c) ? c : partOf(c);
 };
-const regionName = (t) => (REGIONS.find(([k]) => k === regionOf(t)) || [, ""])[1];
+// the country's own name for trips grouped by part of the world ("Japan", not "Asia")
+const regionName = (t) => {
+  const r = regionOf(t);
+  const c = t.start && countryOf(t.start);
+  if (c && !REGIONS.some(([k]) => k === c) && r !== "ALPS") return worldCountryName(c) || (REGIONS.find(([k]) => k === r) || [, ""])[1];
+  return (REGIONS.find(([k]) => k === r) || [, ""])[1];
+};
 // distances in miles for US and UK trips, km elsewhere (like the itinerary)
 const libDist = (t, m) => {
   if (!m) return "";

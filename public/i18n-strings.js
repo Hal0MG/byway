@@ -69,6 +69,15 @@ const I18N_TABLE = {
   "Anywhere": ["Partout", "不限地区", "যেকোনো জায়গা"],
   "Everywhere": ["Partout", "全部地区", "সব জায়গা"],
   "Elsewhere": ["Ailleurs", "其他地区", "অন্যান্য জায়গা"],
+  "More of Europe": ["Reste de l'Europe","欧洲其他地区","ইউরোপের আরও জায়গা"],
+  "Asia": ["Asie","亚洲","এশিয়া"],
+  "Africa and the Middle East": ["Afrique et Moyen-Orient","非洲和中东","আফ্রিকা ও মধ্যপ্রাচ্য"],
+  "Latin America": ["Amérique latine","拉丁美洲","লাতিন আমেরিকা"],
+  "Europe": ["Europe","欧洲","ইউরোপ"],
+  "Africa": ["Afrique","非洲","আফ্রিকা"],
+  "Middle East": ["Moyen-Orient","中东","মধ্যপ্রাচ্য"],
+  "South America": ["Amérique du Sud","南美洲","দক্ষিণ আমেরিকা"],
+  "Central America": ["Amérique centrale","中美洲","মধ্য আমেরিকা"],
 
   // ---- start screen and trip options ----
   "Scenic road trip planner": ["Planificateur de road trips panoramiques", "风景公路旅行规划器", "মনোরম রোড ট্রিপ পরিকল্পনাকারী"],

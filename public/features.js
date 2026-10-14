@@ -149,6 +149,27 @@ const COST_REGION = {
   IE: { cur: "EUR", fuel: 1.75, kwh: 0.6, stay: 1.05 },
   ES: { cur: "EUR", fuel: 1.6, kwh: 0.5, stay: 0.8 },
   PT: { cur: "EUR", fuel: 1.75, kwh: 0.55, stay: 0.72 },
+  // the countries of the ready-made trips elsewhere: rough 2026 levels in the local currency
+  JP: { cur: "JPY", fuel: 175, kwh: 30, stay: 110 },
+  KR: { cur: "KRW", fuel: 1700, kwh: 300, stay: 1100 },
+  TW: { cur: "TWD", fuel: 30, kwh: 8, stay: 25 },
+  TH: { cur: "THB", fuel: 38, kwh: 8, stay: 20 },
+  MY: { cur: "MYR", fuel: 2.6, kwh: 1.2, stay: 2.5 },
+  SG: { cur: "SGD", fuel: 2.8, kwh: 0.7, stay: 1.6 },
+  BD: { cur: "BDT", fuel: 125, kwh: 15, stay: 60 },
+  IN: { cur: "INR", fuel: 103, kwh: 20, stay: 45 },
+  TR: { cur: "TRY", fuel: 48, kwh: 10, stay: 22 },
+  GE: { cur: "GEL", fuel: 3, kwh: 0.6, stay: 1.6 },
+  OM: { cur: "OMR", fuel: 0.24, kwh: 0.05, stay: 0.3 },
+  MA: { cur: "MAD", fuel: 13, kwh: 3, stay: 6 },
+  ZA: { cur: "ZAR", fuel: 22, kwh: 6, stay: 11 },
+  NA: { cur: "NAD", fuel: 21, kwh: 5, stay: 12 },
+  MX: { cur: "MXN", fuel: 24, kwh: 5, stay: 12 },
+  CR: { cur: "CRC", fuel: 800, kwh: 150, stay: 450 },
+  BR: { cur: "BRL", fuel: 6, kwh: 1.5, stay: 3.5 },
+  CL: { cur: "CLP", fuel: 1250, kwh: 250, stay: 650 },
+  PE: { cur: "PEN", fuel: 5.5, kwh: 1.2, stay: 2.6 },
+  RO: { cur: "RON", fuel: 7.3, kwh: 2, stay: 3.2 },
   // anywhere else: a rough world average in US dollars (fuel per litre)
   WORLD: { cur: "USD", fuel: 1.3, kwh: 0.3, stay: 0.8, rough: true },
 };
@@ -156,7 +177,13 @@ const EURO_CC = new Set(["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "
 // a night for two in a typical room, in US dollars, by price level (scaled by the region's `stay`)
 const STAY_USD = { $: [70, 120], $$: [120, 190], $$$: [190, 320], $$$$: [320, 550] };
 function costSetup() {
-  const c = stops.length ? countryOf(stops[0]) || "US" : "US";
+  // the country most of the trip's overnights are in (Singapore to Penang is a Malaysian trip)
+  const tally = {};
+  for (const st of stops.filter((x) => !isVia(x))) {
+    const cc = countryOf(st);
+    if (cc) tally[cc] = (tally[cc] || 0) + 1;
+  }
+  const c = Object.entries(tally).sort((a, b) => b[1] - a[1])[0]?.[0] || (stops.length && countryOf(stops[0])) || "US";
   const reg = COST_REGION[c] || (c === "LI" ? COST_REGION.CH : EURO_CC.has(c) ? COST_REGION.EU : COST_REGION.WORLD);
   const ev = !!tripSettings().ev;
   const miles = c === "US" || c === "GB";
