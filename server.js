@@ -245,6 +245,20 @@ async function snapToRoad(lng, lat) {
       // try the next tier
     }
   }
+  // Overpass busy or rate limiting after a run of lookups (an Iceland trip has a dozen waterfalls and lagoons off the
+  // road; ORS only looks 350 m around each point): the backup router's nearest drivable road.
+  for (const base of best ? [] : OSRM) {
+    try {
+      const r = await fetch(`${base}/nearest/v1/driving/${lng},${lat}?number=1`, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(15000) });
+      const loc = r.ok ? (await r.json())?.waypoints?.[0]?.location : null;
+      if (loc) {
+        best = loc;
+        break;
+      }
+    } catch {
+      // the next server
+    }
+  }
   if (best) snapCache.set(key, best);
   return best;
 }
@@ -3150,11 +3164,23 @@ const STATE_ABBR = {
   "new brunswick": "NB", "nova scotia": "NS", "prince edward island": "PE", "newfoundland and labrador": "NL",
 };
 
+// Words that don't tell one road from another: a road the AI made up ("Sahara Approach Highway") otherwise matches some
+// unrelated highway nearby on these alone.
+const ROAD_WORDS = new Set(["road", "highway", "route", "drive", "way", "street", "the", "and", "pass", "scenic", "coast",
+  "coastal", "loop", "link", "trail", "byway", "parkway", "national", "state", "approach", "mountain", "valley", "old", "new"]);
+const plainText = (t) => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 async function roadShape(q) {
   const u = `https://nominatim.openstreetmap.org/search?format=json&limit=40&polygon_geojson=1&polygon_threshold=0.001&q=${encodeURIComponent(q)}`;
+  // the result must carry a distinctive word of the name, or the road number
+  const head = plainText(q.split(",")[0]);
+  const words = head.split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !ROAD_WORDS.has(w));
+  const nums = head.match(/d+/g) || [];
   const pts = [];
   for (const x of asArray(await nominatimJson(u))) {
     if (x.class !== "highway") continue;
+    const label = plainText(`${x.name || ""} ${x.display_name || ""}`);
+    const labelWords = new Set(label.split(/[^a-z0-9]+/));
+    if (words.length ? !words.some((w) => label.includes(w)) : nums.length && !nums.some((n) => labelWords.has(n))) continue;
     const g = x.geojson;
     if (g?.type === "LineString") pts.push(...g.coordinates);
     else if (g?.type === "MultiLineString") g.coordinates.forEach((l) => pts.push(...l));

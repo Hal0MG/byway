@@ -816,6 +816,8 @@ function pickAlongRoute(points) {
   const best = prev?.reduce((a, b) => (b.total < a.total ? b : a));
   points.forEach((p, i) => {
     if (best) Object.assign(p, { lng: best.path[i].lng, lat: best.path[i].lat });
+    // the other matches, in case the router can't reach this one (a town's outline centred on an island: Angra dos Reis)
+    p.alts = (p.cands || []).filter((c) => c.lng !== p.lng || c.lat !== p.lat).map(({ lng, lat }) => ({ lng, lat }));
     delete p.cands;
     delete p.cls;
   });
@@ -1064,10 +1066,10 @@ function aiLabel() {
   if (aiInfo?.provider === "claude") {
     const name = /haiku/.test(aiInfo.model) ? "Claude Haiku" : /sonnet/.test(aiInfo.model) ? "Claude Sonnet" : "Claude";
     return aiInfo.webSearch
-      ? `${name} is reading road trip forums and picking roads from 184 scenic byways`
-      : `${name} is picking roads from 184 scenic byways`;
+      ? `${name} is reading road trip forums and picking the roads worth driving`
+      : `${name} is picking the roads worth driving`;
   }
-  return "Choosing roads from 184 designated scenic byways";
+  return "Choosing the roads worth driving";
 }
 
 // Web pages Claude read while planning, shown as sources at the end of the itinerary.
@@ -1813,6 +1815,24 @@ async function findRoutes({ fit = true } = {}) {
       const cands = (pair ? [pair[2], pair[1]] : n != null ? [n] : []).map((k) => failed.idx[Number(k)]);
       const i = cands.find((k) => k != null && isVia(stops[k]));
       if (attempt >= 6) throw new Error(failed.message);
+      if (i == null && !pair) {
+        // One stop the router can't reach: the place search's next match for it, else move it toward its neighbour.
+        const k = cands[0];
+        const s = k != null ? stops[k] : null;
+        if (!s) throw new Error(failed.message);
+        if (s.alts?.length) {
+          Object.assign(s, s.alts.shift());
+          continue;
+        }
+        const other = stops[k > 0 ? k - 1 : k + 1];
+        const to = !s.moved && other ? await reachableNear(s, other) : null;
+        if (!to) throw new Error(failed.message);
+        s.lng = to.lng;
+        s.lat = to.lat;
+        s.moved = true;
+        notes.add(`Moved ${s.name.split(",")[0]} ${to.km} km to the nearest road the router can reach.`);
+        continue;
+      }
       if (i == null) {
         // Two stops the router can't connect (Bryce Canyon Lodge sits on roads the map has cut off): move one of them
         // a little toward the other, onto a road it can reach, once.
@@ -1867,7 +1887,7 @@ $("panel-grip").onclick = () => {
 // A point 1, 2, 4 or 8 km from `p` toward `from` that the router can reach from `from`, or null.
 async function reachableNear(p, from) {
   const d = haversine([p.lng, p.lat], [from.lng, from.lat]);
-  for (const km of [1, 2, 4, 8]) {
+  for (const km of [1, 2, 4, 8, 16, 25]) {
     if (km * 1000 >= d) break;
     const f = (km * 1000) / d;
     const c = { lng: p.lng + (from.lng - p.lng) * f, lat: p.lat + (from.lat - p.lat) * f, km };
