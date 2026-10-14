@@ -237,17 +237,30 @@ function layoutHome() {
   // the whole globe fits with room around it: windows orbit it; otherwise they sit just above their places
   const orbit = !mobile && g.r < (bottom - top) * 0.47;
   const gap = 12;
+  // time since the last layout, so the windows drift at the same speed at any frame rate
+  const now = performance.now();
+  const dt = Math.max(0, Math.min(100, now - (s.layoutAt || now)));
+  s.layoutAt = now;
+  const shownCard = (it) => {
+    const c = s.cards.get(it.key);
+    return c?.shown ? c : null;
+  };
 
-  // what faces us: within 72° of the center and on screen
+  // what faces us: within 72° of the center and on screen. A window already showing stays until 80° and a little past
+  // the edges, so windows don't blink in and out at the boundary.
   const visible = homeItems()
-    .map((it) => ({ it, d: angDist([center.lng, center.lat], it.at) }))
-    .filter((x) => x.d < 72)
+    .map((it) => ({ it, d: angDist([center.lng, center.lat], it.at), on: shownCard(it) }))
+    .filter((x) => x.d < (x.on ? 80 : 72))
     .map((x) => ({ ...x, p: map.project(x.it.at) }))
-    .filter((x) => x.p.x > 0 && x.p.x < W && x.p.y > top - 20 && x.p.y < bottom + 20);
-  // windows already showing stay (no flicker); then ready-made trips, then the rest nearest the middle.
-  // At most two of your own trips at a time, so the suggestions get room.
+    .filter((x) => {
+      const m = x.on ? 40 : 0;
+      return x.p.x > -m && x.p.x < W + m && x.p.y > top - 20 - m && x.p.y < bottom + 20 + m;
+    });
+  // windows already showing first, oldest first, so each keeps its slot; then ready-made trips, then the rest nearest
+  // the middle. At most two of your own trips at a time, so the suggestions get room.
   const rank = { ready: 0, idea: 1, mine: 1 };
-  visible.sort((a, b) => (s.cards.get(b.it.key)?.shown ? 1 : 0) - (s.cards.get(a.it.key)?.shown ? 1 : 0) || rank[a.it.kind] - rank[b.it.kind] || a.d - b.d);
+  visible.sort((a, b) =>
+    a.on && b.on ? a.on.order - b.on.order : (b.on ? 1 : 0) - (a.on ? 1 : 0) || rank[a.it.kind] - rank[b.it.kind] || a.d - b.d);
 
   const placed = []; // { v, x, y, slot }
   // keep clear of Continue (top left); measured once per render and resize
@@ -270,16 +283,20 @@ function layoutHome() {
       const tries = [];
       for (let k = 0; k < 36; k++) tries.push((k / 36) * Math.PI * 2);
       const diff = (a) => Math.abs(Math.atan2(Math.sin(a - own), Math.cos(a - own)));
-      tries.sort((a, b) => diff(a) - diff(b));
-      if (prev != null && diff(prev) < 0.7) tries.unshift(prev);
+      // a window keeps its slot while that still points roughly toward its place; when it has to move, it takes the
+      // free slot nearest the one it had, so it slides along the ring instead of jumping across it
+      const from = (x) => Math.abs(Math.atan2(Math.sin(x - prev), Math.cos(x - prev)));
+      tries.sort(prev == null ? (a, b) => diff(a) - diff(b) : (a, b) => from(a) - from(b));
+      if (prev != null && diff(prev) < 1.25) tries.unshift(prev);
       for (const a of tries) {
-        if (diff(a) > 1.4) break;
+        if (diff(a) > 1.4) continue;
         // out into the free space at the sides: the ring is wider than it is tall
-        const side = Math.max(0, Math.min(170, (W / 2 - g.r - cw - 40) * 0.6));
+        const side = Math.max(0, Math.min(280, (W / 2 - g.r - cw - 30) * 0.85));
         const x = g.x + Math.cos(a) * (g.r + 46 + cw / 2 + side);
         const y = g.y + Math.sin(a) * (g.r + 24 + ch / 2);
         if (fits(x, y)) {
-          spot = { x, y, slot: a };
+          // a long way round from its old slot: fade out there and in here, rather than sweep across the globe
+          spot = { x, y, slot: a, fresh: prev != null && from(a) > 0.6 };
           break;
         }
       }
@@ -313,6 +330,13 @@ function layoutHome() {
   for (const t of targets) {
     const it = t.v.it;
     let c = s.cards.get(it.key);
+    if (c && t.fresh) {
+      const old = c.el;
+      old.classList.remove("on");
+      setTimeout(() => old.remove(), 400);
+      s.cards.delete(it.key);
+      c = null;
+    }
     if (!c || !c.el.isConnected) {
       const el = document.createElement("button");
       el.className = `home-card k-${it.kind}`;
@@ -322,14 +346,16 @@ function layoutHome() {
       el.innerHTML = cardHtml(it);
       box.appendChild(el);
       fitText(el);
-      c = { el, x: t.x, y: t.y, shown: false };
+      c = { el, x: t.x, y: t.y, shown: false, order: (s.cardOrder = (s.cardOrder || 0) + 1) };
       s.cards.set(it.key, c);
       requestAnimationFrame(() => el.classList.add("on"));
     }
     c.shown = true;
     c.slot = t.slot;
-    c.x += (t.x - c.x) * 0.18;
-    c.y += (t.y - c.y) * 0.18;
+    // ease toward the slot: about a third of a second to cover most of the way
+    const k = 1 - Math.exp(-dt / 320);
+    c.x += (t.x - c.x) * k;
+    c.y += (t.y - c.y) * k;
     c.el.style.transform = `translate(${(c.x - cw / 2).toFixed(1)}px, ${(c.y - ch / 2).toFixed(1)}px)`;
     // the tether: from the place to the nearest point on the window's edge
     const ex = Math.max(c.x - cw / 2, Math.min(c.x + cw / 2, t.v.p.x));
