@@ -165,3 +165,19 @@ test("route lines packed for storage come back the same, to about a metre", () =
   assert.equal(S.unpackRoutes(packed).scenic.geometry.coordinates.length, coords.length);
   assert.equal(S.unpackRoutes(routes).scenic.geometry.coordinates, coords); // old trips pass through
 });
+
+test("osrmResult builds each leg's roads (the backup router needs roadsFromSteps and parseRoadName)", () => {
+  const step = (name, ref, coords, d) => ({ name, ref, distance: d, duration: d / 20, geometry: { coordinates: coords }, intersections: [] });
+  const route = {
+    distance: 3000, duration: 150,
+    legs: [{ distance: 3000, duration: 150, steps: [
+      step("Main Street", "", [[-105, 39.7], [-105, 39.71]], 1000),
+      step("", "CO 88", [[-105, 39.71], [-105.01, 39.72]], 2000),
+    ] }],
+  };
+  const r = S.osrmResult(route);
+  assert.equal(r.engine, "osrm");
+  assert.equal(r.legs.length, 1);
+  assert.ok(r.legs[0].roads.length >= 2);
+  assert.equal(r.legs[0].roads[1].ref, "CO 88");
+});

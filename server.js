@@ -360,6 +360,152 @@ async function withSnapping(coordinates, router) {
   throw new RouteError("Could not place the stops on roads.");
 }
 
+// ---------- road breakdown from ORS turn-by-turn steps ----------
+
+// ORS step names look like "Lincoln Highway, US 50" or "Carson City Freeway, I 580, US 50".
+// US refs ("US 50", "CO 82"), and letter-number routes: Australia and the UK ("B100", "M1", "A82"), Austria and
+// Germany ("B107", "L188"), France ("D902", "N85"). Italy's "SS38" fits the two-letter form.
+// letter-number routes too: E10 (European), Fv63 / Rv7 (Norway), R559 (Ireland), A-372 (Spain), F35 (Iceland)
+const REF_RE = /^(I|US|SR|SH|CR|FR|NFR|FM|RM|BIA|[A-Z]{2}|[MABCDLNERF](?=[ -]?\d))[ -]?\d+[A-Z]?( (Business|Bus|Alt|Spur|Truck|Bypass|Loop|Scenic))?$/i;
+function parseRoadName(raw) {
+  // Canadian roads come with a bare number ("Icefields Parkway, 93", or just "93"): call it "Hwy 93".
+  const parts = String(raw || "")
+    .split(/,\s*/)
+    .map((p) => p.trim())
+    .filter((p) => p && p !== "-")
+    .map((p) => (/^\d{1,3}[A-Z]?$/.test(p) ? `Hwy ${p}` : p));
+  const isRef = (p) => REF_RE.test(p) || /^Hwy \d/.test(p);
+  return { refs: parts.filter(isRef), names: parts.filter((p) => !isRef(p)) };
+}
+
+// Merge consecutive steps on the same road into segments:
+// { ref, refs, name, distance_m, duration_s, highway_m, ferry_m, toll_m, unpaved_m, from, to }.
+// catBetween(a, b, bit) gives the meters between two geometry indexes in an ORS waycategory (1 freeway, 2 toll,
+// 8 ferry, 16 unpaved). from/to are geometry indexes, so the app can measure curves and climbs on each road.
+function roadsFromSteps(steps, catBetween) {
+  const out = [];
+  for (const s of steps) {
+    if (!s.distance) continue;
+    const [a, b] = s.way_points || [0, 0];
+    const ferry = catBetween(a, b, 8);
+    // Some steps have no name ("-"); the instruction usually still says it, like "Keep left toward I 25 South".
+    const named = s.name && s.name !== "-" ? s.name : "";
+    const fromText = named ? "" : s.instruction?.match(/\b(?:onto|on|toward|towards)\s+(.+?)\s*$/i)?.[1] || "";
+    // A ferry is named after its terminals ("Swartz Bay ↔ Tsawwassen, 1"); its number isn't a highway
+    const { refs, names } = ferry > s.distance / 2
+      ? { refs: [], names: [named.split(",")[0].trim() || "Ferry"] }
+      : parseRoadName(named || fromText.replace(/\s+(North|South|East|West)$/i, ""));
+    const key = refs[0] || names[0] || "";
+    let seg = out[out.length - 1];
+    if (!seg || seg.key !== key) {
+      seg = { key, ref: refs[0] || "", refs: [], names: {}, distance_m: 0, duration_s: 0, highway_m: 0, ferry_m: 0, toll_m: 0, unpaved_m: 0, from: a, to: b };
+      out.push(seg);
+    }
+    for (const r of refs) if (!seg.refs.includes(r)) seg.refs.push(r);
+    for (const n of names) seg.names[n] = (seg.names[n] || 0) + s.distance;
+    seg.distance_m += s.distance;
+    seg.duration_s += s.duration;
+    seg.highway_m += catBetween(a, b, 1);
+    seg.ferry_m += ferry;
+    seg.toll_m += catBetween(a, b, 2);
+    seg.unpaved_m += catBetween(a, b, 16);
+    seg.to = b;
+  }
+  return out.map(({ key, names, ...seg }) => ({
+    ...seg,
+    // the name used for the longest stretch, like "Lincoln Highway"
+    name: Object.entries(names).sort((x, y) => y[1] - x[1])[0]?.[0] || "",
+  }));
+}
+
+// ---------- OpenRouteService (whole US) ----------
+
+// Scenic: through every point including the scenic "via" points, with normal road preferences.
+// Freeways are fine for getting between scenic roads; the via points keep the route on the good roads.
+// After ORS says its daily allowance is used up, don't ask again for half an hour (a minute after "too many requests"):
+// every route goes straight to the backup router meanwhile.
+let orsRestUntil = 0;
+async function routeOrs(coords, mode) {
+  if (!ORS_KEY) throw new RouteError("No routing engine available. Add ORS_API_KEY to .env.");
+  if (Date.now() < orsRestUntil) throw new RouteError("OpenRouteService is resting after its limit");
+  const body = {
+    coordinates: coords,
+    instructions: true,
+    // elevation: coordinates come back as [lng, lat, meters] (SRTM), for the elevation profile and road ratings
+    elevation: true,
+    extra_info: ["waycategory", "surface"],
+    radiuses: coords.map(() => -1),
+    preference: mode === "scenic" ? "recommended" : "fastest",
+  };
+  const r = await fetch("https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson", {
+    method: "POST",
+    headers: { Authorization: ORS_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(90000),
+  });
+  const data = await r.json();
+  if (!r.ok) {
+    let msg = typeof data?.error === "string" ? data.error : data?.error?.message || "Routing failed";
+    // the free plan's daily allowance; it ran out on 2026-10-12 after a day of testing and a 35-trip batch
+    if (r.status === 429) orsRestUntil = Date.now() + 60000;
+    if (r.status === 403 && /quota/i.test(msg)) {
+      orsRestUntil = Date.now() + 30 * 60000;
+      msg = "Today's free routing from OpenRouteService is used up, so routes can't be measured until it resets " +
+        "(within 24 hours). Planned trips still open.";
+    }
+    const m = msg.match(/coordinate (\d+)/);
+    throw new RouteError(msg, { pointIndex: m ? parseInt(m[1], 10) : null });
+  }
+
+  const f = data.features[0];
+  const coordsOut = f.geometry.coordinates;
+  const { way_points: wp = [], segments = [], summary, extras } = f.properties;
+
+  // Meters between two geometry indexes in an ORS waycategory bit: 1 highway, 2 toll (a ferry's fare isn't counted
+  // as a toll road; OpenStreetMap also marks some national park roads as paid), 8 ferry. Bit 16 here means unpaved,
+  // taken from the surface extra (2 unpaved, 8 to 13 gravel, dirt, ground, ice, 15 to 17 sand, woodchips, grass).
+  const cum = [0];
+  for (let k = 1; k < coordsOut.length; k++) cum.push(cum[k - 1] + haversine(coordsOut[k - 1], coordsOut[k]));
+  const UNPAVED = new Set([2, 8, 9, 10, 11, 12, 13, 15, 16, 17]);
+  const cats = [
+    ...(extras?.waycategory?.values || []).map(([f, t, v]) => [f, t, v & 15]),
+    ...(extras?.surface?.values || []).filter(([, , v]) => UNPAVED.has(v)).map(([f, t]) => [f, t, 16]),
+  ];
+  const catBetween = (a, b, bit) => {
+    let m = 0;
+    for (const [from, to, v] of cats) {
+      if (!(v & bit) || (bit === 2 && v & 8)) continue;
+      const lo = Math.max(a, from);
+      const hi = Math.min(b, to);
+      if (hi > lo) m += cum[hi] - cum[lo];
+    }
+    return m;
+  };
+  const end = coordsOut.length - 1;
+
+  const legs = legsFromIndexes(coordsOut, wp, summary.distance, summary.duration, null).map((l, i) => ({
+    ...l,
+    distance_m: segments[i]?.distance ?? l.distance_m,
+    duration_s: segments[i]?.duration ?? l.duration_s,
+    ascent_m: segments[i]?.ascent ?? null,
+    descent_m: segments[i]?.descent ?? null,
+    roads: roadsFromSteps(segments[i]?.steps || [], catBetween),
+  }));
+  return {
+    engine: "openrouteservice",
+    geometry: f.geometry,
+    distance_m: summary.distance,
+    duration_s: summary.duration,
+    ascent_m: f.properties.ascent ?? summary.ascent ?? null,
+    descent_m: f.properties.descent ?? summary.descent ?? null,
+    highway_m: catBetween(0, end, 1),
+    toll_m: catBetween(0, end, 2),
+    ferry_m: catBetween(0, end, 8),
+    unpaved_m: catBetween(0, end, 16),
+    legs,
+  };
+}
+
 // ---------- backup router: OSRM (OpenStreetMap's public routing servers, no key) ----------
 // Used when OpenRouteService can't answer (the free daily allowance ran out on 2026-10-12, or it's down). The public
 // servers are meant for light use (about one request a second, a real User-Agent), so requests wait their turn. OSRM has
