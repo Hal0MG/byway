@@ -3,7 +3,7 @@
 // Usage: node tools/build-byways.mjs
 import fs from "node:fs";
 
-const UA = { "User-Agent": "Byway/1.14 (personal project)" };
+const UA = { "User-Agent": "Byway (personal project)" };
 const u = "https://en.wikipedia.org/w/api.php?action=parse&page=National_Scenic_Byway&prop=wikitext&format=json&formatversion=2";
 const wikitext = (await (await fetch(u, { headers: UA })).json()).parse.wikitext;
 

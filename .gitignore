@@ -20,9 +20,6 @@ data/elevation-usage.json
 data/route-cache/
 
 node_modules/
-graphhopper/*.pbf
-graphhopper/graph-*/
-graphhopper/*.jar
 .browsers/
 
 # desktop app builds

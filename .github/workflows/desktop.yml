@@ -1,5 +1,5 @@
 # Desktop apps: builds Byway for Mac (.dmg and .zip) and Windows (installer and .zip) as downloadable artifacts of the run.
-# Nothing is published. Start it from the Actions tab (Desktop apps > Run workflow) or by pushing a tag like v1.15.
+# Nothing is published. Start it from the Actions tab (Desktop apps > Run workflow) or by pushing a tag like v1.1.0.
 # The apps are unsigned: the first time, right-click > Open on a Mac, and "More info > Run anyway" on Windows.
 # On a private repo, Mac minutes count ten times against the free Actions allowance.
 name: Desktop apps

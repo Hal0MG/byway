@@ -890,7 +890,7 @@ async function placePoints(skel) {
 }
 
 // The day guides are written in the background while the route is measured. When the days change (the order fix or
-// a rebalance) the request is cancelled, which also stops the local model, and sent again for the new days.
+// a rebalance) the request is cancelled and sent again for the new days.
 let detailsCtl = null;
 function requestDetails(prompt, skel) {
   detailsCtl?.abort();
@@ -1194,8 +1194,7 @@ async function planTrip(prompt, settings) {
     for (let round = 0, long = longDays(); long.length && round < 2; round++) {
       const before = { n: long.length, worst: worst() };
       progressSet("drive", "doing", `Day ${long.join(", ")} ran over ${tripSettings().maxHours} hours, asking the AI to rebalance`);
-      // The guides being written are for the old days and get redone after this, and two answers at once
-      // halve the local model's speed, so stop them.
+      // The guides being written are for the old days and get redone after this, so stop them.
       detailsCtl?.abort();
       progressSet("details", "todo", "Waits for the rebalanced days");
       const dayHours = dayGroups().map((g) => (dayStats(g, "scenic")?.dur || 0) / 3600);

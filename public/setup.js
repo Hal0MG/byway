@@ -208,7 +208,7 @@ async function setupClick(e) {
     await loadSetup();
     redrawSetup();
     updateSetupBadge();
-    // the planner's label ("Qwen3 on your GPU...") follows the chosen AI
+    // the planner's label follows the chosen AI
     fetch("/api/status").then((r) => r.json()).then((s) => (aiInfo = s.ai)).catch(() => {});
   }
 }

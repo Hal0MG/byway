@@ -115,7 +115,8 @@ on a Mac; "More info", "Run anyway" on Windows.
 ## Data and tools
 
 - `data/byways.json`: US National Scenic Byways and All-American Roads (`node tools/build-byways.mjs`).
-- `data/*-drives.json`: hand-picked drives (US extras, Canada, Australia, New Zealand, UK, Alps).
+- `data/*-drives.json`: hand-picked drives (US extras, Canada, Australia, New Zealand, UK, Ireland, the Alps, Norway,
+  Iceland, Spain, Portugal).
   `node tools/check-drives.mjs` checks every Wikipedia title.
 - `public/seasonal-roads.json`: roads that close for winter or need chains. `node tools/check-seasonal.mjs` checks the
   coordinates against OpenStreetMap.
@@ -133,12 +134,6 @@ on a Mac; "More info", "Run anyway" on Windows.
 - Saved trips store their route lines as encoded polylines (about 1 m precision) to keep files small.
 - Your trips (`data/trips.json`), keys (`.env`) and caches (routes, places, weather, photos, searches) stay on your
   computer and out of git.
-
-## GraphHopper (optional, off by default)
-
-A self-hosted GraphHopper can fine-tune routes inside one region. It needs Java, a lot of RAM and a long first build,
-so the app doesn't need it. To use it, download a region from Geofabrik and the GraphHopper jar, set
-`USE_GRAPHHOPPER=1` in `.env` and run `graphhopper/start-graphhopper.cmd`.
 
 ## Privacy, terms and license
 

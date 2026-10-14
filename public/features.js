@@ -1,4 +1,4 @@
-// Trip features added in 1.12: trip options, seasonal roads, daylight and weather, elevation profiles and road ratings,
+// Trip features: trip options, seasonal roads, daylight and weather, elevation profiles and road ratings,
 // fuel/charger gaps and sights along the route, 3D terrain and road flyovers, photo galleries, export and sharing,
 // plan versions, notes and checklists, ready-made trips (presets and batch building), and the installable app.
 // Loaded after app.js and before itinerary.js; uses their shared state (stops, routes, plan, trip).

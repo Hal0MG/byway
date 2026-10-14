@@ -30,9 +30,9 @@ const DEEP_SECTIONS = [
       <li>no place names copied from the instructions' own examples into an unrelated trip</li>
     </ul>
     <p>The problems go back to the model as sentences, once. The repaired plan is kept only if it has <b>fewer</b> problems than the first: a greedy accept step, because a repair can also make things worse.</p>
-    <p><b>Grounding.</b> The prompt carries a catalog of 399 real roads: the 184 US National Scenic Byways and All-American Roads (scraped from Wikipedia's table) and 215 hand-picked famous drives in the other countries, each checked against a Wikipedia article. A local model with a 32k context gets only the roads in the states it crosses: a cheap first call names the states, which acts as a retrieval step (Denver to Moab: 20 of 184 byways).</p>
+    <p><b>Grounding.</b> The prompt carries a catalog of 399 real roads: the 184 US National Scenic Byways and All-American Roads (scraped from Wikipedia's table) and 215 hand-picked famous drives in the other countries, each checked against a Wikipedia article.</p>
     <p><b>Streaming.</b> The answer streams token by token. <code>partialJson</code> walks the text with a bracket stack, cuts at the last closed object or array and closes the open brackets, so the screen shows whole days and stops while the rest is still being written.</p>
-    <div class="dp-nums"><span>busy retry after 8 s, then 20 s</span><span>3 fallback models</span><span>local model at temperature 0.3</span><span>~3 s per plan on Flash-Lite</span></div>`],
+    <div class="dp-nums"><span>busy retry after 8 s, then 20 s</span><span>3 fallback models</span><span>~3 s per plan on Flash-Lite</span></div>`],
 
   ["geocode", "Place names to coordinates: decoding the most likely route", `
     <p class="dp-q">Problem: names are ambiguous. "Green River, Utah" is a town on I-70 and a river by Flaming Gorge; there are dozens of Springfields. Taking each top search result independently puts some stops hundreds of km off.</p>
@@ -108,7 +108,7 @@ const DEEP_SECTIONS = [
   ["data", "Data sources, rate limits and caches", `
     <p>Everything runs on free, keyless or free-tier services, so most of the engineering is about being a polite client: rate limits, caches and fallbacks.</p>
     <table class="dp-table"><thead><tr><th>Source</th><th>Used for</th><th>Limits and caching</th></tr></thead><tbody>
-      <tr><td>Gemini, or a local model</td><td>plans, day guides, answers</td><td>model fallbacks, busy retries, usage per model per day</td></tr>
+      <tr><td>Gemini</td><td>plans, day guides, answers</td><td>model fallbacks, busy retries, usage per model per day</td></tr>
       <tr><td>OpenRouteService</td><td>routes with heights</td><td>daily quota; 30-day route cache; rests 30 min after a refusal</td></tr>
       <tr><td>OSRM</td><td>backup routes</td><td>1 request a second; cached a day</td></tr>
       <tr><td>Nominatim</td><td>place search, road shapes</td><td>1 request a second, one queue for all devices; 30-day cache</td></tr>

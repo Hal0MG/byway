@@ -1,7 +1,7 @@
 // Service worker: makes the app installable and lets saved trips open without a connection.
 // App files and opened trips: from the network (so updates show at once), falling back to the last copy when offline.
 // Everything else (planning, routing, map tiles) always goes to the network.
-const CACHE = "byway-1.65";
+const CACHE = "byway-1.66";
 const SHELL = [
   "/", "/index.html", "/style.css", "/icons.js", "/logic.js", "/sound.js", "/i18n.js", "/i18n-strings.js", "/app.js", "/itinerary.js", "/features.js", "/home.js", "/setup.js", "/demo.js", "/welcome.js", "/about.js", "/about-deep-i18n.js", "/about-deep.js", "/library.js",
   "/privacy.html", "/terms.html", "/legal.css",

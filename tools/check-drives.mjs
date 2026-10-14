@@ -7,7 +7,7 @@ const dir = new URL("../data/", import.meta.url);
 const only = process.argv.slice(2);
 const files = fs.readdirSync(dir).filter((f) => f.endsWith("-drives.json") && (!only.length || only.includes(f.replace("-drives.json", ""))));
 // Wikimedia slows down clients without a contact in the User-Agent
-const UA = "Byway/1.14 (road list check; https://github.com/Hal0MG/byway)";
+const UA = "Byway (road list check; https://github.com/Hal0MG/byway)";
 const getJson = async (u) => {
   for (let i = 0; ; i++) {
     const r = await fetch(u, { headers: { "User-Agent": UA } });

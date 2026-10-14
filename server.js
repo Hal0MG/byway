@@ -151,9 +151,6 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-lite-latest";
 const GEMINI_FALLBACKS = (process.env.GEMINI_FALLBACK_MODELS || "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-latest")
   .split(",")
   .map((s) => s.trim());
-const GH_URL = (process.env.GRAPHHOPPER_URL || "http://localhost:8989").replace(/\/$/, "");
-// GraphHopper is optional and off unless USE_GRAPHHOPPER=1 in .env. Everything works with ORS alone.
-const USE_GH = /^(1|true|yes)$/i.test(process.env.USE_GRAPHHOPPER || "");
 // Wikimedia and Nominatim ask automated clients for a User-Agent with contact details (an email or a URL).
 // Without CONTACT in .env, Wikimedia throttles photo lookups hard ("You are making too many requests").
 let CONTACT = (process.env.CONTACT || "").trim();
@@ -363,244 +360,6 @@ async function withSnapping(coordinates, router) {
   throw new RouteError("Could not place the stops on roads.");
 }
 
-// ---------- GraphHopper (self-hosted, real scenic rules) ----------
-
-async function routeGraphHopper(coords, mode) {
-  let r;
-  try {
-    r = await fetch(`${GH_URL}/route`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        points: coords,
-        profile: mode === "scenic" ? "scenic" : "car",
-        // scenic only has an LM preparation, so CH must be turned off for it
-        ...(mode === "scenic" && { "ch.disable": true }),
-        points_encoded: false,
-        instructions: false,
-        calc_points: true,
-        details: ["time"],
-      }),
-      signal: AbortSignal.timeout(60000),
-    });
-  } catch {
-    throw new RouteError("GraphHopper is not running", { fallback: true });
-  }
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    const msg = data.message || "GraphHopper routing failed";
-    const m = msg.match(/Cannot find point (\d+)/i);
-    if (m) {
-      // Outside the downloaded map region, or far from a road
-      throw new RouteError(msg, { pointIndex: parseInt(m[1], 10), fallback: true });
-    }
-    throw new RouteError(msg, { fallback: true });
-  }
-
-  const p = data.paths[0];
-  const coordsOut = p.points.coordinates.map((c) => [c[0], c[1]]);
-  const snappedWps = p.snapped_waypoints?.coordinates || coords;
-  const wp = waypointIndexes(coordsOut, snappedWps);
-  const timeDetails = p.details?.time || [];
-  const timeAt = timeDetails.length
-    ? (a, b) => {
-        let ms = 0;
-        for (const [from, to, v] of timeDetails) {
-          const lo = Math.max(from, a);
-          const hi = Math.min(to, b);
-          if (hi > lo) ms += v * ((hi - lo) / (to - from));
-        }
-        return ms / 1000;
-      }
-    : null;
-
-  // Leg distances are measured along the line; scale them so they add up to GraphHopper's total.
-  const legs = legsFromIndexes(coordsOut, wp, p.distance, p.time / 1000, timeAt);
-  const sum = legs.reduce((s, l) => s + l.distance_m, 0);
-  if (sum > 0) legs.forEach((l) => (l.distance_m *= p.distance / sum));
-
-  return {
-    engine: "graphhopper",
-    geometry: { type: "LineString", coordinates: coordsOut },
-    distance_m: p.distance,
-    duration_s: p.time / 1000,
-    legs,
-  };
-}
-
-// ---------- road breakdown from ORS turn-by-turn steps ----------
-
-// ORS step names look like "Lincoln Highway, US 50" or "Carson City Freeway, I 580, US 50".
-// US refs ("US 50", "CO 82"), and letter-number routes: Australia and the UK ("B100", "M1", "A82"), Austria and
-// Germany ("B107", "L188"), France ("D902", "N85"). Italy's "SS38" fits the two-letter form.
-// letter-number routes too: E10 (European), Fv63 / Rv7 (Norway), R559 (Ireland), A-372 (Spain), F35 (Iceland)
-const REF_RE = /^(I|US|SR|SH|CR|FR|NFR|FM|RM|BIA|[A-Z]{2}|[MABCDLNERF](?=[ -]?\d))[ -]?\d+[A-Z]?( (Business|Bus|Alt|Spur|Truck|Bypass|Loop|Scenic))?$/i;
-function parseRoadName(raw) {
-  // Canadian roads come with a bare number ("Icefields Parkway, 93", or just "93"): call it "Hwy 93".
-  const parts = String(raw || "")
-    .split(/,\s*/)
-    .map((p) => p.trim())
-    .filter((p) => p && p !== "-")
-    .map((p) => (/^\d{1,3}[A-Z]?$/.test(p) ? `Hwy ${p}` : p));
-  const isRef = (p) => REF_RE.test(p) || /^Hwy \d/.test(p);
-  return { refs: parts.filter(isRef), names: parts.filter((p) => !isRef(p)) };
-}
-
-// Merge consecutive steps on the same road into segments:
-// { ref, refs, name, distance_m, duration_s, highway_m, ferry_m, toll_m, unpaved_m, from, to }.
-// catBetween(a, b, bit) gives the meters between two geometry indexes in an ORS waycategory (1 freeway, 2 toll,
-// 8 ferry, 16 unpaved). from/to are geometry indexes, so the app can measure curves and climbs on each road.
-function roadsFromSteps(steps, catBetween) {
-  const out = [];
-  for (const s of steps) {
-    if (!s.distance) continue;
-    const [a, b] = s.way_points || [0, 0];
-    const ferry = catBetween(a, b, 8);
-    // Some steps have no name ("-"); the instruction usually still says it, like "Keep left toward I 25 South".
-    const named = s.name && s.name !== "-" ? s.name : "";
-    const fromText = named ? "" : s.instruction?.match(/\b(?:onto|on|toward|towards)\s+(.+?)\s*$/i)?.[1] || "";
-    // A ferry is named after its terminals ("Swartz Bay ↔ Tsawwassen, 1"); its number isn't a highway
-    const { refs, names } = ferry > s.distance / 2
-      ? { refs: [], names: [named.split(",")[0].trim() || "Ferry"] }
-      : parseRoadName(named || fromText.replace(/\s+(North|South|East|West)$/i, ""));
-    const key = refs[0] || names[0] || "";
-    let seg = out[out.length - 1];
-    if (!seg || seg.key !== key) {
-      seg = { key, ref: refs[0] || "", refs: [], names: {}, distance_m: 0, duration_s: 0, highway_m: 0, ferry_m: 0, toll_m: 0, unpaved_m: 0, from: a, to: b };
-      out.push(seg);
-    }
-    for (const r of refs) if (!seg.refs.includes(r)) seg.refs.push(r);
-    for (const n of names) seg.names[n] = (seg.names[n] || 0) + s.distance;
-    seg.distance_m += s.distance;
-    seg.duration_s += s.duration;
-    seg.highway_m += catBetween(a, b, 1);
-    seg.ferry_m += ferry;
-    seg.toll_m += catBetween(a, b, 2);
-    seg.unpaved_m += catBetween(a, b, 16);
-    seg.to = b;
-  }
-  return out.map(({ key, names, ...seg }) => ({
-    ...seg,
-    // the name used for the longest stretch, like "Lincoln Highway"
-    name: Object.entries(names).sort((x, y) => y[1] - x[1])[0]?.[0] || "",
-  }));
-}
-
-// ---------- OpenRouteService (whole US) ----------
-
-// Scenic: through every point including the scenic "via" points, with normal road preferences.
-// Freeways are fine for getting between scenic roads; the via points keep the route on the good roads.
-// After ORS says its daily allowance is used up, don't ask again for half an hour (a minute after "too many requests"):
-// every route goes straight to the backup router meanwhile.
-let orsRestUntil = 0;
-async function routeOrs(coords, mode) {
-  if (!ORS_KEY) throw new RouteError("No routing engine available. Add ORS_API_KEY to .env.");
-  if (Date.now() < orsRestUntil) throw new RouteError("OpenRouteService is resting after its limit");
-  const body = {
-    coordinates: coords,
-    instructions: true,
-    // elevation: coordinates come back as [lng, lat, meters] (SRTM), for the elevation profile and road ratings
-    elevation: true,
-    extra_info: ["waycategory", "surface"],
-    radiuses: coords.map(() => -1),
-    preference: mode === "scenic" ? "recommended" : "fastest",
-  };
-  const r = await fetch("https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson", {
-    method: "POST",
-    headers: { Authorization: ORS_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(90000),
-  });
-  const data = await r.json();
-  if (!r.ok) {
-    let msg = typeof data?.error === "string" ? data.error : data?.error?.message || "Routing failed";
-    // the free plan's daily allowance; it ran out on 2026-10-12 after a day of testing and a 35-trip batch
-    if (r.status === 429) orsRestUntil = Date.now() + 60000;
-    if (r.status === 403 && /quota/i.test(msg)) {
-      orsRestUntil = Date.now() + 30 * 60000;
-      msg = "Today's free routing from OpenRouteService is used up, so routes can't be measured until it resets " +
-        "(within 24 hours). Planned trips still open.";
-    }
-    const m = msg.match(/coordinate (\d+)/);
-    throw new RouteError(msg, { pointIndex: m ? parseInt(m[1], 10) : null });
-  }
-
-  const f = data.features[0];
-  const coordsOut = f.geometry.coordinates;
-  const { way_points: wp = [], segments = [], summary, extras } = f.properties;
-
-  // Meters between two geometry indexes in an ORS waycategory bit: 1 highway, 2 toll (a ferry's fare isn't counted
-  // as a toll road; OpenStreetMap also marks some national park roads as paid), 8 ferry. Bit 16 here means unpaved,
-  // taken from the surface extra (2 unpaved, 8 to 13 gravel, dirt, ground, ice, 15 to 17 sand, woodchips, grass).
-  const cum = [0];
-  for (let k = 1; k < coordsOut.length; k++) cum.push(cum[k - 1] + haversine(coordsOut[k - 1], coordsOut[k]));
-  const UNPAVED = new Set([2, 8, 9, 10, 11, 12, 13, 15, 16, 17]);
-  const cats = [
-    ...(extras?.waycategory?.values || []).map(([f, t, v]) => [f, t, v & 15]),
-    ...(extras?.surface?.values || []).filter(([, , v]) => UNPAVED.has(v)).map(([f, t]) => [f, t, 16]),
-  ];
-  const catBetween = (a, b, bit) => {
-    let m = 0;
-    for (const [from, to, v] of cats) {
-      if (!(v & bit) || (bit === 2 && v & 8)) continue;
-      const lo = Math.max(a, from);
-      const hi = Math.min(b, to);
-      if (hi > lo) m += cum[hi] - cum[lo];
-    }
-    return m;
-  };
-  const end = coordsOut.length - 1;
-
-  const legs = legsFromIndexes(coordsOut, wp, summary.distance, summary.duration, null).map((l, i) => ({
-    ...l,
-    distance_m: segments[i]?.distance ?? l.distance_m,
-    duration_s: segments[i]?.duration ?? l.duration_s,
-    ascent_m: segments[i]?.ascent ?? null,
-    descent_m: segments[i]?.descent ?? null,
-    roads: roadsFromSteps(segments[i]?.steps || [], catBetween),
-  }));
-  return {
-    engine: "openrouteservice",
-    geometry: f.geometry,
-    distance_m: summary.distance,
-    duration_s: summary.duration,
-    ascent_m: f.properties.ascent ?? summary.ascent ?? null,
-    descent_m: f.properties.descent ?? summary.descent ?? null,
-    highway_m: catBetween(0, end, 1),
-    toll_m: catBetween(0, end, 2),
-    ferry_m: catBetween(0, end, 8),
-    unpaved_m: catBetween(0, end, 16),
-    legs,
-  };
-}
-
-// Route between stops. coordinates: [[lng, lat], ...], mode: "scenic" | "fastest".
-// Uses GraphHopper when it is running, otherwise OpenRouteService.
-// GraphHopper's /info tells us whether it is running and which area its map covers.
-let ghInfo = { at: 0, value: null };
-async function getGhInfo() {
-  if (!USE_GH) return null;
-  if (Date.now() - ghInfo.at < 30000) return ghInfo.value;
-  let value = null;
-  try {
-    const r = await fetch(`${GH_URL}/info`, { signal: AbortSignal.timeout(2000) });
-    if (r.ok) {
-      const info = await r.json();
-      const profiles = (info.profiles || []).map((p) => p.name);
-      value = { bbox: info.bbox || null, scenic: profiles.includes("scenic") };
-    }
-  } catch {
-    // not running
-  }
-  ghInfo = { at: Date.now(), value };
-  return value;
-}
-const inBbox = (bbox, [lng, lat]) =>
-  !bbox || (lng >= bbox[0] && lat >= bbox[1] && lng <= bbox[2] && lat <= bbox[3]);
-
-// Route between stops. coordinates: [[lng, lat], ...], mode: "scenic" | "fastest".
-// Uses GraphHopper when it is running and its map covers every stop,
-// otherwise OpenRouteService.
 // ---------- backup router: OSRM (OpenStreetMap's public routing servers, no key) ----------
 // Used when OpenRouteService can't answer (the free daily allowance ran out on 2026-10-12, or it's down). The public
 // servers are meant for light use (about one request a second, a real User-Agent), so requests wait their turn. OSRM has
@@ -875,6 +634,8 @@ async function routeCacheSet(key, entry) {
   }
 }
 
+// Route between stops. coordinates: [[lng, lat], ...], mode: "scenic" | "fastest". OpenRouteService, and the backup router
+// (OSRM) when it can't answer.
 app.post("/api/route", async (req, res) => {
   const { mode } = req.body;
   const coordinates = asArray(req.body.coordinates);
@@ -884,23 +645,10 @@ app.post("/api/route", async (req, res) => {
   if (bad >= 0) return res.status(400).json({ error: `Stop ${bad + 1} has no valid location.` });
   if (coordinates.length > 400) return res.status(400).json({ error: "That's more than 400 points; split the trip." });
 
-  const gh = await getGhInfo();
-  let note = null;
-  if (gh?.scenic && coordinates.every((c) => inBbox(gh.bbox, c))) {
-    try {
-      return res.json(await withSnapping(coordinates, (c) => routeGraphHopper(c, mode)));
-    } catch (e) {
-      if (!ORS_KEY) return res.status(422).json({ error: e.message });
-      note = `GraphHopper could not route this trip (${e.message}), so basic routing was used.`;
-    }
-  } else if (gh?.scenic) {
-    note = "Some stops are outside your GraphHopper map, so basic routing was used.";
-  }
-
   // (without an ORS key every route comes from the backup router: it works, without elevation)
   const key = routeKey(coordinates, mode);
   const hit = await routeCacheGet(key);
-  if (hit) return hit.error ? res.status(422).json({ error: hit.error }) : res.json(note ? { ...hit.result, note } : hit.result);
+  if (hit) return hit.error ? res.status(422).json({ error: hit.error }) : res.json(hit.result);
   try {
     const result = await routeInPieces(coordinates, async (c) => {
       try {
@@ -914,7 +662,6 @@ app.post("/api/route", async (req, res) => {
       }
     });
     routeCacheSet(key, { result });
-    if (note) result.note = note;
     res.json(result);
   } catch (e) {
     // only ORS's own "can't route that" answers are kept; not quota, timeouts or network failures
@@ -938,10 +685,9 @@ app.post("/api/heights", async (req, res) => {
 
 // Which routing engine is available, for the status line in the app.
 app.get("/api/status", async (req, res) => {
-  const gh = await getGhInfo();
   res.json({
     version: VERSION,
-    graphhopper: !!gh?.scenic, bbox: gh?.bbox || null, ors: !!ORS_KEY, useGraphhopper: USE_GH,
+    ors: !!ORS_KEY,
     ai: AI_PROVIDER === "claude" && anthropic
         ? { provider: "claude", model: CLAUDE_MODEL, webSearch: SEARCHES_PLAN + SEARCHES_DETAILS > 0 }
         : { provider: "gemini", model: GEMINI_MODEL, webSearch: false },
@@ -2229,7 +1975,7 @@ function extractJson(text) {
 }
 
 // Ask the configured AI for a JSON answer. Returns { data, model, sources }.
-// signal: stop when the app stops waiting (local model only). region: a key for reusing research notes.
+// signal: stop when the app stops waiting. region: a key for reusing research notes.
 // `model`: a Gemini model to use alone, no fallbacks (the planner eval).
 async function callAI({ system, user, searches = 0, schema, signal, region, onEvent, writing, model: only }) {
   if (AI_PROVIDER === "claude" && anthropic && !only) {
@@ -2264,7 +2010,7 @@ async function callAI({ system, user, searches = 0, schema, signal, region, onEv
       console.log("Falling back to Gemini");
     }
   }
-  // Gemini streams too, so the app shows the plan as it's written (the same partial events as the local model)
+  // Gemini streams too, so the app shows the plan as it's written (partial events with the finished part of the plan)
   onEvent?.({ type: "status", text: writing || "Writing the plan" });
   let lastPartial = "";
   let lastLen = 0;
@@ -2722,8 +2468,7 @@ app.post("/api/plan", async (req, res) => {
     const evalModel = isLocalRequest(req) && /^gemini-[\w.-]+$/.test(req.body.evalModel || "") ? req.body.evalModel : undefined;
     emit = eventStream(req, res);
 
-    // The local model gets only the byways in the states the trip crosses (shorter prompt, better focus).
-    // A revision already knows its states (the client sends them); a new trip asks the model first.
+    // The states the trip crosses (a revision's, sent by the app) pick the research notes to reuse and the options text.
     const list = await loadByways();
     const stateList = asArray(req.body.states).map(String).filter(Boolean);
     const catalog = list

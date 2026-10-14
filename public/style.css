@@ -995,7 +995,7 @@ body[data-view="home"] #map {
 .home-setup .ico:last-child { margin-left: auto; }
 @media (max-width: 760px) { .su-choice { grid-template-columns: 1fr; } .su-row { flex-wrap: wrap; } }
 
-/* ---------- 1.12: trip options ---------- */
+/* ---------- trip options ---------- */
 .options { display: flex; flex-direction: column; gap: 10px; padding: 4px 6px 2px; }
 .opt-styles { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip.toggle { padding: 7px 12px; font-size: 13px; font-weight: 600; border: 1px solid var(--line); }

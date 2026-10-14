@@ -23,9 +23,9 @@ const DEEP_I18N = {
       <li>aucun nom de lieu recopié des exemples des instructions dans un voyage sans rapport</li>
     </ul>
     <p>Les problèmes sont renvoyés au modèle sous forme de phrases, une fois. Le plan corrigé n'est gardé que s'il a <b>moins</b> de problèmes que le premier : une acceptation gloutonne, car une correction peut aussi empirer les choses.</p>
-    <p><b>Ancrage.</b> La demande contient un catalogue de 399 vraies routes : les 184 National Scenic Byways et All-American Roads des États-Unis (tirées du tableau de Wikipédia) et 215 parcours célèbres choisis à la main dans les autres pays, chacun vérifié avec un article de Wikipédia. Un modèle local à contexte de 32k ne reçoit que les routes des États traversés : un premier appel peu coûteux nomme les États, ce qui sert d'étape de récupération (Denver à Moab : 20 routes sur 184).</p>
+    <p><b>Ancrage.</b> La demande contient un catalogue de 399 vraies routes : les 184 National Scenic Byways et All-American Roads des États-Unis (tirées du tableau de Wikipédia) et 215 parcours célèbres choisis à la main dans les autres pays, chacun vérifié avec un article de Wikipédia.</p>
     <p><b>Flux.</b> La réponse arrive jeton par jeton. <code>partialJson</code> parcourt le texte avec une pile de crochets, coupe au dernier objet ou tableau fermé et referme les crochets ouverts : l'écran montre des jours et des arrêts entiers pendant que le reste s'écrit.</p>
-    <div class="dp-nums"><span>nouvel essai après 8 s puis 20 s si occupé</span><span>3 modèles de secours</span><span>modèle local à température 0,3</span><span>~3 s par plan avec Flash-Lite</span></div>`],
+    <div class="dp-nums"><span>nouvel essai après 8 s puis 20 s si occupé</span><span>3 modèles de secours</span><span>~3 s par plan avec Flash-Lite</span></div>`],
       ["Des noms de lieux aux coordonnées : décoder l'itinéraire le plus probable", `
     <p class="dp-q">Problème : les noms sont ambigus. « Green River, Utah » est une ville sur l'I-70 et une rivière près de Flaming Gorge ; il existe des dizaines de Springfield. Prendre chaque premier résultat isolément place certains arrêts à des centaines de km.</p>
     <p>Chaque point reçoit jusqu'à <var>k</var> = 5 candidats de Nominatim (OpenStreetMap). En choisir un par point revient à un <b>plus court chemin dans un graphe en couches</b>, la même structure que le décodage de Viterbi dans un modèle de Markov caché : les états sont les candidats, le coût de transition est la distance orthodromique entre choix successifs, et le coût d'émission est une pénalité de 100 km pour un candidat qui n'est ni une localité ni un lieu notable (rivières, lacs, restes administratifs).</p>
@@ -91,7 +91,7 @@ const DEEP_I18N = {
       ["Sources de données, limites et caches", `
     <p>Tout tourne sur des services gratuits, sans clé ou en offre gratuite ; l'essentiel du travail consiste donc à être un client poli : limites de débit, caches et solutions de secours.</p>
     <table class="dp-table"><thead><tr><th>Source</th><th>Utilisée pour</th><th>Limites et cache</th></tr></thead><tbody>
-      <tr><td>Gemini, ou un modèle local</td><td>plans, guides du jour, réponses</td><td>modèles de secours, nouvels essais, usage par modèle et par jour</td></tr>
+      <tr><td>Gemini</td><td>plans, guides du jour, réponses</td><td>modèles de secours, nouvels essais, usage par modèle et par jour</td></tr>
       <tr><td>OpenRouteService</td><td>itinéraires avec altitudes</td><td>quota quotidien ; cache de 30 jours ; pause de 30 min après un refus</td></tr>
       <tr><td>OSRM</td><td>itinéraires de secours</td><td>1 requête par seconde ; cache d'un jour</td></tr>
       <tr><td>Nominatim</td><td>recherche de lieux, formes des routes</td><td>1 requête par seconde, une file pour tous les appareils ; cache de 30 jours</td></tr>
@@ -132,9 +132,9 @@ const DEEP_I18N = {
       <li>不能把指令示例里的地名照搬到无关的行程里</li>
     </ul>
     <p>问题以句子形式退回给模型一次。修正后的方案只有在问题<b>更少</b>时才会被采用：这是一种贪心接受，因为修正也可能让情况变糟。</p>
-    <p><b>事实依据。</b>提示词附带一份 399 条真实公路的目录：美国 184 条国家风景道和全美公路（取自维基百科表格），以及其他国家 215 条人工挑选的著名路线，每条都核对过维基百科条目。上下文为 32k 的本地模型只拿到途经州的公路：先用一次低成本调用列出途经的州，相当于一个检索步骤（丹佛到摩押：184 条中取 20 条）。</p>
+    <p><b>事实依据。</b>提示词附带一份 399 条真实公路的目录：美国 184 条国家风景道和全美公路（取自维基百科表格），以及其他国家 215 条人工挑选的著名路线，每条都核对过维基百科条目。</p>
     <p><b>流式输出。</b>答案逐个词元流式返回。<code>partialJson</code> 用括号栈扫描文本，在最后一个闭合的对象或数组处截断，并补齐未闭合的括号，这样屏幕上能先显示完整的天和站点，其余部分还在继续生成。</p>
-    <div class="dp-nums"><span>繁忙时 8 秒、20 秒后重试</span><span>3 个备用模型</span><span>本地模型温度 0.3</span><span>Flash-Lite 每个方案约 3 秒</span></div>`],
+    <div class="dp-nums"><span>繁忙时 8 秒、20 秒后重试</span><span>3 个备用模型</span><span>Flash-Lite 每个方案约 3 秒</span></div>`],
       ["从地名到坐标：解码最可能的路线", `
     <p class="dp-q">问题：地名有歧义。“Green River, Utah” 既是 I-70 上的小镇，也是 Flaming Gorge 旁的一条河；叫 Springfield 的地方有几十个。每个点各自取第一个搜索结果，会让一些站点偏离几百公里。</p>
     <p>每个点从 OpenStreetMap 的 Nominatim 获取最多 <var>k</var> = 5 个候选。为每个点各选一个，就是<b>分层图中的最短路径</b>，与隐马尔可夫模型中的 Viterbi 解码结构相同：状态是候选，转移代价是相邻选择之间的大圆距离，发射代价是对非城镇或地标候选（河流、湖泊、行政区残留）施加的 100 公里惩罚。</p>
@@ -200,7 +200,7 @@ const DEEP_I18N = {
       ["数据来源、频率限制与缓存", `
     <p>所有服务都是免费、无需密钥或免费额度的，所以大部分工程工作是做一个守规矩的客户端：频率限制、缓存和备用方案。</p>
     <table class="dp-table"><thead><tr><th>来源</th><th>用途</th><th>限制与缓存</th></tr></thead><tbody>
-      <tr><td>Gemini 或本地模型</td><td>规划、每日指南、问答</td><td>备用模型、繁忙重试、按模型按日统计用量</td></tr>
+      <tr><td>Gemini</td><td>规划、每日指南、问答</td><td>备用模型、繁忙重试、按模型按日统计用量</td></tr>
       <tr><td>OpenRouteService</td><td>带海拔的路线</td><td>每日额度；30 天路线缓存；被拒后暂停 30 分钟</td></tr>
       <tr><td>OSRM</td><td>备用路线</td><td>每秒 1 次请求；缓存一天</td></tr>
       <tr><td>Nominatim</td><td>地点搜索、道路形状</td><td>每秒 1 次请求，所有设备共用一个队列；缓存 30 天</td></tr>
@@ -241,9 +241,9 @@ const DEEP_I18N = {
       <li>নির্দেশনার উদাহরণ থেকে কোনো জায়গার নাম অন্য ভ্রমণে নকল করা হয়নি</li>
     </ul>
     <p>সমস্যাগুলো একবার বাক্য আকারে মডেলের কাছে ফেরত যায়। সংশোধিত পরিকল্পনা কেবল তখনই রাখা হয় যখন প্রথমটির চেয়ে <b>কম</b> সমস্যা থাকে: একটি লোভী গ্রহণ ধাপ, কারণ সংশোধন অবস্থা খারাপও করতে পারে।</p>
-    <p><b>ভিত্তি।</b> অনুরোধের সাথে ৩৯৯টি আসল রাস্তার একটি তালিকা যায়: যুক্তরাষ্ট্রের ১৮৪টি ন্যাশনাল সিনিক বাইওয়ে ও অল-আমেরিকান রোড (উইকিপিডিয়ার সারণি থেকে নেওয়া) এবং অন্য দেশগুলোর হাতে বাছাই করা ২১৫টি বিখ্যাত পথ, প্রতিটি উইকিপিডিয়ার নিবন্ধ দিয়ে যাচাই করা। ৩২k কনটেক্সটের স্থানীয় মডেল শুধু যে রাজ্যগুলো পার হয় সেগুলোর রাস্তা পায়: একটি সস্তা প্রথম কল রাজ্যগুলোর নাম বলে, যা একটি তথ্য-উদ্ধারের ধাপ হিসেবে কাজ করে (ডেনভার থেকে মোয়াব: ১৮৪টির মধ্যে ২০টি)।</p>
+    <p><b>ভিত্তি।</b> অনুরোধের সাথে ৩৯৯টি আসল রাস্তার একটি তালিকা যায়: যুক্তরাষ্ট্রের ১৮৪টি ন্যাশনাল সিনিক বাইওয়ে ও অল-আমেরিকান রোড (উইকিপিডিয়ার সারণি থেকে নেওয়া) এবং অন্য দেশগুলোর হাতে বাছাই করা ২১৫টি বিখ্যাত পথ, প্রতিটি উইকিপিডিয়ার নিবন্ধ দিয়ে যাচাই করা।</p>
     <p><b>স্ট্রিমিং।</b> উত্তর টোকেন ধরে ধরে আসে। <code>partialJson</code> একটি বন্ধনী-স্ট্যাক দিয়ে লেখা পড়ে, শেষ বন্ধ হওয়া অবজেক্ট বা অ্যারেতে কাটে আর খোলা বন্ধনীগুলো বন্ধ করে দেয়, তাই বাকিটা লেখা চলাকালীন পর্দায় পুরো দিন ও স্টপ দেখা যায়।</p>
-    <div class="dp-nums"><span>ব্যস্ত থাকলে ৮ সেকেন্ড, তারপর ২০ সেকেন্ড পরে আবার চেষ্টা</span><span>৩টি বিকল্প মডেল</span><span>স্থানীয় মডেলের তাপমাত্রা ০.৩</span><span>Flash-Lite-এ প্রতি পরিকল্পনায় ~৩ সেকেন্ড</span></div>`],
+    <div class="dp-nums"><span>ব্যস্ত থাকলে ৮ সেকেন্ড, তারপর ২০ সেকেন্ড পরে আবার চেষ্টা</span><span>৩টি বিকল্প মডেল</span><span>Flash-Lite-এ প্রতি পরিকল্পনায় ~৩ সেকেন্ড</span></div>`],
       ["জায়গার নাম থেকে স্থানাঙ্ক: সবচেয়ে সম্ভাব্য পথ ডিকোড করা", `
     <p class="dp-q">সমস্যা: নাম দ্ব্যর্থক। “Green River, Utah” I-70-এর একটি শহর, আবার Flaming Gorge-এর কাছের একটি নদীও; Springfield নামে ডজনখানেক জায়গা আছে। প্রতিটির প্রথম সার্চ ফল আলাদাভাবে নিলে কিছু স্টপ শত শত কিলোমিটার দূরে চলে যায়।</p>
     <p>প্রতিটি বিন্দু OpenStreetMap-এর Nominatim থেকে সর্বোচ্চ <var>k</var> = ৫টি প্রার্থী পায়। প্রতিটি বিন্দুর জন্য একটি বাছাই করা হলো একটি <b>স্তরে সাজানো গ্রাফে সংক্ষিপ্ততম পথ</b>, যা হিডেন মার্কভ মডেলের Viterbi ডিকোডিংয়ের একই কাঠামো: অবস্থাগুলো প্রার্থী, পরিবর্তনের খরচ পরপর বাছাইয়ের মধ্যে মহাবৃত্ত দূরত্ব, আর নির্গমন খরচ হলো এমন প্রার্থীর জন্য ১০০ কিমি জরিমানা যা জনবসতি বা দর্শনীয় স্থান নয় (নদী, হ্রদ, প্রশাসনিক অবশিষ্টাংশ)।</p>
@@ -309,7 +309,7 @@ const DEEP_I18N = {
       ["তথ্যের উৎস, হারের সীমা ও ক্যাশ", `
     <p>সবকিছু চলে বিনামূল্যের, কী-ছাড়া বা ফ্রি-প্ল্যানের সেবায়, তাই প্রকৌশলের বেশিরভাগটাই একজন ভদ্র ক্লায়েন্ট হওয়া: হারের সীমা, ক্যাশ আর বিকল্প ব্যবস্থা।</p>
     <table class="dp-table"><thead><tr><th>উৎস</th><th>যে কাজে ব্যবহার</th><th>সীমা ও ক্যাশ</th></tr></thead><tbody>
-      <tr><td>Gemini, বা একটি স্থানীয় মডেল</td><td>পরিকল্পনা, দিনের গাইড, উত্তর</td><td>বিকল্প মডেল, ব্যস্ত হলে আবার চেষ্টা, মডেল ও দিনভিত্তিক ব্যবহার</td></tr>
+      <tr><td>Gemini</td><td>পরিকল্পনা, দিনের গাইড, উত্তর</td><td>বিকল্প মডেল, ব্যস্ত হলে আবার চেষ্টা, মডেল ও দিনভিত্তিক ব্যবহার</td></tr>
       <tr><td>OpenRouteService</td><td>উচ্চতাসহ পথ</td><td>দৈনিক কোটা; ৩০ দিনের পথ ক্যাশ; প্রত্যাখ্যানের পর ৩০ মিনিট বিরতি</td></tr>
       <tr><td>OSRM</td><td>বিকল্প পথ</td><td>সেকেন্ডে ১টি অনুরোধ; এক দিনের ক্যাশ</td></tr>
       <tr><td>Nominatim</td><td>জায়গা খোঁজা, রাস্তার আকৃতি</td><td>সেকেন্ডে ১টি অনুরোধ, সব ডিভাইসের জন্য এক সারি; ৩০ দিনের ক্যাশ</td></tr>
