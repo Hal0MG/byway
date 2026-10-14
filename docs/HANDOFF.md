@@ -20,17 +20,16 @@ not in git; copy them over by hand if you want the full history.
 - Gemini is the only planner (Claude works if a key is set). The local LM Studio model and GraphHopper are gone.
 - OpenRouteService through `api.heigit.org` (2,000 routes a day), with OSRM as the backup router.
 - Demo site mode (`DEMO=1`): see `docs/DEMO.md`. It runs on Render's free plan from `render.yaml`.
-- Desktop apps for Mac (Apple Silicon) and Windows from the "Desktop apps" workflow; the current release is v1.0.0.
+- Desktop apps for Mac (Apple Silicon) and Windows from the "Desktop apps" workflow; the current release is v1.1.0.
 
 ## Open items
 
 1. **Make the repo public** (Settings, General, Danger zone, Change visibility) so the release downloads work for
    anyone. The license is MIT. The old working notes were already removed from the history.
-2. **Release 1.1.0**: run the "Desktop apps" workflow by hand, or push a `v1.1.0` tag.
-3. **Smoke test** every view with `npm run smoke` (needs a headless Chrome).
-4. **Watch the demo's free-service limits**: Nominatim and Overpass limit by network address, and Render's free hosts
+2. **Smoke test** every view with `npm run smoke` (needs a headless Chrome).
+3. **Watch the demo's free-service limits**: Nominatim and Overpass limit by network address, and Render's free hosts
    share addresses. If place search fails on the demo, add a fallback search (Photon, https://photon.komoot.io).
-5. Long days remain in a few world trips where the router's times for gravel are slow (Namibia).
-6. When OpenRouteService has quota, re-measure trips with `tools/audit-trips.mjs`, `tools/add-heights.mjs` and
+4. Long days remain in a few world trips where the router's times for gravel are slow (Namibia).
+5. When OpenRouteService has quota, re-measure trips with `tools/audit-trips.mjs`, `tools/add-heights.mjs` and
    `node tools/export-presets.mjs`.
-7. Later: a promo video, signed desktop apps and an Intel Mac build.
+6. Later: a promo video, signed desktop apps and an Intel Mac build.
