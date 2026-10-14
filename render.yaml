@@ -1,0 +1,25 @@
+# The public demo on Render's free plan (see docs/DEMO.md). The keys are entered in Render's dashboard when the
+# service is created ("sync: false"), so they never sit in this repo.
+services:
+  - type: web
+    name: byway-demo
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /api/status
+    envVars:
+      - key: DEMO
+        value: "1"
+      - key: NODE_VERSION
+        value: "22"
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ORS_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: CONTACT
+        sync: false

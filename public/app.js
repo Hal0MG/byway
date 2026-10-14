@@ -1047,11 +1047,14 @@ function dropDetours(points) {
 // Which AI plans trips (from /api/status), for the progress text.
 let aiInfo = null;
 let appVersion = ""; // shown in Setup
+let demoInfo = null; // on the demo site: { plansLeft, plansPerDay }
 fetch("/api/status")
   .then((r) => r.json())
   .then((s) => {
     aiInfo = s.ai;
     appVersion = s.version || "";
+    demoInfo = s.demo || null;
+    if (demoInfo && typeof renderItinerary === "function") renderItinerary();
   })
   .catch(() => {});
 // How long a plan takes (Gemini answers in seconds; measuring and the day guides take the rest).
@@ -1849,6 +1852,12 @@ async function findRoutes({ fit = true } = {}) {
         if (!pair || cands.some((k) => k == null)) throw new Error(failed.message);
         const [a, b] = cands;
         let moved = false;
+        // first the place search's other matches (Nha Trang's outline is centred on an island in its bay)
+        const alt = [b, a].find((k) => stops[k].alts?.length);
+        if (alt != null) {
+          Object.assign(stops[alt], stops[alt].alts.shift());
+          continue;
+        }
         for (const [k, other] of [[a, b], [b, a]]) {
           if (stops[k].moved) continue;
           const to = await reachableNear(stops[k], stops[other]);

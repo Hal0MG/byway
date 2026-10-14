@@ -81,6 +81,7 @@ function renderStart() {
         </form>
         <div class="examples">${EXAMPLES.map((x) => `<button class="chip" data-act="example">${esc(x)}</button>`).join("")}</div>
         <p class="fine">${esc(planTime())} You can also add stops by hand on the Map tab.</p>
+        ${typeof demoInfo !== "undefined" && demoInfo ? `<p class="fine demo-note">${icon("sparkle", 14)} ${esc(t("On this demo, planning is limited to a few trips a day per visitor, and your trips are kept in this browser."))}</p>` : ""}
         <p class="fine coverage-note">${icon("map", 14)} ${esc(COVERAGE_TEXT)}.</p>
       </div>
       ${presetsHtml()}

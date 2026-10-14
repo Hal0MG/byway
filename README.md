@@ -10,7 +10,7 @@ in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own co
 
 ![The Trips tab: ready-made trips filtered to the United States, one open in the preview](docs/screenshots/trips.jpg)
 
-**Trips**: your own and the 66 ready-made ones, with search and filters, and a preview of every day before you open one.
+**Trips**: your own and the 74 ready-made ones, with search and filters, and a preview of every day before you open one.
 
 | | |
 |---|---|
@@ -33,6 +33,8 @@ in Google Maps or Apple Maps for turn-by-turn directions. It runs on your own co
 
 ## Getting started
 
+A public demo website on your own keys is described in [docs/DEMO.md](docs/DEMO.md).
+
 **The desktop app** is the easiest way: download it from the [Releases](../../releases) page (Mac: the `.dmg`, Apple
 Silicon; Windows: `Byway Setup`), open it, and the welcome screen walks you through the rest. The apps aren't signed:
 on a Mac, right-click the app and choose Open the first time; on Windows, "More info", then "Run anyway".
@@ -43,7 +45,7 @@ on a Mac, right-click the app and choose Open the first time; on Windows, "More 
 2. Mac: double-click `start.command` (the first time, macOS may refuse it as coming from an unidentified developer:
    right-click it, choose Open, then Open). Windows: double-click `start.cmd`. Linux, or a Mac from Terminal: `sh start.sh`.
    The first time it installs what the app needs (about a minute), then opens the app in your browser.
-3. That's enough to open the 66 ready-made trips, browse them and change them on the map. To plan your own, open
+3. That's enough to open the 74 ready-made trips, browse them and change them on the map. To plan your own, open
    Setup (the gear button, or "add a free AI planner" on the home screen); it walks you through the rest, all free:
    - an [OpenRouteService](https://openrouteservice.org/dev/#/signup) key for measuring routes (recommended, no card;
      without it, or when its daily allowance runs out, routes come from OpenStreetMap's public OSRM servers, with
@@ -60,7 +62,7 @@ top bar and only works on the computer running the app. Keep the start window op
 ## What it does
 
 - **Plan**: describe the trip, or pick a style (coast, mountains, twisty roads...), dates, when you leave, the longest
-  day you want, a loop, no night driving, an electric car. Or open one of the 66 ready-made trips instantly. The plan
+  day you want, a loop, no night driving, an electric car. Or open one of the 74 ready-made trips instantly. The plan
   fills in on screen as the AI writes it, and the app checks it (days, overnights, featured roads on the route) and
   sends problems back once.
 - **Every day**: driving time and distance, weather, sunset, a timeline with the roads and stops, a drive chart (climbs,

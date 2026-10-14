@@ -7,7 +7,8 @@ Plans anywhere in the world.
 - **Whole world**: trips can start and end anywhere. Place search, routing, units and currency work in every country;
   the hand-checked road lists (US, Canada, Australia, New Zealand, the UK and Ireland, the Alps, Norway, Iceland, Spain
   and Portugal) are a bonus where they exist. The grey "not covered" mask is gone.
-- **66 ready-made trips**, 28 of them new and spread around the globe: Norway, Iceland, Ireland, Andalusia, Provence,
+- **74 ready-made trips**, 36 of them new, among them eight Top Gear specials (Botswana, the US, Vietnam, Bolivia,
+  India, Patagonia, the Stelvio and the Transfăgărășan), and 28 more and spread around the globe: Norway, Iceland, Ireland, Andalusia, Provence,
   Tuscany and Amalfi, Croatia, Romania, Turkey, Georgia, Oman, Morocco, South Africa, Namibia, Ladakh, northern
   Thailand, Taiwan, Japan, South Korea, Western Australia, Yucatán, Costa Rica, Brazil, Patagonia, Salta, Peru,
   Bangladesh, and Singapore to Malaysia. Five older ones were measured again with OpenRouteService (real heights and
@@ -21,6 +22,9 @@ Plans anywhere in the world.
 - **Home screen**: the floating windows keep their places as the globe turns, slide instead of jumping, and sit further
   out at the sides. The opening starts over the home town you set on the welcome screen.
 - **Removed**: the local model in LM Studio. Gemini plans every trip (Claude still works if set up).
+- **Demo site mode** (`DEMO=1`, `render.yaml`, `docs/DEMO.md`): a public site on your own keys, with no key screens,
+  each visitor's trips kept to themselves, daily caps so nobody can use up the free allowances, and trips that survive
+  the free host's sleep.
 
 ## 1.0.0 (2026-10-13)
 

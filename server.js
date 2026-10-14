@@ -37,6 +37,12 @@ app.use((req, res, next) => {
   };
   next();
 });
+// Demo mode (see "demo mode" below): the visitor's id cookie is set with the page itself, before the app's first
+// requests, so they all carry the same id.
+app.use((req, res, next) => {
+  if (process.env.DEMO === "1" && req.method === "GET" && !req.path.startsWith("/api/")) demoVisitor(req, res);
+  next();
+});
 // The app's own files, gzipped once per version of the file and kept in memory (the biggest, coverage.json, goes from
 // 480 KB to ~150 KB). Everything else (and browsers without gzip) falls through to express.static.
 const GZ_TYPES = { ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".html": "text/html", ".svg": "image/svg+xml", ".webmanifest": "application/manifest+json" };
@@ -65,6 +71,73 @@ app.use(async (req, res, next) => {
   }
 });
 app.use(express.static(appFile("public")));
+
+// ---------- demo mode (DEMO=1): a public site that plans on the owner's keys ----------
+// Visitors never see or set keys (the setup routes are off), each visitor sees only their own trips (a random id in a
+// cookie), and the calls that spend the owner's free allowances have daily caps per visitor, per network address and
+// for the whole site, so one visitor (or a bot) can't use them up. Caps reset at midnight UTC; DEMO_* env vars tune them.
+const DEMO = process.env.DEMO === "1";
+const cap = (name, def) => Math.max(0, Number(process.env[name] ?? def) || 0);
+// kind: [per visitor, whole site]. "plan" is every /api/plan call: a new trip takes 1 to 4 (repairs, long days).
+const DEMO_CAPS = {
+  plan: [cap("DEMO_PLANS_PER_VISITOR", 12), cap("DEMO_PLANS_PER_DAY", 150)],
+  ai: [cap("DEMO_AI_PER_VISITOR", 60), cap("DEMO_AI_PER_DAY", 900)], // day guides, Ask, road ideas and reviews
+  route: [cap("DEMO_ROUTES_PER_VISITOR", 200), cap("DEMO_ROUTES_PER_DAY", 1500)], // OpenRouteService: 2,000 a day
+  geo: [cap("DEMO_GEOCODES_PER_VISITOR", 400), cap("DEMO_GEOCODES_PER_DAY", 4000)], // Nominatim, one a second
+  along: [cap("DEMO_ALONG_PER_VISITOR", 60), cap("DEMO_ALONG_PER_DAY", 800)], // Overpass: fuel, food, stays
+};
+const DEMO_KIND = {
+  "POST /plan": "plan",
+  "POST /details": "ai", "POST /ask": "ai", "POST /road-reviews": "ai", "POST /road-ideas": "ai", "POST /road-points": "ai",
+  "POST /route": "route",
+  "GET /geocode": "geo", "GET /place-name": "geo",
+  "POST /along": "along",
+};
+const demoUse = { day: "", counts: new Map() };
+const VISITOR_RE = /^[a-f0-9-]{36}$/;
+function demoVisitor(req, res) {
+  const m = /(?:^|;\s*)byway_v=([^;]+)/.exec(req.headers.cookie || "");
+  if (m && VISITOR_RE.test(m[1])) return m[1];
+  const id = crypto.randomUUID();
+  res.setHeader("Set-Cookie", `byway_v=${id}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${req.secure ? "; Secure" : ""}`);
+  return id;
+}
+// Counts one call of a kind; returns an error message when a cap is reached. A network address gets twice a visitor's
+// share (clearing cookies doesn't reset it; a shared network still has room).
+function demoSpend(req, kind) {
+  const day = new Date().toISOString().slice(0, 10);
+  if (demoUse.day !== day) Object.assign(demoUse, { day, counts: new Map() });
+  const [perVisitor, perSite] = DEMO_CAPS[kind];
+  const keys = [[`v:${req.visitor}:${kind}`, perVisitor], [`ip:${req.ip}:${kind}`, perVisitor * 2], [`site:${kind}`, perSite]];
+  const over = keys.find(([k, limit]) => (demoUse.counts.get(k) || 0) >= limit);
+  if (over) {
+    return over[0].startsWith("site")
+      ? "The demo has used today's free allowance for this. It resets at midnight UTC; ready-made trips still open."
+      : kind === "plan"
+        ? "The demo plans a few trips a day per visitor, and that's today's share. Ready-made trips still open, and Byway is free to run on your own computer."
+        : "That's today's share of this for one visitor on the demo. It resets at midnight UTC.";
+  }
+  for (const [k] of keys) demoUse.counts.set(k, (demoUse.counts.get(k) || 0) + 1);
+  return null;
+}
+const demoLeft = (req) => {
+  const [perVisitor] = DEMO_CAPS.plan;
+  return Math.max(0, perVisitor - (demoUse.day === new Date().toISOString().slice(0, 10) ? demoUse.counts.get(`v:${req.visitor}:plan`) || 0 : 0));
+};
+if (DEMO) {
+  app.set("trust proxy", true); // the host's proxy sends the visitor's address in X-Forwarded-For
+  app.use("/api", (req, res, next) => {
+    req.visitor = demoVisitor(req, res);
+    if (/^\/(setup|lan)\b/.test(req.path)) return res.status(404).json({ error: "Not available on the demo." });
+    const kind = DEMO_KIND[`${req.method} ${req.path}`];
+    const err = kind && demoSpend(req, kind);
+    if (err) return res.status(429).json({ error: err });
+    next();
+  });
+}
+// On the demo, a saved trip belongs to the visitor who made it.
+const ownTrip = (req, t) => !DEMO || t?.owner === req.visitor;
+const DEMO_MAX_TRIPS = 30;
 
 // Keys and choices that the in-app setup can change while the server runs (see "setup" below): reloaded from
 // process.env by applyConfig().
@@ -872,6 +945,7 @@ app.get("/api/status", async (req, res) => {
     ai: AI_PROVIDER === "claude" && anthropic
         ? { provider: "claude", model: CLAUDE_MODEL, webSearch: SEARCHES_PLAN + SEARCHES_DETAILS > 0 }
         : { provider: "gemini", model: GEMINI_MODEL, webSearch: false },
+    demo: DEMO ? { plansLeft: demoLeft(req), plansPerDay: DEMO_CAPS.plan[0] } : null,
   });
 });
 
@@ -1030,7 +1104,7 @@ app.get("/api/trips", async (req, res) => {
     const trips = await readTrips();
     // ready-made trips (built in batch, see "presets") are listed separately
     const list = Object.values(trips)
-      .filter((t) => !t.preset)
+      .filter((t) => !t.preset && ownTrip(req, t))
       .map(tripSummary)
       .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
     res.json({ trips: list });
@@ -1073,10 +1147,10 @@ app.post("/api/trips/:id/duplicate", async (req, res) => {
     const ship = await shipped();
     const copy = await updateTrips((trips) => {
       const t = trips[req.params.id] || ship[req.params.id];
-      if (!t) return null;
+      if (!t || (!t.preset && !ownTrip(req, t))) return null;
       const now = new Date().toISOString();
       const name = String(req.body?.name || (t.preset ? t.name : `${t.name} (copy)`)).slice(0, 120);
-      trips[id] = { ...structuredClone(t), id, name, preset: false, createdAt: now, updatedAt: now, versions: [] };
+      trips[id] = { ...structuredClone(t), id, name, preset: false, createdAt: now, updatedAt: now, versions: [], ...(DEMO && { owner: req.visitor }) };
       return trips[id];
     });
     if (!copy) return res.status(404).json({ error: "That trip no longer exists." });
@@ -1088,7 +1162,9 @@ app.post("/api/trips/:id/duplicate", async (req, res) => {
 
 app.get("/api/trips/:id", async (req, res) => {
   const trips = await readTrips().catch(() => ({}));
-  const trip = trips[req.params.id] || (await shipped())[req.params.id];
+  let trip = trips[req.params.id];
+  if (trip && !trip.preset && !ownTrip(req, trip)) trip = null;
+  trip ||= (await shipped())[req.params.id];
   if (!trip) return res.status(404).json({ error: "That trip no longer exists." });
   res.json(unpackTrip(trip));
 });
@@ -1102,6 +1178,13 @@ async function saveTrip(req, res) {
   const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
   try {
     const trip = await updateTrips((trips) => {
+      if (DEMO) {
+        // someone else's trip, or a ready-made one, can't be written; and a visitor keeps at most DEMO_MAX_TRIPS
+        if (trips[id] && trips[id].owner !== req.visitor) return { denied: "That trip isn't yours to change." };
+        const mine = Object.values(trips).filter((t) => t.owner === req.visitor);
+        if (!trips[id] && mine.length >= DEMO_MAX_TRIPS)
+          return { denied: `The demo keeps up to ${DEMO_MAX_TRIPS} trips per visitor. Delete one to save another.` };
+      }
       trips[id] = {
         id,
         name: String(name || "Untitled trip").slice(0, 120),
@@ -1114,7 +1197,8 @@ async function saveTrip(req, res) {
         versions: asArray(versions).slice(-6),
         // free-text notes and a checklist: { text, items: [{ text, done }] }
         notes: isObj(notes) ? { text: String(notes.text || "").slice(0, 20000), items: asArray(notes.items).slice(0, 200) } : { text: "", items: [] },
-        preset: !!preset,
+        preset: DEMO ? false : !!preset,
+        ...(DEMO && { owner: req.visitor }),
         stops: stops.map((s) => ({
           name: String(s.name || ""),
           lng: Number(s.lng),
@@ -1136,6 +1220,7 @@ async function saveTrip(req, res) {
       };
       return trips[id];
     });
+    if (trip.denied) return res.status(403).json({ error: trip.denied });
     res.json({ id: trip.id, updatedAt: trip.updatedAt });
   } catch (e) {
     res.status(500).json({ error: String(e) });
@@ -1147,7 +1232,7 @@ app.post("/api/trips/:id/beacon", saveTrip);
 app.delete("/api/trips/:id", async (req, res) => {
   try {
     await updateTrips((trips) => {
-      delete trips[req.params.id];
+      if (trips[req.params.id] && (trips[req.params.id].preset ? !DEMO : ownTrip(req, trips[req.params.id]))) delete trips[req.params.id];
     });
     res.json({ ok: true });
   } catch (e) {

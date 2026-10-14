@@ -45,7 +45,7 @@ function welcomeHtml() {
       const s = st.setup;
       const ready = s.ready;
       return `<h2>${icon("sparkle", 26)} ${t("Plan your own trips")}</h2>
-        <p class="wl-sub">${t("The 38 ready-made trips, the map and routes work without this. To plan new trips, the app needs an AI planner.")}</p>
+        <p class="wl-sub">${t("The ready-made trips, the map and routes work without this. To plan new trips, the app needs an AI planner.")}</p>
         ${ready
           ? `<p class="wl-ok">${icon("check", 18)} ${t("A planner is set up. You're ready to plan trips.")}</p>`
           : `<div class="wl-card">
