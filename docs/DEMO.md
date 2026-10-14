@@ -31,9 +31,12 @@ the ready-made trips, the map, and a few new trips a day each.
 2. **New > Blueprint**, pick the repo. Render reads `render.yaml` and asks for the four secret values:
    - `GEMINI_API_KEY`, `ORS_API_KEY`, `TAVILY_API_KEY`: your keys (the same as in your `.env`).
    - `CONTACT`: what Wikipedia and OpenStreetMap see as the contact for the site's requests. The demo's web address
-     (for example `https://byway-demo.onrender.com`) works and keeps your email out of it.
-3. **Apply.** The first build takes a few minutes; the site is at `https://byway-demo.onrender.com` (or the name Render
+     (for example `https://byway.onrender.com`) works and keeps your email out of it.
+3. **Apply.** The first build takes a few minutes; the site is at `https://byway.onrender.com` (or the address Render
    shows). Every push to `main` redeploys it.
+
+Don't rename the service in Render's dashboard: the Blueprint finds it by the name in `render.yaml` (`byway`), and if
+the names differ it creates a second site. To rename it, change `name:` in `render.yaml` too.
 
 Free plan notes: the site sleeps after 15 minutes without visitors and takes about 30 seconds to wake; 750 free hours a
 month is enough for one site running all month.

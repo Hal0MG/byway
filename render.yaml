@@ -2,7 +2,7 @@
 # service is created ("sync: false"), so they never sit in this repo.
 services:
   - type: web
-    name: byway-demo
+    name: byway
     runtime: node
     plan: free
     buildCommand: npm ci --omit=dev
