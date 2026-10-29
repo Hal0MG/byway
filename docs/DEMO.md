@@ -14,16 +14,24 @@ the ready-made trips, the map, and a few new trips a day each.
 
   | What | Per visitor | Whole site | Env vars |
   |---|---|---|---|
-  | Planning calls (a new trip takes 1 to 4) | 12 | 150 | `DEMO_PLANS_PER_VISITOR`, `DEMO_PLANS_PER_DAY` |
-  | Other AI calls (day guides, Ask, road ideas) | 60 | 900 | `DEMO_AI_PER_VISITOR`, `DEMO_AI_PER_DAY` |
-  | Routes (OpenRouteService, 2,000 a day) | 200 | 1,500 | `DEMO_ROUTES_PER_VISITOR`, `DEMO_ROUTES_PER_DAY` |
-  | Place searches (Nominatim) | 400 | 4,000 | `DEMO_GEOCODES_PER_VISITOR`, `DEMO_GEOCODES_PER_DAY` |
-  | Fuel, food and stays (Overpass) | 60 | 800 | `DEMO_ALONG_PER_VISITOR`, `DEMO_ALONG_PER_DAY` |
+  | Planning calls (a new trip takes 1 to 4) | 4 | 40 | `DEMO_PLANS_PER_VISITOR`, `DEMO_PLANS_PER_DAY` |
+  | Other AI calls (day guides, Ask, road ideas) | 20 | 200 | `DEMO_AI_PER_VISITOR`, `DEMO_AI_PER_DAY` |
+  | Routes (OpenRouteService, 2,000 a day) | 60 | 600 | `DEMO_ROUTES_PER_VISITOR`, `DEMO_ROUTES_PER_DAY` |
+  | Place searches (Nominatim) | 150 | 1,500 | `DEMO_GEOCODES_PER_VISITOR`, `DEMO_GEOCODES_PER_DAY` |
+  | Fuel, food and stays (Overpass) | 20 | 300 | `DEMO_ALONG_PER_VISITOR`, `DEMO_ALONG_PER_DAY` |
 
 - **Trips survive the host's sleep.** Render's free plan wipes the disk when the site sleeps (after 15 idle minutes) or
   redeploys. The browser keeps a copy of each trip the visitor saves (`public/demo.js`) and puts it back when the
   server has lost it, so a visitor's trips stay as long as their browser keeps its site data.
 - The start screen says it's a demo with a few trips a day.
+
+- **A burst limit** of 120 calls a minute per network address, and saved trips are limited to 4 MB.
+- **Counts survive the host's sleep** only with a counter store. Render's free plan forgets memory and disk when the
+  site sleeps, which would reset every cap. Make a free database at https://upstash.com (Redis, any region) and put
+  its REST URL and token in Render as `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. The monthly web
+  search count (`TAVILY_MONTHLY_LIMIT`, 300 on the demo) uses it too. If the store can't be reached, planning pauses
+  rather than running uncapped. Without the two variables the counts are kept in `data/demo-usage.json`, which only
+  helps on a host with a persistent disk.
 
 ## Putting it on Render (free)
 

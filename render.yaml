@@ -15,7 +15,14 @@ services:
         value: "22"
       - key: GEMINI_MODEL
         value: gemini-3.5-flash-lite
+      - key: TAVILY_MONTHLY_LIMIT
+        value: "300"
       - key: GEMINI_API_KEY
+        sync: false
+      # A free Upstash Redis database keeps the daily caps across the free plan's sleeps (docs/DEMO.md).
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
         sync: false
       - key: ORS_API_KEY
         sync: false
