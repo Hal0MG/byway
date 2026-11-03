@@ -32,3 +32,6 @@ CLAUDE.md
 
 # personal working notes (local only)
 docs/BACKLOG.md
+
+# road model downloads and tables (rebuilt by the scripts in analysis/roads)
+analysis/roads/cache/
