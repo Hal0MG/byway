@@ -111,7 +111,7 @@ def main(iso):
         pts = [(round(g["lon"], 7), round(g["lat"], 7)) for g in w["geometry"]]
         for p in pts:
             use[p] += 1
-            vert[p] = (w["id"], t.get("highway"), speed_kmh(t.get("maxspeed")), t.get("surface", ""), t.get("lanes"))
+            vert[p] = (w["id"], t.get("highway"), speed_kmh(t.get("maxspeed")), t.get("surface", ""), t.get("lanes"), t.get("name", ""))
         key = t.get("ref") or t.get("name") or f"~{t.get('highway')}"
         groups[key].append(LineString(pts))
 
@@ -136,7 +136,8 @@ def main(iso):
                 speeds = [a[2] for a in attrs if not np.isnan(a[2])]
                 mid = piece[len(piece) // 2]
                 rows.append({
-                    "road": key, "highway": hw, "km": length / 1000,
+                    "road": key, "name": Counter(a[5] for a in attrs if a[5]).most_common(1)[0][0] if any(a[5] for a in attrs) else "",
+                    "highway": hw, "km": length / 1000,
                     "turn_per_km": turn / (length / 1000),
                     "hairpins_per_10km": hairpins / (length / 10000),
                     "straightness": haversine(piece[0], piece[-1]) / length,

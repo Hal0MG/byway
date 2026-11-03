@@ -43,7 +43,14 @@ def main(iso):
         # designated byways: national and state networks ("US:CO:Scenic", "byway:historic", ...)
         q = f'[out:json][timeout:300];{area}rel(area.a)[route=road][network~"Scenic|byway|Byway",i];out body;'
         byways.write_text(json.dumps(overpass(q)))
-    for f in (roads, byways):
+    places = CACHE / f"{iso}-places.json"
+    if not places.exists():
+        print("passes and towns...")
+        # names for searches: mountain passes, and towns to say where a stretch runs ("Telluride to Rico")
+        q = (f'[out:json][timeout:300];{area}(node(area.a)[mountain_pass=yes][name];node(area.a)[natural=saddle][name];'
+             f'node(area.a)[place~"^(city|town|village|hamlet)$"][name];);out;')
+        places.write_text(json.dumps(overpass(q)))
+    for f in (roads, byways, places):
         print(f.name, len(json.loads(f.read_text())["elements"]), "elements")
 
 

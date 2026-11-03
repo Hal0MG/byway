@@ -46,21 +46,68 @@ right kind of road: Pikes Peak Highway (in Byway's catalog, and never shown to t
    discovery and sometimes an error. Precision against byway labels understates the model, and only a hand-checked test
    set can say by how much.
 
+## Labels from what drivers say (2026-11-03)
+
+Byway designation is the wrong label, so the next step labelled roads by driver opinion instead: one web search per
+stretch (Tavily, worded like a review search: "... driving experience motorcycle ride review"), read by Gemini, which
+scores driving 1 to 5 apart from scenery and quotes its evidence. It's the app's "What drivers say" feature, made to
+give a score.
+
+```bash
+python analysis/roads/fetch_osm.py US-CO       # now also passes and towns, to name stretches
+python analysis/roads/stretches.py US-CO       # ~30 km stretches of state and US highways, named, 242 picked
+python analysis/roads/label_drivers.py US-CO   # 1 search + 1 Gemini answer each, resumable, keeps the app's search count
+python analysis/roads/driver_model.py US-CO    # compares predictors, writes US-CO-driver-labels.csv
+```
+
+The 242 stretches were picked across the pilot model's scores (92 top fifth, 100 middle, 50 bottom fifth), from state
+and US highways and anything over a pass or on a byway. County roads were left out because nobody writes about them.
+They cost 248 of the month's 1,000 free searches. The labels are in `US-CO-driver-labels.csv`, with each verdict's
+evidence and sources.
+
+**What the labels look like.** 119 of 242 stretches had drivers talking about them. Scores bunch up: 92 of the 119 are
+4 or 5, because people mostly write about roads they like. A read of about 40 verdicts against their sources found
+them well grounded ("Best switchback mountain pass in Colorado" for Berthoud Pass, "17 miles of consistent curves" for
+Grand Mesa), with about 1 in 20 clearly wrong. One came from a troll comment (Poudre Canyon got 1/5). Another came from
+spillover, where a road's reputation lands on a dull part of it (CO 82's approach to Independence Pass got 5/5, US 160
+on the Kansas plains got 4/5). Some famous stretches come back with nothing usable (Trail Ridge Road's results were
+about closures).
+
+**Results**, on held-out map areas, with 95% bootstrap intervals:
+
+| Question | Predictor | ROC AUC |
+|---|---|---|
+| Do drivers write about this stretch at all? (119 yes, 123 no) | Curves per km alone | **0.84** |
+| | Relief alone | 0.83 |
+| | Logistic on all features | 0.83 (0.78 to 0.88) |
+| | Pilot byway model | 0.73 |
+| Among those, do drivers rate it 4 or 5? (92 yes, 27 no) | Curves per km alone | 0.56 (0.42 to 0.69) |
+| | Pilot byway model | 0.70 (0.58 to 0.81) |
+| | Logistic on driver scores | 0.76 (0.65 to 0.87) |
+
+1. **The app's curve measure is a good driving-road detector.** On its own it says which roads drivers talk about
+   (0.84) better than official byway status does (0.73), and a full model adds nothing over it. This is the validated
+   result: curves and relief, measured from map data, find the roads drivers care about.
+2. **What separates great from fine isn't captured yet.** Among roads drivers discuss, curves don't separate 4s and 5s
+   from 3s, and the driver-trained model's lead over the byway model is inside the noise (27 negatives). The weights
+   hint that drivers favour high relief, the twistiest part of a stretch and paved roads, but that's a hint, not a
+   finding.
+3. **Candidates.** The highest scoring stretches with no driver talk found include Cucharas Pass on the Highway of
+   Legends, Dallas Divide, CO 90 to Paradox, and Turkey Creek Canyon on US 285. Trail Ridge Road also appears there,
+   which shows that some "silent" stretches are search misses, not unknown roads.
+
 ## Plan
 
-1. **A gold test set.** Hand-label about 300 segments across regions ("would you drive this for fun", 1 to 3),
-   stratified by model score. This is the only honest measure of the real target, and the step that most needs a
-   driver's judgement. Use it for evaluation only; train on the weak labels.
-2. **Three label tiers.** Catalog famous drives (driving quality, hand-picked), designated byways (scenery), and
-   unlabeled roads. Then compare a positive-unlabeled learner against plain weighted classification.
-3. **Features that transfer.** Relative terrain (relief, max grade, height above the lowest point within 10 km),
-   scenery from OpenStreetMap (coast or lake within 500 m, forest, protected areas), distance to towns, and switchback
-   sequences, not just hairpin counts.
-4. **More regions, and the headline test.** Add California, the Alps, Scotland and Norway (the catalog has roads in
-   all of them). Train on three, test on the fourth. If the scores hold across regions, the model is useful worldwide.
-   If they don't, that's the finding.
-5. **Back into the app.** Export the top-scoring segments per region as a `road-points.json`-style list, so "Roads near
-   me" works where there's no catalog.
+1. **Use the detector now.** Curves plus relief is simple and validated: score every highway stretch in a region and
+   export the top ones as a `road-points.json`-style list, so "Roads near me" works where there's no catalog.
+2. **Sharper labels.** Count a verdict only when its evidence names a place on the stretch (cuts spillover), and
+   search more low-scoring stretches to get more negatives. Fine grading needs about 100 stretches drivers rate 3 or
+   below, against 27 now.
+3. **More regions, and the headline test.** California, the Alps, Scotland and Norway, about 250 searches each (a
+   month's free searches covers three to four regions). Train on three, test on the fourth. If the detector holds
+   across regions, it's useful worldwide.
+4. **Features that transfer.** Relative terrain (relief, height above the valley floor) over absolute height, plus
+   scenery from OpenStreetMap (coast, lakes, forest, protected areas) for the scenery score.
 
 Everything uses free, keyless data (Overpass, AWS terrain tiles). The limit is Overpass on large areas, so fetch big
 regions as several boxes.
