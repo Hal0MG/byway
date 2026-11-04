@@ -1,7 +1,7 @@
 """Exports the roads the curve detector finds to public/detected-roads.json, for "Roads near me" where the hand-picked
 list (public/road-points.json) doesn't reach. The detector is the validated one: a logistic regression on curves per km
 and relief, trained on whether drivers write about a stretch (label_drivers.py; ROC AUC about 0.84 on held-out map
-areas). A stretch goes in when it scores above the threshold that keeps 80% precision on the labelled stretches, or
+areas). A stretch goes in when it scores above the threshold that keeps 75% precision on the labelled stretches, or
 when drivers rated it 4 or 5; not when drivers rated it 3 or below, when it's mostly unpaved, or when the hand-picked
 list already has the road. Neighbouring stretches of one road join into one entry.
 
@@ -22,14 +22,15 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from driver_model import stretch_features
+from transfer_test import names_on
 
 HERE = Path(__file__).parent
 CACHE = HERE / "cache"
 OUT = HERE.parents[1] / "public" / "detected-roads.json"
 SCORE = HERE.parents[1] / "public" / "driving-score.json"
 DETECTOR = ["turn_per_km", "relief"]
-PRECISION = 0.8
-STATE = {"US-CO": ("Colorado", "United States")}
+PRECISION = 0.75
+STATE = {"US-CO": ("Colorado", "United States"), "US-CA": ("California", "United States")}
 # the app's curve levels (CURVE_LEVELS in public/features.js)
 LEVELS = [(40, "mostly straight"), (100, "gentle curves"), (200, "curvy"), (400, "very twisty"), (np.inf, "relentless curves")]
 
@@ -76,41 +77,53 @@ def write_model(det, thr, p_cv, talked, isos):
     }, indent=1) + "\n", encoding="utf-8")
 
 
+def prepare(iso):
+    """One region's stretches with their measurements and driver verdicts. A verdict counts only when the search results
+    name a place on the stretch (transfer_test.py explains why): ungrounded ones are dropped (driving becomes NaN)."""
+    seg = pd.read_csv(CACHE / f"{iso}-segments.csv")
+    st = pd.read_csv(CACHE / f"{iso}-all-stretches.csv", keep_default_na=False, na_values=[""])
+    st["name"] = st["name"].fillna("")
+    st["byway_name"] = st["byway_name"].fillna("")
+    st = pd.concat([st.reset_index(drop=True), pd.DataFrame([stretch_features(seg, json.loads(i)) for i in st.segments])], axis=1)
+    labels = pd.DataFrame([json.loads(l) for l in (CACHE / f"{iso}-driver-labels.jsonl").read_text(encoding="utf-8").splitlines()])
+    labels["text"] = [" ".join(f"{x['title']} {x['snippet']}" for x in r.results).lower() + " " + r.evidence.lower() for r in labels.itertuples()]
+    st = st.merge(labels[["stretch", "driving", "evidence", "unpaved", "text"]].rename(columns={"unpaved": "said_unpaved"}), on="stretch", how="left")
+    ground = [isinstance(t, str) and any(n and n in t for n in names_on(r)) for t, (_, r) in zip(st.text, st.iterrows())]
+    st.loc[(st.driving > 0) & ~pd.Series(ground, index=st.index), "driving"] = np.nan
+    st["iso"] = iso
+    return st.drop(columns=["text"])
+
+
 def main(isos):
     catalog = json.loads((HERE.parents[1] / "public" / "road-points.json").read_text(encoding="utf-8"))["roads"]
+    regions = {iso: prepare(iso) for iso in isos}
+    # one detector for all regions: trained on every region's labelled stretches together
+    lab = pd.concat(r[r.driving.notna()] for r in regions.values()).reset_index(drop=True)
+    talked = (lab.driving > 0).astype(int)
+    det = make_pipeline(StandardScaler(), LogisticRegression())
+    groups = (np.floor(lab.lon / 0.5) * 1000 + np.floor(lab.lat / 0.5)).values
+    p_cv = cross_val_predict(det, lab[DETECTOR], talked, groups=groups, cv=GroupKFold(5), method="predict_proba")[:, 1]
+    # lowest threshold whose held-out precision on the labelled stretches is at least PRECISION
+    thr = next(t for t in sorted(set(np.round(p_cv, 3))) if talked[p_cv >= t].mean() >= PRECISION)
+    det.fit(lab[DETECTOR], talked)
+    write_model(det, thr, p_cv, talked, isos)
+    print(f"pooled over {isos}: {len(lab)} labelled stretches, ROC AUC {roc_auc_score(talked, p_cv):.3f} on held-out map areas; "
+          f"threshold {thr:.2f} (precision {talked[p_cv >= thr].mean():.0%}, recall {(p_cv >= thr)[talked == 1].mean():.0%})")
     out = []
-    for iso in isos:
+    for iso, st in regions.items():
         state, country = STATE[iso]
-        seg = pd.read_csv(CACHE / f"{iso}-segments.csv")
-        st = pd.read_csv(CACHE / f"{iso}-all-stretches.csv", keep_default_na=False, na_values=[""])
-        st["name"] = st["name"].fillna("")
-        st["byway_name"] = st["byway_name"].fillna("")
-        st = pd.concat([st.reset_index(drop=True), pd.DataFrame([stretch_features(seg, json.loads(i)) for i in st.segments])], axis=1)
-        labels = pd.DataFrame([json.loads(l) for l in (CACHE / f"{iso}-driver-labels.jsonl").read_text(encoding="utf-8").splitlines()])
-        st = st.merge(labels[["stretch", "driving", "evidence", "unpaved"]].rename(columns={"unpaved": "said_unpaved"}), on="stretch", how="left")
-        lab = st[st.driving.notna()]
-        talked = (lab.driving > 0).astype(int)
-
-        det = make_pipeline(StandardScaler(), LogisticRegression())
-        groups = (np.floor(lab.lon / 0.5) * 1000 + np.floor(lab.lat / 0.5)).values
-        p_cv = cross_val_predict(det, lab[DETECTOR], talked, groups=groups, cv=GroupKFold(5), method="predict_proba")[:, 1]
-        # lowest threshold whose held-out precision on the labelled stretches is at least PRECISION
-        ts = sorted(set(np.round(p_cv, 3)))
-        thr = next(t for t in ts if talked[p_cv >= t].mean() >= PRECISION)
-        det.fit(lab[DETECTOR], talked)
-        write_model(det, thr, p_cv, talked, isos)
         st["p"] = det.predict_proba(st[DETECTOR])[:, 1]
-        print(f"{iso}: detector ROC AUC {roc_auc_score(talked, p_cv):.3f} held out; threshold {thr:.2f} "
-              f"(precision {talked[p_cv >= thr].mean():.0%}, recall {(p_cv >= thr)[talked == 1].mean():.0%})")
-
         loved = st.driving >= 4
         keep = ((st.p >= thr) | loved) & ~(st.driving.between(1, 3)) & (st.unpaved < 0.3) & ~(st.said_unpaved == True)
         # forest and county roads are often gravel with no surface tag: only keep those drivers rate 4 or 5 and don't call unpaved
-        backroad = st.road.astype(str).str.match(r"^(FR|CR|CH|CS|RD|~)")
+        backroad = st.road.astype(str).str.match(r"^(FR|NF|CR|CH|CS|RD|M\d|~)")
         keep &= ~backroad | (loved & ~(st.said_unpaved == True))
+        # only the kind of road that was searched and labelled (state and US highways, passes, byways): the precision
+        # figure says nothing about the county and local roads stretches.py leaves out of the pool (ids from 100000)
+        keep &= st.stretch < 100000
         keep &= ~st.apply(lambda r: in_catalog(r, catalog), axis=1)
         st["keep"] = keep
-        print(f"  {keep.sum()} of {len(st)} stretches kept ({(keep & loved).sum()} that drivers rate 4 or 5)")
+        print(f"{iso}: {keep.sum()} of {len(st)} stretches kept ({(keep & loved).sum()} that drivers rate 4 or 5)")
 
         # join neighbouring kept stretches of one road (each one's end is the next one's start)
         runs, cur = [], []

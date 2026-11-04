@@ -13,8 +13,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-CACHE = Path(__file__).parent / "cache"
-STATE = {"US-CO": "Colorado"}
+HERE = Path(__file__).parent
+CACHE = HERE / "cache"
+STATE = {"US-CO": "Colorado", "US-CA": "California"}
 MAX_SEGS = 6
 SAMPLE = {"top": 100, "middle": 100, "bottom": 50}
 
@@ -24,10 +25,15 @@ def dist_km(a, b):
     return 6371 * math.hypot(x, math.radians(b[1] - a[1]))
 
 
-def main(iso):
+def main(iso, stratify="byway"):
+    """stratify "byway": spread the picks over the pilot byway model's scores (US-CO). "detector": over the frozen
+    detector in public/driving-score.json, for a region whose byways are too few to train a pilot (US-CA)."""
     seg = pd.read_csv(CACHE / f"{iso}-segments.csv")
-    scored = pd.read_csv(CACHE / f"{iso}-scored.csv")[["road", "lon", "lat", "score"]]
-    seg = seg.merge(scored, on=["road", "lon", "lat"], how="left")
+    if stratify == "byway":
+        scored = pd.read_csv(CACHE / f"{iso}-scored.csv")[["road", "lon", "lat", "score"]]
+        seg = seg.merge(scored, on=["road", "lon", "lat"], how="left")
+    else:
+        seg["score"] = 0.0
     places = json.loads((CACHE / f"{iso}-places.json").read_text())["elements"]
     passes = [(p["lon"], p["lat"], p["tags"]["name"]) for p in places if p["tags"].get("mountain_pass") or p["tags"].get("natural") == "saddle"]
     towns = [(p["lon"], p["lat"], p["tags"]["name"]) for p in places if p["tags"].get("place") in ("city", "town", "village")]
@@ -66,7 +72,7 @@ def main(iso):
         if not where:
             continue
         # only roads people write about go in the search pool: state and US highways, and anything over a pass or on a byway
-        pool = bool(re.match(r"^(US|CO|SH) ", s.road.iloc[0]) or on_pass or s.byway_share.mean() > 0.5)
+        pool = bool(re.match(rf"^(US|{iso[3:]}|SH) ", s.road.iloc[0]) or on_pass or s.byway_share.mean() > 0.5)
         byways = s.byway[s.byway.notna() & (s.byway != "")]
         (rows if pool else others).append({
             "stretch": len(rows) if pool else 100000 + len(others), "road": s.road.iloc[0], "name": name, "passes": "; ".join(on_pass), "from": a, "to": b,
@@ -76,6 +82,13 @@ def main(iso):
             "lon": float(np.mean([p[0] for p in coords])), "lat": float(np.mean([p[1] for p in coords])),
             "start": json.dumps(coords[0]), "end": json.dumps(coords[-1]),
         })
+    if stratify == "detector":
+        from driver_model import stretch_features
+        m = json.loads((HERE.parents[1] / "public" / "driving-score.json").read_text())
+        for r in rows + others:
+            f = stretch_features(seg, json.loads(r["segments"]))
+            z = m["intercept"] + sum(m["coef"][i] * (f[k] - m["mean"][i]) / m["scale"][i] for i, k in enumerate(["turn_per_km", "relief"]))
+            r["score"] = 1 / (1 + math.exp(-z))
     pd.DataFrame(rows + others).to_csv(CACHE / f"{iso}-all-stretches.csv", index=False)
     st = pd.DataFrame(rows).dropna(subset=["score"]).drop_duplicates("query")
     lo, hi = st.score.quantile([0.2, 0.8])
@@ -90,4 +103,4 @@ def main(iso):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "US-CO")
+    main(next((a for a in sys.argv[1:] if not a.startswith("--")), "US-CO"), "detector" if "--detector" in sys.argv else "byway")
