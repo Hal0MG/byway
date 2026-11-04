@@ -2565,8 +2565,11 @@ try {
   nearState.home = JSON.parse(store.get("homeBase") || "null");
 } catch {}
 const nearHours = (km) => (km * 1.3) / 80 + 0.25;
+// public/detected-roads.json: roads found from map data (curves and relief, a model trained on what drivers write about
+// roads, built by analysis/roads/export_detected.py) for regions the hand-picked list doesn't reach. They're listed apart.
 async function loadNearRoads() {
-  nearState.roads ||= await fetch("road-points.json").then((r) => r.json()).then((d) => d.roads || []).catch(() => []);
+  const get = (f) => fetch(f).then((r) => r.json()).then((d) => d.roads || []).catch(() => []);
+  nearState.roads ||= [...(await get("road-points.json")), ...(await get("detected-roads.json"))];
   return nearState.roads;
 }
 // Which landmass a point is on, so a road across the sea (Wales from Dublin, Norway from Scotland) isn't "an hour
@@ -2611,7 +2614,9 @@ function nearLoops(list) {
 function nearHtml() {
   const s = nearState;
   const home = s.home;
-  const list = nearList();
+  const near = nearList();
+  const list = near.filter((x) => !x.r.detected);
+  const found = near.filter((x) => x.r.detected);
   const loops = home && list.length ? nearLoops(list) : [];
   const fmtH = (h) => (h < 1 ? "under an hour" : `about ${h < 2 ? Math.round(h * 2) / 2 : Math.round(h)} h`);
   // lengths in the home base's units (miles in the US and UK)
@@ -2627,7 +2632,7 @@ function nearHtml() {
     ${home ? `<div class="near-reach" role="group" aria-label="How far">
       <span>Within</span>${[2, 3, 5, 8].map((h) => `<button class="chip ${s.hours === h ? "on" : ""}" data-near-h="${h}">${h} hours</button>`).join("")}
     </div>` : `<p class="fine">Type a town (or use your location) to see the scenic byways and famous drives within a few hours, and weekend loops to plan in one tap.</p>`}
-    ${home && !list.length ? `<p class="fine">No roads from the app's list within ${s.hours} hours of ${esc(shortName(home.name))}. Try a longer reach; the list covers the US, Canada, Australia, New Zealand, the UK, Ireland, Norway, Iceland, Spain, Portugal and the Alps.</p>` : ""}
+    ${home && !list.length && !found.length ? `<p class="fine">No roads from the app's list within ${s.hours} hours of ${esc(shortName(home.name))}. Try a longer reach; the list covers the US, Canada, Australia, New Zealand, the UK, Ireland, Norway, Iceland, Spain, Portugal and the Alps.</p>` : ""}
     ${loops.length ? `<h3 class="near-h">${icon("route", 16)} Weekend loops</h3><div class="near-loops">
       ${loops.map((l) => `<div class="near-loop"><span><b>${esc(l.roads.join(" + "))}</b><small>${l.nights === 1 ? "1 night" : "2 nights"} from ${esc(shortName(home.name))}</small></span>
         <button class="btn blue small" data-near-plan="${esc(l.prompt)}">${icon("sparkle", 14)} Plan it</button></div>`).join("")}
@@ -2644,7 +2649,20 @@ function nearHtml() {
         </span>
       </li>`).join("")}
     </ul>
-    <p class="fine">Times are straight-line estimates; the plan measures the real drive.</p>` : ""}`;
+    <p class="fine">Times are straight-line estimates; the plan measures the real drive.</p>` : ""}
+    ${found.length ? `<h3 class="near-h">${icon("sparkle", 16)} ${found.length} more found from map data</h3>
+    <p class="fine">Not on the hand-picked list. These stretches curve and climb like the roads drivers write about, and some have driver reviews. Check them before you commit to a route.</p>
+    <ul class="near-list">
+      ${found.slice(0, 20).map((x) => `<li>
+        <span class="near-img">${icon("road", 18)}</span>
+        <span class="near-text"><b>${esc(x.r.name)}</b><small>${x.r.drivers ? "Drivers rate it highly" : "Found from map data"} · ${esc(x.r.state || "")} · ${len(x.r.km)} long · ${fmtH(x.h)} away</small>
+          ${x.r.about ? `<span class="near-about">${esc(x.r.about)}</span>` : ""}</span>
+        <span class="near-acts">
+          <button class="link-btn" data-near-map="${esc(x.r.name)}">${icon("map", 13)} Map</button>
+          <button class="link-btn" data-near-plan="${esc(`A one-night loop from ${shortName(home.name)} to drive ${x.r.name}, 2 days, back to ${shortName(home.name)}`)}">${icon("sparkle", 13)} Plan a loop</button>
+        </span>
+      </li>`).join("")}
+    </ul>` : ""}`;
 }
 let nearEl = null;
 async function openNear() {

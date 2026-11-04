@@ -48,7 +48,7 @@ def main(iso):
         last = c[-1]
     stretches.append(cur)
 
-    rows = []
+    rows, others = [], []  # the search pool, and every other named stretch (for export_detected.py)
     for idx in stretches:
         s = seg.loc[idx]
         if s.km.sum() < 10 or s.junctions_per_km.median() > 4:
@@ -61,19 +61,22 @@ def main(iso):
         # a road's own name helps a search ("Trail Ridge Road"); street and county road names don't
         name = next((n for n in s.name if isinstance(n, str) and n and n != ref
                      and not re.search(r"county road|street|avenue|boulevard|\bblvd\b|\bdrive\b|highway \d|^(north|south|east|west) ", n, re.I)), "")
-        # only roads people write about: state and US highways, and anything over a pass or on a byway
-        if not (re.match(r"^(US|CO|SH) ", s.road.iloc[0]) or on_pass or s.byway_share.mean() > 0.5):
-            continue
         label = " ".join(x for x in [ref, f'"{name}"' if name else ""] if x) or "road"
         where = " and ".join(on_pass[:2]) if on_pass else (f"{a} to {b}" if a and b and a != b else (f"near {a or b}" if a or b else ""))
         if not where:
             continue
-        rows.append({
-            "stretch": len(rows), "road": s.road.iloc[0], "name": name, "passes": "; ".join(on_pass), "from": a, "to": b,
+        # only roads people write about go in the search pool: state and US highways, and anything over a pass or on a byway
+        pool = bool(re.match(r"^(US|CO|SH) ", s.road.iloc[0]) or on_pass or s.byway_share.mean() > 0.5)
+        byways = s.byway[s.byway.notna() & (s.byway != "")]
+        (rows if pool else others).append({
+            "stretch": len(rows) if pool else 100000 + len(others), "road": s.road.iloc[0], "name": name, "passes": "; ".join(on_pass), "from": a, "to": b,
             "query": f"{label} {where} {STATE.get(iso, '')} drive",
             "km": s.km.sum(), "segments": json.dumps(idx), "score": s.score.max(),
-            "byway": s.byway_share.mean() > 0.5, "lon": float(np.mean([p[0] for p in coords])), "lat": float(np.mean([p[1] for p in coords])),
+            "byway": s.byway_share.mean() > 0.5, "byway_name": byways.mode().iloc[0] if len(byways) else "",
+            "lon": float(np.mean([p[0] for p in coords])), "lat": float(np.mean([p[1] for p in coords])),
+            "start": json.dumps(coords[0]), "end": json.dumps(coords[-1]),
         })
+    pd.DataFrame(rows + others).to_csv(CACHE / f"{iso}-all-stretches.csv", index=False)
     st = pd.DataFrame(rows).dropna(subset=["score"]).drop_duplicates("query")
     lo, hi = st.score.quantile([0.2, 0.8])
     pick = pd.concat([

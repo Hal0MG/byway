@@ -96,17 +96,37 @@ about closures).
    Legends, Dallas Divide, CO 90 to Paradox, and Turkey Creek Canyon on US 285. Trail Ridge Road also appears there,
    which shows that some "silent" stretches are search misses, not unknown roads.
 
+## In the app: "Roads near me" (2026-11-03)
+
+```bash
+python analysis/roads/stretches.py US-CO         # also writes every named stretch, not only the 242 searched
+python analysis/roads/export_detected.py US-CO   # writes public/detected-roads.json
+```
+
+The detector is a logistic regression on curves per km and relief only (the two features that carried it), trained on
+whether drivers write about a stretch. A stretch is exported when its score clears the threshold that keeps 80%
+precision on held-out labelled stretches (recall 61%), or when drivers rated it 4 or 5. Left out: stretches drivers
+rated 3 or below, mostly unpaved ones, forest and county roads unless drivers rated them 4 or 5 and didn't call them
+unpaved (gravel often has no surface tag), and roads the hand-picked list already has. Neighbouring stretches of a road
+join into one entry. For Colorado that's 69 roads, 41 of them with driver ratings of 4 or 5, and the rest found from
+the map data alone.
+
+"Roads near me" lists them in their own section, "more found from map data", below the hand-picked roads, with what the
+measurements say and, where there is one, a driver quote. Weekend loops use hand-picked roads only. Measured on Denver:
+11 hand-picked roads and 51 found ones within 5 hours.
+
+**Caveat.** The 80% precision holds on state and US highways, which is what was searched. Back roads were barely
+searched, so the detector is extrapolating there. The section tells the traveler to check before committing.
+
 ## Plan
 
-1. **Use the detector now.** Curves plus relief is simple and validated: score every highway stretch in a region and
-   export the top ones as a `road-points.json`-style list, so "Roads near me" works where there's no catalog.
-2. **Sharper labels.** Count a verdict only when its evidence names a place on the stretch (cuts spillover), and
+1. **Sharper labels.** Count a verdict only when its evidence names a place on the stretch (cuts spillover), and
    search more low-scoring stretches to get more negatives. Fine grading needs about 100 stretches drivers rate 3 or
    below, against 27 now.
-3. **More regions, and the headline test.** California, the Alps, Scotland and Norway, about 250 searches each (a
+2. **More regions, and the headline test.** California, the Alps, Scotland and Norway, about 250 searches each (a
    month's free searches covers three to four regions). Train on three, test on the fourth. If the detector holds
    across regions, it's useful worldwide.
-4. **Features that transfer.** Relative terrain (relief, height above the valley floor) over absolute height, plus
+3. **Features that transfer.** Relative terrain (relief, height above the valley floor) over absolute height, plus
    scenery from OpenStreetMap (coast, lakes, forest, protected areas) for the scenery score.
 
 Everything uses free, keyless data (Overpass, AWS terrain tiles). The limit is Overpass on large areas, so fetch big
