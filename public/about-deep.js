@@ -127,6 +127,21 @@ const DEEP_SECTIONS = [
       <li><b>A planner eval</b> (<code>npm run eval</code>): 30 fixed requests across every region, run through a model and the whole pipeline, recording each stage. With Gemini Flash-Lite, every plan passed the rule checks after the one repair, but only 42% of trips were fully right once routed (every featured road driven, no day over the limit). The road pass took that to 62% and the day-split DP to 69%: the deterministic steps add 27 points. Intervals over 30 requests are wide (about ±20 points), so it measures big effects, not small ones.</li>
     </ul>
     <p><b>Honest limits.</b> Most thresholds (8% and 40 km, 250 m and 70%, the 100 km penalty, the curvature levels) were tuned by hand on a few dozen trips, not fitted on labelled data. There's no ground truth for "a good road trip", the LLM isn't deterministic, and the audit measures structure (is the road driven, is any day too long) rather than whether a person would enjoy the trip.</p>`],
+  ["scores", "Road scores: do drivers write about this road?", `
+    <p>The "Drivers' road" chip and the "mostly straight and flat" note come from a small model, trained on what drivers say on the web rather than on anyone's idea of a good road.</p>
+    <ul>
+      <li><b>Segments.</b> Roads from OpenStreetMap (trunk to tertiary) are cut into 5 km pieces. Each gets curves per km (heading change, the same method as the app's curve level), hairpins, and <b>relief</b>: the biggest climb inside any 5 km, from AWS terrain tiles.</li>
+      <li><b>Labels.</b> About 500 named stretches of about 30 km were each searched on the web, and Gemini read the results for what drivers and riders say (1 to 5). A verdict only counts when the results name a place on that stretch, so praise for a route's famous part can't land on a dull part.</li>
+      <li><b>Model.</b> Logistic regression on curves per km and relief, predicting "drivers write about this stretch". Evaluated on whole map areas held out (0.5° cells), with bootstrap intervals.</li>
+      <li><b>Where it runs.</b> In your browser: the weights are a 1 KB file (<code>driving-score.json</code>) and the score is computed from the route's own shape and heights.</li>
+    </ul>
+    <table class="dp-table"><thead><tr><th>Test</th><th>ROC AUC</th><th>Precision at the app's threshold</th></tr></thead><tbody>
+      <tr><td>Colorado, held-out areas</td><td>0.83</td><td>about 80%</td></tr>
+      <tr><td>Train Colorado, test California</td><td>0.77 (0.71 to 0.83)</td><td>about 75%</td></tr>
+      <tr><td>Train California, test Colorado</td><td>0.85 (0.80 to 0.89)</td><td></td></tr>
+      <tr><td>Train US, test the Alps</td><td>0.63 (0.55 to 0.71)</td><td>43%</td></tr>
+    </tbody></table>
+    <p><b>Honest limits.</b> It works for US-style roads and failed in the Alps, where nearly every road curves and climbs, so the chip is shown only in countries where it passed a held-out test. It can't tell a good drive from a famous one, "no talk found" can be a search miss, and it knows nothing about scenery or surface yet. The score says how much a road looks like the ones drivers write about; it is not a verdict on the road. The full write-up is in <code>analysis/roads/README.md</code>.</p>`],
 ];
 
 function aboutDeepHtml() {
