@@ -118,6 +118,38 @@ measurements say and, where there is one, a driver quote. Weekend loops use hand
 **Caveat.** The 80% precision holds on state and US highways, which is what was searched. Back roads were barely
 searched, so the detector is extrapolating there. The section tells the traveler to check before committing.
 
+## In the app: road cards and a plan check (2026-11-03)
+
+The detector's weights go to `public/driving-score.json` (written by `export_detected.py`), and the app applies them to
+every featured road as the route drives it: curves per km (the number the road card already shows) and the biggest
+climb inside any 5 km (`windowRelief` and `drivingScore` in `public/logic.js`, with tests).
+
+- **Road cards** show a gold "Drivers' road" chip when the score clears the 80%-precision threshold.
+- **A plan check.** A road that isn't an official byway, that the route drives for 8 km or more, and that scores below
+  the median of the stretches nobody writes about, gets a note on its card: "Measured on this route it's mostly
+  straight and flat, so it may be a road for the views more than the drive", with the existing "Swap for another
+  road" button. Official byways are left alone, since they're chosen for scenery and history.
+
+**Does a model trained on Colorado hold up elsewhere?** The 74 ready-made trips have 180 featured roads on every
+continent, and none of them was in the training data. Scored as the app measures them (in the page, trip by trip):
+
+| | Roads | Examples |
+|---|---|---|
+| Score above the threshold (0.57) | 121 | Amalfi Drive, Manali to Leh, Great Dolomite Road, Transfăgărășan, Stelvio, Bernina, Susten, NH 5 Himalayan Highway (all 0.99 to 1.00) |
+| In between | 42 | |
+| Below the weak line (0.25) | 17, of which 12 flagged (the rest are official byways, or under 8 km of the route) | Florida Keys and Gulf Coast highways, Tamiami Trail, Trans-Kalahari and Boteti Road in Botswana, Shark Bay Road, Minilya-Exmouth Road (4 to 30 m of climb in 5 km, under 50°/km) |
+
+The ranking matches what a driver would say: the famous mountain roads at the top, long flat plains and coastal
+highways at the bottom, and for the Botswana road the AI's own write-up says "Straight, flat, and lightly
+trafficked". That's the first evidence the detector transfers beyond Colorado (Europe, Asia, Africa, Australia), and
+it's a check by reading the list, not a measured accuracy: those roads have no driver ratings to score against.
+California and the Alps would give the held-out test the Plan below describes.
+
+**Limits.** Scores say how much a road curves and climbs, nothing about scenery, so a flat coastal road gets flagged
+(Shark Bay Road is one) when it may be exactly what the traveler wants, which is why the note is worded as a maybe and
+official byways are exempt. The Botswana roads are on the list because it's a Top Gear route, not because anyone
+chose them for the driving. A road can appear on the card several times (one note per day).
+
 ## Plan
 
 1. **Sharper labels.** Count a verdict only when its evidence names a place on the stretch (cuts spillover), and

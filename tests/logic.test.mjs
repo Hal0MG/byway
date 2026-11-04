@@ -181,3 +181,25 @@ test("osrmResult builds each leg's roads (the backup router needs roadsFromSteps
   assert.ok(r.legs[0].roads.length >= 2);
   assert.equal(r.legs[0].roads[1].ref, "CO 88");
 });
+
+test("windowRelief: the biggest climb inside any 5 km, not over the whole road", () => {
+  // 0 to 100 m over 10 km (a steady 10 m per km): any 5 km window climbs about 50 m
+  const d = Array.from({ length: 21 }, (_, i) => i * 500);
+  const e = d.map((x) => x / 100);
+  assert.equal(L.windowRelief(d, e), 50);
+  // a short steep bit counts in full: flat, then 200 m up in 1 km, then flat
+  const d2 = [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000];
+  assert.equal(L.windowRelief(d2, [0, 0, 0, 200, 200, 200, 200, 200]), 200);
+  assert.equal(L.windowRelief([0], [5]), 0);
+});
+
+test("drivingScore: twisty climbing roads score above flat straight ones, from the saved model", () => {
+  const model = JSON.parse(fs.readFileSync(new URL("../public/driving-score.json", import.meta.url), "utf8"));
+  const twisty = L.drivingScore(model, 245, 300); // Beartooth-like
+  const interstate = L.drivingScore(model, 30, 20); // an interstate across the plains
+  assert.ok(twisty > model.high, `twisty ${twisty}`);
+  assert.ok(interstate < model.low, `interstate ${interstate}`);
+  assert.ok(twisty > 0 && twisty < 1);
+  assert.equal(L.drivingScore(null, 100, 100), null);
+  assert.equal(L.drivingScore(model, 100, NaN), null);
+});

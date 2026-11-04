@@ -816,6 +816,7 @@ function renderDay(g, gi, groups, segs) {
             ${o ? `<span class="badge-official ${o.type.startsWith("All") ? "aar" : ""}">${esc(o.type)}</span>` : ""}</div>
           <small class="road-seg">${esc(r.segment || "")}${onRoute >= 8047 ? ` · ${fmtMi(onRoute)} on this route` : ""}</small>
           ${onRoute >= 8047 ? ratingHtml(roadStats(r)) : ""}
+          ${onRoute >= 8047 && roadIsWeak(r, roadStats(r)) ? `<p class="road-warn">${icon("alert", 14)} <span>Measured on this route it's mostly straight and flat, so it may be a road for the views more than the drive.${READONLY ? "" : ` <button class="link-btn" data-act="road-swap" data-name="${esc(r.name)}">Swap for another road</button>`}</span></p>` : ""}
           ${season ? `<p class="road-warn ${seasonClass(season.status)}">${icon("calendar", 14)} <span><b>${esc(season.status ? SEASON_LABEL[season.status] : seasonText(season.r))}.</b>
             ${esc(season.r.note)} ${season.r.url ? `<a href="${esc(season.r.url)}" target="_blank" rel="noopener">Road status ${icon("external", 12)}</a>` : ""}</span></p>` : ""}
           ${routes.scenic && onRoute < 8047 && !READONLY

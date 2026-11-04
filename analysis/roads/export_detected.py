@@ -26,6 +26,7 @@ from driver_model import stretch_features
 HERE = Path(__file__).parent
 CACHE = HERE / "cache"
 OUT = HERE.parents[1] / "public" / "detected-roads.json"
+SCORE = HERE.parents[1] / "public" / "driving-score.json"
 DETECTOR = ["turn_per_km", "relief"]
 PRECISION = 0.8
 STATE = {"US-CO": ("Colorado", "United States")}
@@ -63,6 +64,18 @@ def title(r):
     return f"{base} near {ends[0]}" if ends else base
 
 
+def write_model(det, thr, p_cv, talked, isos):
+    """The detector as numbers the app can apply (public/driving-score.json): standardise the features, then logistic."""
+    sc, lr = det[0], det[-1]
+    SCORE.write_text(json.dumps({
+        "built": date.today().isoformat(), "trainedOn": isos, "features": ["perKm", "relief"],
+        "mean": [round(float(x), 4) for x in sc.mean_], "scale": [round(float(x), 4) for x in sc.scale_],
+        "coef": [round(float(x), 4) for x in lr.coef_[0]], "intercept": round(float(lr.intercept_[0]), 4),
+        "high": float(thr), "low": float(np.quantile(p_cv[talked == 0], 0.5)),
+        "about": "Chance a stretch is one drivers write about, from curves per km and the biggest 5 km climb. See analysis/roads/README.md.",
+    }, indent=1) + "\n", encoding="utf-8")
+
+
 def main(isos):
     catalog = json.loads((HERE.parents[1] / "public" / "road-points.json").read_text(encoding="utf-8"))["roads"]
     out = []
@@ -85,6 +98,7 @@ def main(isos):
         ts = sorted(set(np.round(p_cv, 3)))
         thr = next(t for t in ts if talked[p_cv >= t].mean() >= PRECISION)
         det.fit(lab[DETECTOR], talked)
+        write_model(det, thr, p_cv, talked, isos)
         st["p"] = det.predict_proba(st[DETECTOR])[:, 1]
         print(f"{iso}: detector ROC AUC {roc_auc_score(talked, p_cv):.3f} held out; threshold {thr:.2f} "
               f"(precision {talked[p_cv >= thr].mean():.0%}, recall {(p_cv >= thr)[talked == 1].mean():.0%})")

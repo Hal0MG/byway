@@ -1,0 +1,26 @@
+{
+ "built": "2026-11-03",
+ "trainedOn": [
+  "US-CO"
+ ],
+ "features": [
+  "perKm",
+  "relief"
+ ],
+ "mean": [
+  75.0391,
+  134.9802
+ ],
+ "scale": [
+  94.3185,
+  100.9469
+ ],
+ "coef": [
+  0.7313,
+  0.9202
+ ],
+ "intercept": 0.1058,
+ "high": 0.567,
+ "low": 0.250422953700979,
+ "about": "Chance a stretch is one drivers write about, from curves per km and the biggest 5 km climb. See analysis/roads/README.md."
+}

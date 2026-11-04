@@ -1096,6 +1096,7 @@ body[data-view="itinerary"] #map-profile { display: none; }
 .rating { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 13px; font-weight: 700; }
 .rating > span { display: inline-flex; align-items: center; gap: 6px; }
 .rating .curves { color: var(--teal); }
+.rating .drivers-pick { color: var(--gold); cursor: help; }
 .dots { display: inline-flex; gap: 3px; }
 .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--card-strong); }
 .dots i.on { background: var(--blue); }

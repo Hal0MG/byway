@@ -647,7 +647,18 @@ const curveLevel = (perKm) => {
   const i = CURVE_LEVELS.findIndex(([max]) => perKm < max);
   return { level: i + 1, label: CURVE_LEVELS[i][1] };
 };
-// Ratings for a featured road, measured on the stretches the route drives: { km, curves, hairpins, climb, top, grade }.
+// The driving score's model (public/driving-score.json, from analysis/roads): without it the cards show no score.
+let drivingModel = null;
+fetch("driving-score.json").then((r) => (r.ok ? r.json() : null)).then((m) => (drivingModel = m)).catch(() => {});
+// 0 to 1: how much this road, as the route drives it, curves and climbs like the roads drivers write about.
+const roadScore = (st) => (st?.relief != null ? drivingScore(drivingModel, st.perKm, st.relief) : null);
+// A featured road that's mostly straight and flat on this route, so not one to drive for the drive. Official byways are
+// left alone (they're chosen for scenery and history), and so is anything under 8 km of the route.
+const roadIsWeak = (r, st) => {
+  const s = roadScore(st);
+  return s != null && !r.official && st.len >= 8000 && s < drivingModel.low;
+};
+// Ratings for a featured road, measured on the stretches the route drives: { km, curves, hairpins, climb, top, grade, relief }.
 function roadStats(r) {
   if (!routes.scenic) return null;
   return memo(`road:${r.name}`, () => {
@@ -658,6 +669,7 @@ function roadStats(r) {
     let up = 0;
     let top = -Infinity;
     let grade = 0;
+    let relief = 0;
     for (const g of dayGroups()) {
       for (const s of daySegments(g)) {
         if (s.road !== r || s.from == null || s.to == null || s.to <= s.from) continue;
@@ -666,7 +678,9 @@ function roadStats(r) {
         turn += c.turn;
         hairpins += c.hairpins;
         if (hasElevation()) {
-          const cs = climbStats(elevSamples(coords, s.from, s.to, 50, 250));
+          const sm = elevSamples(coords, s.from, s.to, 50, 250);
+          const cs = climbStats(sm);
+          relief = Math.max(relief, windowRelief(sm.d, sm.e));
           up += cs.up;
           top = Math.max(top, cs.max);
           grade = Math.max(grade, cs.grade);
@@ -675,14 +689,16 @@ function roadStats(r) {
     }
     if (len < 3000) return null;
     const perKm = turn / (len / 1000);
-    return { len, perKm, ...curveLevel(perKm), hairpins, climb: hasElevation() ? up : null, top: hasElevation() ? top : null, grade: hasElevation() ? grade : null };
+    return { len, perKm, ...curveLevel(perKm), hairpins, climb: hasElevation() ? up : null, top: hasElevation() ? top : null, grade: hasElevation() ? grade : null, relief: hasElevation() ? relief : null };
   });
 }
 function ratingHtml(st) {
   if (!st) return "";
   const dots = Array.from({ length: 5 }, (_, i) => `<i class="${i < st.level ? "on" : ""}"></i>`).join("");
+  const score = roadScore(st);
   return `<div class="rating">
     <span class="curves" title="${Math.round(st.perKm)}° of turning per km"><span class="dots">${dots}</span> ${esc(st.label)}</span>
+    ${score != null && score >= drivingModel.high ? `<span class="drivers-pick" title="On this route it curves and climbs like the roads drivers write about (a model trained on Colorado roads: see analysis/roads in the repository)">${icon("sparkle", 14)} Drivers' road</span>` : ""}
     ${st.hairpins ? `<span>${icon("hairpin", 14)} ${st.hairpins} hairpin${st.hairpins === 1 ? "" : "s"}</span>` : ""}
     ${st.climb != null ? `<span>${icon("mountain", 14)} ${fmtElev(st.climb)} climb</span>` : ""}
     ${st.top != null && isFinite(st.top) ? `<span>${icon("flag", 14)} top ${fmtElev(st.top)}</span>` : ""}

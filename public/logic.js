@@ -90,6 +90,24 @@ function distToSegment(p, a, b) {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
+// The biggest climb inside any 5 km of a profile (meters between its highest and lowest point, d meters along, e heights).
+// This is the "relief" the driving score was trained on (analysis/roads).
+function windowRelief(d, e, win = 5000) {
+  let best = 0;
+  for (let i = 0, j = 0; i < d.length; i++) {
+    while (j < d.length && d[j] - d[i] <= win) j++;
+    if (j - i >= 2) best = Math.max(best, Math.max(...e.slice(i, j)) - Math.min(...e.slice(i, j)));
+  }
+  return best;
+}
+// How much a stretch of road looks like the roads drivers write about, 0 to 1: a logistic model on turning per km and
+// relief (public/driving-score.json, trained on Colorado by analysis/roads). Null without the model or a measurement.
+function drivingScore(model, perKm, relief) {
+  if (!model || !isFinite(perKm) || !isFinite(relief)) return null;
+  const z = model.intercept + [perKm, relief].reduce((a, x, i) => a + (model.coef[i] * (x - model.mean[i])) / model.scale[i], 0);
+  return 1 / (1 + Math.exp(-z));
+}
+
 // In Node (the tests) the helpers are exported; in the page they're globals like the rest of the app.
-if (typeof module !== "undefined") module.exports = { MAX_LINK_STOPS, LINK_PLACES, haversine, bestSplit, mapLinksFor, linkParts, alongShape, distToSegment };
+if (typeof module !== "undefined") module.exports = { MAX_LINK_STOPS, LINK_PLACES, haversine, bestSplit, mapLinksFor, linkParts, alongShape, distToSegment, windowRelief, drivingScore };
 
