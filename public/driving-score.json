@@ -8,6 +8,9 @@
   "perKm",
   "relief"
  ],
+ "validatedIn": [
+  "US"
+ ],
  "mean": [
   109.1406,
   153.4148

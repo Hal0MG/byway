@@ -57,7 +57,8 @@ def auc_ci(y, p, rng, n=2000):
 
 def main(train_iso, test_iso, grounded=False):
     rng = np.random.default_rng(0)
-    tr, te = load(train_iso, grounded), load(test_iso, grounded)
+    tr = pd.concat([load(i, grounded) for i in train_iso.split(",")])  # "US-CO,US-CA" trains on both
+    te = load(test_iso, grounded)
     tr, te = tr.reset_index(drop=True), te.reset_index(drop=True)
     print(f"[{'only verdicts that name a place on the stretch' if grounded else 'all verdicts'}]")
     det = make_pipeline(StandardScaler(), LogisticRegression())

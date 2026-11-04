@@ -654,6 +654,9 @@ fetch("driving-score.json").then((r) => (r.ok ? r.json() : null)).then((m) => (d
 const roadScore = (st) => (st?.relief != null ? drivingScore(drivingModel, st.perKm, st.relief) : null);
 // A featured road that's mostly straight and flat on this route, so not one to drive for the drive. Official byways are
 // left alone (they're chosen for scenery and history), and so is anything under 8 km of the route.
+// The chip says a road is like the ones drivers write about; that was only tested on US roads (Colorado and California),
+// and not in the Alps, where nearly every road curves and climbs and the score stopped telling roads apart.
+const scoreTested = (st) => !!st?.at && (drivingModel?.validatedIn || []).includes(countryOf({ lng: st.at[0], lat: st.at[1] }));
 const roadIsWeak = (r, st) => {
   const s = roadScore(st);
   return s != null && !r.official && st.len >= 8000 && s < drivingModel.low;
@@ -670,10 +673,12 @@ function roadStats(r) {
     let top = -Infinity;
     let grade = 0;
     let relief = 0;
+    let at = null;
     for (const g of dayGroups()) {
       for (const s of daySegments(g)) {
         if (s.road !== r || s.from == null || s.to == null || s.to <= s.from) continue;
         const c = curveStats(coords, s.from, s.to);
+        at ||= coords[Math.floor((s.from + s.to) / 2)].slice(0, 2);
         len += c.len;
         turn += c.turn;
         hairpins += c.hairpins;
@@ -689,7 +694,7 @@ function roadStats(r) {
     }
     if (len < 3000) return null;
     const perKm = turn / (len / 1000);
-    return { len, perKm, ...curveLevel(perKm), hairpins, climb: hasElevation() ? up : null, top: hasElevation() ? top : null, grade: hasElevation() ? grade : null, relief: hasElevation() ? relief : null };
+    return { len, perKm, ...curveLevel(perKm), hairpins, climb: hasElevation() ? up : null, top: hasElevation() ? top : null, grade: hasElevation() ? grade : null, relief: hasElevation() ? relief : null, at };
   });
 }
 function ratingHtml(st) {
@@ -698,7 +703,7 @@ function ratingHtml(st) {
   const score = roadScore(st);
   return `<div class="rating">
     <span class="curves" title="${Math.round(st.perKm)}° of turning per km"><span class="dots">${dots}</span> ${esc(st.label)}</span>
-    ${score != null && score >= drivingModel.high ? `<span class="drivers-pick" title="On this route it curves and climbs like the roads drivers write about (a model trained on Colorado roads: see analysis/roads in the repository)">${icon("sparkle", 14)} Drivers' road</span>` : ""}
+    ${score != null && score >= drivingModel.high && scoreTested(st) ? `<span class="drivers-pick" title="On this route it curves and climbs like the roads drivers write about (a model trained on Colorado and California roads: see analysis/roads in the repository)">${icon("sparkle", 14)} Drivers' road</span>` : ""}
     ${st.hairpins ? `<span>${icon("hairpin", 14)} ${st.hairpins} hairpin${st.hairpins === 1 ? "" : "s"}</span>` : ""}
     ${st.climb != null ? `<span>${icon("mountain", 14)} ${fmtElev(st.climb)} climb</span>` : ""}
     ${st.top != null && isFinite(st.top) ? `<span>${icon("flag", 14)} top ${fmtElev(st.top)}</span>` : ""}

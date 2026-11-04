@@ -19,6 +19,14 @@ ROOT = Path(__file__).resolve().parents[2]
 CACHE = Path(__file__).parent / "cache"
 USAGE = ROOT / "data" / "search-usage.json"
 
+# how a search is worded in the stretch's language (the stretch's own place names are already local)
+SUFFIX = {
+    "en": "driving experience motorcycle ride review",
+    "de": "Fahrerlebnis Motorrad Ausfahrt Erfahrung Bewertung",
+    "it": "esperienza di guida moto giro recensione",
+    "fr": "expérience de conduite balade moto avis",
+}
+
 PROMPT = """You read web search results about one stretch of road and judge what keen drivers (sports cars, motorcycles) say about driving it.
 
 Stretch: {query}
@@ -113,7 +121,7 @@ def main(iso, limit=None):
         key = str(r.stretch)
         if key not in searches:
             # worded like a review search: "... drive" alone found driver talk for fewer stretches
-            searches[key] = search(r.query.removesuffix(" drive") + " driving experience motorcycle ride review", e["TAVILY_API_KEY"], cap)
+            searches[key] = search(r.query.removesuffix(" drive") + " " + SUFFIX[getattr(r, "lang", "en") if isinstance(getattr(r, "lang", "en"), str) else "en"], e["TAVILY_API_KEY"], cap)
             saved.write_text(json.dumps(searches), encoding="utf-8")
         results = searches[key]
         verdict, model = judge(r.query, results, e["GEMINI_API_KEY"], models)

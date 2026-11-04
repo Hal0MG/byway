@@ -200,6 +200,7 @@ test("drivingScore: twisty climbing roads score above flat straight ones, from t
   assert.ok(twisty > model.high, `twisty ${twisty}`);
   assert.ok(interstate < model.low, `interstate ${interstate}`);
   assert.ok(twisty > 0 && twisty < 1);
+  assert.deepEqual(model.validatedIn, ["US"]); // the chip is shown only where the score was tested
   assert.equal(L.drivingScore(null, 100, 100), null);
   assert.equal(L.drivingScore(model, 100, NaN), null);
 });

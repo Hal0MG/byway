@@ -16,6 +16,8 @@ import pandas as pd
 HERE = Path(__file__).parent
 CACHE = HERE / "cache"
 STATE = {"US-CO": "Colorado", "US-CA": "California"}
+# Regions that cross borders: the country decides the word for the region and the language the search is worded in
+LOCAL = {"CH": ("Schweiz", "de"), "AT": ("Österreich", "de"), "IT": ("Italia", "it"), "FR": ("France", "fr")}
 MAX_SEGS = 6
 SAMPLE = {"top": 100, "middle": 100, "bottom": 50}
 
@@ -72,11 +74,16 @@ def main(iso, stratify="byway"):
         if not where:
             continue
         # only roads people write about go in the search pool: state and US highways, and anything over a pass or on a byway
-        pool = bool(re.match(rf"^(US|{iso[3:]}|SH) ", s.road.iloc[0]) or on_pass or s.byway_share.mean() > 0.5)
+        country = s.country.mode().iloc[0] if "country" in s else ""
+        if country in LOCAL:  # no "US 40" style names: any numbered main or regional road
+            pool = bool((ref and s.highway.isin(["trunk", "primary", "secondary"]).any()) or on_pass or s.byway_share.mean() > 0.5)
+        else:
+            pool = bool(re.match(rf"^(US|{iso[3:]}|SH) ", s.road.iloc[0]) or on_pass or s.byway_share.mean() > 0.5)
         byways = s.byway[s.byway.notna() & (s.byway != "")]
         (rows if pool else others).append({
             "stretch": len(rows) if pool else 100000 + len(others), "road": s.road.iloc[0], "name": name, "passes": "; ".join(on_pass), "from": a, "to": b,
-            "query": f"{label} {where} {STATE.get(iso, '')} drive",
+            "query": f"{label} {where} {LOCAL[country][0]}" if country in LOCAL else f"{label} {where} {STATE.get(iso, '')} drive",
+            "country": country, "lang": LOCAL[country][1] if country in LOCAL else "en",
             "km": s.km.sum(), "segments": json.dumps(idx), "score": s.score.max(),
             "byway": s.byway_share.mean() > 0.5, "byway_name": byways.mode().iloc[0] if len(byways) else "",
             "lon": float(np.mean([p[0] for p in coords])), "lat": float(np.mean([p[1] for p in coords])),

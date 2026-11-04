@@ -201,11 +201,41 @@ official byways are exempt. The Botswana roads are on the list because it's a To
 chose them for the driving. A road can appear on the card several times (one note per day). Surface isn't in the
 score, so a gravel road can score as a good drive.
 
+## The Alps: the held-out test that failed (2026-11-04)
+
+Region: Switzerland, Tyrol and Vorarlberg, Lombardy and South Tyrol, Savoie, Haute-Savoie and Hautes-Alpes. 209
+labelled stretches, searched in German, Italian and French. The detector was trained on Colorado and California and
+frozen, then scored the Alpine stretches (`python analysis/roads/transfer_test.py US-CO,US-CA EU-AL --grounded`).
+
+| Question | Colorado to California | US to Alps |
+| --- | --- | --- |
+| Do drivers write about it? ROC AUC | 0.77 to 0.85 | **0.63** (0.55 to 0.71) |
+| Precision at the app's threshold | about 75% | **43%** (recall 91%) |
+| Rated 4 or 5 among those discussed, AUC | 0.66 to 0.68 | 0.46 (no signal) |
+
+So the detector does not transfer. `diagnostics.py` checks why, using the labels already collected:
+
+- **Little signal inside the Alps either.** Trained and tested within the Alps (blocked by map area), AUC is 0.64 to 0.66,
+  and leaving one region out gives similar numbers. Curves and relief barely separate Alpine roads because nearly all
+  of them curve and climb (range restriction).
+- **Label coverage differs by country.** Share of stretches with driver talk: France 46%, Austria 41%, Switzerland 36%,
+  Italy 26% (against 47% Colorado, 53% California). Part of "no talk" in Italy is a search miss, not a dull road.
+- **Tunnels and expressways** (6 of 209) climb and curve little but are not the cause: 17% talk against 37%.
+- More features (road class, speed, junctions, surface, straightness) do not rescue it.
+
+**Decision.** The Alps are not added to the weights and no Alpine roads are exported to `detected-roads.json`. The app
+shows the "Drivers' road" chip only in countries listed in `validatedIn` in `public/driving-score.json` (US). The weak-road
+note stays global because it states a plain fact (mostly straight and flat), not a prediction of what drivers love.
+
+A negative result is still a result: it says the score measures "twisty and steep compared with a typical US road",
+which is what drivers write about in the US, and says nothing about regions where every road is twisty. Fixing that
+would need relative features (how much a road beats its neighbours) and a label that isn't search-hit rate.
+
 ## Plan
 
-1. **A region with a different road culture.** The Alps (Italy, France, Switzerland), about 250 searches. Train on
-   Colorado and California, test on the Alps. If it holds there, it's useful worldwide. This needs search wording in
-   the local language, since "motorcycle ride review" in English finds far less on a Swiss pass than on a US highway.
+1. **A region with a different road culture.** Done for the Alps (above): it failed, so the chip stays US-only. Next try
+   relative features (a road against its neighbours) before spending more searches; add a country to `validatedIn` only
+   after a held-out test passes.
 2. **Sharper labels.** Search more low-scoring stretches to get more negatives (fine grading needs about 100 stretches
    drivers rate 3 or below, against 50 across both regions now), and check the place-name test by hand on a sample.
 3. **Features that transfer.** Surface (so gravel stops scoring as a good drive) and scenery from OpenStreetMap (coast,

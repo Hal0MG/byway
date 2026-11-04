@@ -30,6 +30,9 @@ OUT = HERE.parents[1] / "public" / "detected-roads.json"
 SCORE = HERE.parents[1] / "public" / "driving-score.json"
 DETECTOR = ["turn_per_km", "relief"]
 PRECISION = 0.75
+# Countries where the detector was tested on held-out stretches (the app shows its chip only there). The Alps failed that test:
+# see analysis/roads/README.md.
+VALIDATED_IN = ["US"]
 STATE = {"US-CO": ("Colorado", "United States"), "US-CA": ("California", "United States")}
 # the app's curve levels (CURVE_LEVELS in public/features.js)
 LEVELS = [(40, "mostly straight"), (100, "gentle curves"), (200, "curvy"), (400, "very twisty"), (np.inf, "relentless curves")]
@@ -69,7 +72,7 @@ def write_model(det, thr, p_cv, talked, isos):
     """The detector as numbers the app can apply (public/driving-score.json): standardise the features, then logistic."""
     sc, lr = det[0], det[-1]
     SCORE.write_text(json.dumps({
-        "built": date.today().isoformat(), "trainedOn": isos, "features": ["perKm", "relief"],
+        "built": date.today().isoformat(), "trainedOn": isos, "features": ["perKm", "relief"], "validatedIn": VALIDATED_IN,
         "mean": [round(float(x), 4) for x in sc.mean_], "scale": [round(float(x), 4) for x in sc.scale_],
         "coef": [round(float(x), 4) for x in lr.coef_[0]], "intercept": round(float(lr.intercept_[0]), 4),
         "high": float(thr), "low": float(np.quantile(p_cv[talked == 0], 0.5)),

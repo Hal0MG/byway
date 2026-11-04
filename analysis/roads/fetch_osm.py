@@ -29,29 +29,48 @@ def overpass(query):
     raise RuntimeError("Overpass kept failing")
 
 
+# Regions that aren't one ISO area: several areas, each tagged with its country (for the search language)
+REGIONS = {
+    "EU-AL": [  # the Alps: Switzerland, western Austria, northern Italy, the French Alps
+        ("CH", '["ISO3166-1"="CH"]'), ("AT", '["ISO3166-2"="AT-7"]'), ("AT", '["ISO3166-2"="AT-8"]'),
+        ("IT", '["ISO3166-2"="IT-32"]'), ("IT", '["ISO3166-2"="IT-23"]'),
+        ("FR", '["ISO3166-2"="FR-73"]'), ("FR", '["ISO3166-2"="FR-74"]'), ("FR", '["ISO3166-2"="FR-05"]'),
+    ],
+}
+
+
+def fetch(out_file, body, areas):
+    """Runs `body` (with {a} for the area set) over each area, merges the elements, tags each with its country."""
+    if out_file.exists():
+        return
+    elements, seen = [], set()
+    for n, (country, sel) in enumerate(areas):
+        part = CACHE / f"{out_file.stem}-part{n}.json"
+        if not part.exists():
+            print(f"  {out_file.stem} {country}{sel} ...")
+            part.write_text(json.dumps(overpass(body.format(a=f"area{sel}->.a;"))))
+        for e in json.loads(part.read_text())["elements"]:
+            if (e["type"], e["id"]) not in seen:
+                seen.add((e["type"], e["id"]))
+                e["area"] = country
+                elements.append(e)
+    out_file.write_text(json.dumps({"elements": elements}))
+    for n in range(len(areas)):
+        (CACHE / f"{out_file.stem}-part{n}.json").unlink(missing_ok=True)
+
+
 def main(iso):
     CACHE.mkdir(exist_ok=True)
-    area = f'area["ISO3166-2"="{iso}"]->.a;'
-    roads = CACHE / f"{iso}-roads.json"
-    if not roads.exists():
-        print("roads...")
-        q = f'[out:json][timeout:500];{area}way(area.a)[highway~"^(trunk|primary|secondary|tertiary)$"];out tags geom;'
-        roads.write_text(json.dumps(overpass(q)))
-    byways = CACHE / f"{iso}-byways.json"
-    if not byways.exists():
-        print("byways...")
-        # designated byways: national and state networks ("US:CO:Scenic", "byway:historic", ...)
-        q = f'[out:json][timeout:300];{area}rel(area.a)[route=road][network~"Scenic|byway|Byway",i];out body;'
-        byways.write_text(json.dumps(overpass(q)))
-    places = CACHE / f"{iso}-places.json"
-    if not places.exists():
-        print("passes and towns...")
-        # names for searches: mountain passes, and towns to say where a stretch runs ("Telluride to Rico")
-        q = (f'[out:json][timeout:300];{area}(node(area.a)[mountain_pass=yes][name];node(area.a)[natural=saddle][name];'
-             f'node(area.a)[place~"^(city|town|village|hamlet)$"][name];);out;')
-        places.write_text(json.dumps(overpass(q)))
-    for f in (roads, byways, places):
-        print(f.name, len(json.loads(f.read_text())["elements"]), "elements")
+    areas = REGIONS.get(iso) or [("", f'["ISO3166-2"="{iso}"]')]
+    fetch(CACHE / f"{iso}-roads.json",
+          '[out:json][timeout:500];{a}way(area.a)[highway~"^(trunk|primary|secondary|tertiary)$"];out tags geom;', areas)
+    # designated byways: national and state networks ("US:CO:Scenic", "byway:historic", ...)
+    fetch(CACHE / f"{iso}-byways.json", '[out:json][timeout:300];{a}rel(area.a)[route=road][network~"Scenic|byway|Byway",i];out body;', areas)
+    # names for searches: mountain passes, and towns to say where a stretch runs ("Telluride to Rico")
+    fetch(CACHE / f"{iso}-places.json", '[out:json][timeout:300];{a}(node(area.a)[mountain_pass=yes][name];node(area.a)[natural=saddle][name];'
+          'node(area.a)[place~"^(city|town|village|hamlet)$"][name];);out;', areas)
+    for f in (f"{iso}-roads.json", f"{iso}-byways.json", f"{iso}-places.json"):
+        print(f, len(json.loads((CACHE / f).read_text())["elements"]), "elements")
 
 
 if __name__ == "__main__":
